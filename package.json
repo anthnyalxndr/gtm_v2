@@ -1,0 +1,34 @@
+{
+  "name": "gtm-v2",
+  "version": "1.0.0",
+  "description": "A TypeScript service for accessing and managing Google Tag Manager (GTM) accounts via the Tag Manager API v2",
+  "main": "dist/gtm_v2.js",
+  "types": "dist/gtm_v2.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/gtm_v2.js",
+    "dev": "tsx example.ts"
+  },
+  "keywords": [
+    "google-tag-manager",
+    "gtm",
+    "google-api",
+    "tag-manager"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "google-auth-library": "^9.0.0",
+    "googleapis": "^140.0.0",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
