@@ -43,14 +43,29 @@ describe("planContainerSpec", () => {
   });
 
   it("is all unchanged after an execute", async () => {
-    const { client } = fresh();
+    const { client, state } = fresh();
     const first = await planContainerSpec(client, target, fixtureSpec());
     await executePlan(client, first);
+    // Creating the version deleted the workspace; the plan must read the latest version instead.
     const second = await planContainerSpec(client, target, fixtureSpec());
     expect(second.errors).toEqual([]);
-    expect(second.workspacePath).not.toBeNull();
-    const entityOps = second.ops.filter((o) => o.kind !== "version");
+    expect(second.workspacePath).toBeNull();
+    expect(state.calls).toContain("version_headers.latest");
+    const entityOps = second.ops.filter((o) => o.kind !== "workspace");
     expect(entityOps.every((o) => o.action === "unchanged")).toBe(true);
+    expect(second.ops.find((o) => o.kind === "workspace")).toMatchObject({ action: "create" });
+    expect(second.ops.find((o) => o.kind === "version")).toBeUndefined();
+  });
+
+  it("rejects names containing a colon, which Tag Manager refuses", async () => {
+    const { client } = fresh();
+    const plan = await planContainerSpec(client, target, {
+      folder: [{ name: "recipe: x" }],
+      trigger: [{ name: "ok", type: "pageview" }],
+    });
+    expect(plan.errors).toEqual([
+      'folder name "recipe: x" contains ":", which Tag Manager rejects',
+    ]);
   });
 
   it("plans an update when a parameter changes", async () => {

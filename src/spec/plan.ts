@@ -83,6 +83,40 @@ export async function loadExisting(
   return state;
 }
 
+/**
+ * A new workspace branches from the container's latest version (not the live
+ * one), so when the target workspace does not exist yet this is what it will
+ * contain. Entity ids are stable across versions and workspaces.
+ */
+export async function loadExistingFromLatestVersion(
+  client: GtmClient,
+  containerPath: string
+): Promise<ExistingState> {
+  const api = client.service.accounts.containers;
+  const header = await client.call(() => api.version_headers.latest({ parent: containerPath }));
+  const versionId = header.data.containerVersionId;
+  const state = emptyState();
+  if (!versionId) return state;
+  const version = await client.call(() =>
+    api.versions.get({ path: `${containerPath}/versions/${versionId}` })
+  );
+  const cv = version.data;
+  state.raw.folder = cv.folder ?? [];
+  state.raw.variable = cv.variable ?? [];
+  state.raw.trigger = cv.trigger ?? [];
+  state.raw.tag = cv.tag ?? [];
+  for (const f of state.raw.folder) if (f.name && f.folderId) state.folders.set(f.name, f.folderId);
+  for (const v of state.raw.variable) {
+    if (v.name && v.variableId) state.variables.set(v.name, v.variableId);
+  }
+  for (const t of state.raw.trigger) {
+    if (t.name && t.triggerId) state.triggers.set(t.name, t.triggerId);
+  }
+  for (const t of state.raw.tag) if (t.name && t.tagId) state.tags.set(t.name, t.tagId);
+  for (const b of cv.builtInVariable ?? []) if (b.type) state.builtIns.add(b.type);
+  return state;
+}
+
 /** Order variables so that any variable a {{ }} reference points at comes first. */
 export function sortVariablesByReference(variables: readonly VariableSpec[]): VariableSpec[] {
   const names = new Set(variables.map((v) => v.name ?? ""));
@@ -121,7 +155,9 @@ export async function planContainerSpec(
   const wsList = await client.call(() => wsApi.list({ parent: container.path }));
   const found = (wsList.data.workspace ?? []).find((w) => w.name === target.workspace);
   const workspacePath = found?.path ?? null;
-  const existing = workspacePath ? await loadExisting(client, workspacePath) : emptyState();
+  const existing = workspacePath
+    ? await loadExisting(client, workspacePath)
+    : await loadExistingFromLatestVersion(client, container.path);
 
   const ops: PlannedOp[] = [];
   const errors: string[] = [];
@@ -156,6 +192,9 @@ export async function planContainerSpec(
         continue;
       }
       if (seen.has(e.name)) errors.push(`duplicate ${kind} name "${e.name}" in spec`);
+      if (e.name.includes(":")) {
+        errors.push(`${kind} name "${e.name}" contains ":", which Tag Manager rejects`);
+      }
       seen.add(e.name);
     }
   }
@@ -238,7 +277,12 @@ export async function planContainerSpec(
   planEntities("trigger", spec.trigger!, existing.raw.trigger, (t) => toApiTrigger(t, existing));
   planEntities("tag", spec.tag!, existing.raw.tag, (t) => toApiTag(t, existing));
 
-  ops.push({ kind: "version", name: target.workspace, action: "create" });
+  // A version is only created when something changed or a publish was requested;
+  // creating one deletes the workspace, so an unchanged run leaves it in place.
+  const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
+  if (changed || options.publish) {
+    ops.push({ kind: "version", name: target.workspace, action: "create" });
+  }
   if (options.publish) ops.push({ kind: "publish", name: target.workspace, action: "create" });
 
   return { target, container, workspacePath, spec, existing, ops, errors };

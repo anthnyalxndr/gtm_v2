@@ -6,7 +6,7 @@ import { googleAdsConversion, ADS_CONVERSION_ID_VARIABLE } from "../src/recipes/
 import { mergeSpecs, compileConversions } from "../src/recipes/compile.js";
 import { applyConversions } from "../src/recipes/apply.js";
 import type { ConversionRecipe } from "../src/recipes/types.js";
-import { createFakeService } from "./helpers/fakeService.js";
+import { createFakeService, latestSnapshot } from "./helpers/fakeService.js";
 
 describe("trigger recipes", () => {
   it("names are deterministic", () => {
@@ -127,16 +127,18 @@ describe("compileConversions and applyConversions", () => {
 
     const first = await applyConversions(client, base);
     expect(first.plan.errors).toEqual([]);
-    expect(state.builtIns.map((b) => b.type)).toEqual(["formId"]);
-    expect(state.triggers.map((t) => t.name)).toEqual(["Form Submit - contact"]);
-    expect(state.tags.map((t) => t.name)).toEqual(["GA4 - lead", "Ads - lead"]);
-    expect(state.tags[1].firingTriggerId).toEqual([state.triggers[0].triggerId]);
+    const snap = latestSnapshot(state);
+    expect(snap.builtIns).toEqual(["formId"]);
+    expect(snap.trigger.map((t) => t.name)).toEqual(["Form Submit - contact"]);
+    expect(snap.tag.map((t) => t.name)).toEqual(["GA4 - lead", "Ads - lead"]);
+    expect(snap.tag[1].firingTriggerId).toEqual([snap.trigger[0].triggerId]);
 
     const second = await applyConversions(client, base);
     expect(
       second.result?.ops.filter((o) => o.kind === "tag").every((o) => o.action === "unchanged")
     ).toBe(true);
-    expect(state.tags).toHaveLength(2);
+    expect(second.result?.versionPath).toBeUndefined();
+    expect(state.versions).toHaveLength(1);
 
     const dry = await applyConversions(client, { ...base, dryRun: true });
     expect(dry.result).toBeUndefined();

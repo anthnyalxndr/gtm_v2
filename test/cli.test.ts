@@ -102,7 +102,7 @@ describe("runCli", () => {
       (l) => lines.push(l)
     );
     expect(code).toBe(0);
-    expect(state.tags).toHaveLength(1);
+    expect(state.versions[0].snapshot.tag).toHaveLength(1);
     expect(lines[lines.length - 1]).toMatch(
       /^Version: accounts\/1\/containers\/10\/versions\/\d+$/
     );
@@ -129,14 +129,19 @@ describe("runCli", () => {
 
   it("export prints the live container as a spec", async () => {
     const { client, state } = fresh();
-    state.triggers.push({ name: "PV", type: "pageview", triggerId: "1", path: "x/trigger/1" });
-    state.tags.push({
-      name: "T",
-      type: "html",
-      tagId: "2",
-      path: "x/tag/2",
-      firingTriggerId: ["1"],
+    state.versions.push({
+      path: "accounts/1/containers/10/versions/9",
+      versionId: "9",
+      name: "live",
+      snapshot: {
+        folder: [],
+        variable: [],
+        trigger: [{ name: "PV", type: "pageview", triggerId: "1" }],
+        tag: [{ name: "T", type: "html", tagId: "2", firingTriggerId: ["1"] }],
+        builtIns: [],
+      },
     });
+    state.published.push("accounts/1/containers/10/versions/9");
     const lines: string[] = [];
     const code = await runCli(parseCliArgs(["export", "--container", "GTM-ABC123"]), client, (l) =>
       lines.push(l)

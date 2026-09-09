@@ -18,8 +18,10 @@ export interface ExecuteOptions {
 }
 
 export interface ApplyResult {
+  /** The workspace written to. Tag Manager deletes it once a version is created from it. */
   workspacePath: string;
   ops: PlannedOp[];
+  /** Absent when nothing changed and no publish was requested. */
   versionPath?: string;
   published: boolean;
 }
@@ -100,6 +102,13 @@ export async function executePlan(
     );
   }
 
+  // Creating a version deletes the workspace, and a fresh workspace branches
+  // from the latest version, so a version is only worth creating when
+  // something changed (or a publish was requested).
+  const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
+  if (!changed && !options.publish) {
+    return { workspacePath: ws.path, ops, published: false };
+  }
   const versionName = options.versionName ?? plan.target.workspace;
   const versionRes = await client.call(() =>
     wsApi.create_version({ path: ws.path, requestBody: { name: versionName } })

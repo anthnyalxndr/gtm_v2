@@ -101,7 +101,11 @@ export async function runCli(
         publish: args.publish,
         versionName: args.versionName,
       });
-      out(`Version: ${result.versionPath}${result.published ? " (published)" : ""}`);
+      if (result.versionPath) {
+        out(`Version: ${result.versionPath}${result.published ? " (published)" : ""}`);
+      } else {
+        out("No changes: no version created.");
+      }
       return 0;
     }
   }

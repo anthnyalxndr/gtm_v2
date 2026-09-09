@@ -5,7 +5,7 @@ import { normalizeExport } from "../src/spec/normalize.js";
 import { applySpec, executePlan } from "../src/spec/execute.js";
 import { planContainerSpec } from "../src/spec/plan.js";
 import type { ContainerSpec } from "../src/spec/types.js";
-import { createFakeService } from "./helpers/fakeService.js";
+import { createFakeService, latestSnapshot } from "./helpers/fakeService.js";
 
 const base = { container: "GTM-ABC123", workspace: "conv-2026-09" };
 const fixtureSpec = (): ContainerSpec =>
@@ -29,25 +29,28 @@ describe("applySpec", () => {
     expect(result?.published).toBe(false);
     expect(result?.versionPath).toBe(state.versions[0].path);
 
-    expect(state.workspaces.map((w) => w.name)).toEqual(["conv-2026-09"]);
-    expect(state.builtIns.map((b) => b.type).sort()).toEqual(["formId", "pagePath"]);
-    expect(state.folders.map((f) => f.name)).toEqual(["Conversions"]);
-    expect(state.variables.map((v) => v.name)).toEqual([
+    // The version captured the workspace and Tag Manager then deleted the workspace.
+    expect(state.calls).toContain("workspace.create");
+    expect(state.workspaces).toEqual([]);
+    const snap = latestSnapshot(state);
+    expect([...snap.builtIns].sort()).toEqual(["formId", "pagePath"]);
+    expect(snap.folder.map((f) => f.name)).toEqual(["Conversions"]);
+    expect(snap.variable.map((v) => v.name)).toEqual([
       "Const - Google Ads Conversion ID",
       "Const - Upper Value",
     ]);
-    expect(state.triggers.map((t) => t.name)).toEqual([
+    expect(snap.trigger.map((t) => t.name)).toEqual([
       "Custom Event - lead",
       "Form Submit - contact",
     ]);
-    expect(state.tags).toHaveLength(1);
+    expect(snap.tag).toHaveLength(1);
 
-    const tag = state.tags[0];
-    expect(tag.firingTriggerId).toEqual(state.triggers.map((t) => t.triggerId));
-    expect(tag.parentFolderId).toBe(state.folders[0].folderId);
+    const tag = snap.tag[0];
+    expect(tag.firingTriggerId).toEqual(snap.trigger.map((t) => t.triggerId));
+    expect(tag.parentFolderId).toBe(snap.folder[0].folderId);
     expect(tag).not.toHaveProperty("firingTriggerName");
     expect(tag).not.toHaveProperty("parentFolderName");
-    expect(state.variables[0].parentFolderId).toBe(state.folders[0].folderId);
+    expect(snap.variable[0].parentFolderId).toBe(snap.folder[0].folderId);
 
     const order = writes(state.calls);
     expect(order.indexOf("folder.create")).toBeLessThan(order.indexOf("variable.create"));
@@ -61,15 +64,26 @@ describe("applySpec", () => {
     const { client, state } = fresh();
     await applySpec(client, { ...base, spec: fixtureSpec() });
     const callsBefore = state.calls.length;
+    // The first apply's version deleted the workspace, so the second apply recreates it
+    // (branching from the latest version) and finds nothing to change: no new version.
     const { result } = await applySpec(client, { ...base, spec: fixtureSpec() });
     const newWrites = writes(state.calls.slice(callsBefore));
-    expect(newWrites).toEqual(["workspaces.create_version"]);
+    expect(newWrites).toEqual(["workspace.create"]);
     expect(
       result?.ops
         .filter((o) => o.kind === "tag" || o.kind === "trigger")
         .every((o) => o.action === "unchanged")
     ).toBe(true);
-    expect(state.tags).toHaveLength(1);
+    expect(result?.versionPath).toBeUndefined();
+    expect(latestSnapshot(state).tag).toHaveLength(1);
+    expect(state.versions).toHaveLength(1);
+  });
+
+  it("creates a version when publish is requested even with no changes", async () => {
+    const { client, state } = fresh();
+    await applySpec(client, { ...base, spec: fixtureSpec() });
+    const { result } = await applySpec(client, { ...base, spec: fixtureSpec(), publish: true });
+    expect(result?.published).toBe(true);
     expect(state.versions).toHaveLength(2);
   });
 
@@ -80,8 +94,9 @@ describe("applySpec", () => {
     spec.tag![0].parameter![1].value = "changed";
     const { result } = await applySpec(client, { ...base, spec });
     expect(result?.ops.find((o) => o.kind === "tag")).toMatchObject({ action: "update" });
-    expect(state.tags[0].fingerprint).toBe("2");
-    expect(state.tags[0].parameter?.[1]?.value).toBe("changed");
+    expect(state.calls).toContain("tag.update");
+    expect(latestSnapshot(state).tag[0].parameter?.[1]?.value).toBe("changed");
+    expect(state.versions).toHaveLength(2);
   });
 
   it("publishes when asked", async () => {

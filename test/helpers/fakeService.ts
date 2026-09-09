@@ -31,7 +31,18 @@ export interface FakeState {
   triggers: Trigger[];
   variables: Variable[];
   builtIns: { workspacePath: string; type: string }[];
-  versions: { path: string; name?: string }[];
+  versions: {
+    path: string;
+    versionId: string;
+    name?: string;
+    snapshot: {
+      folder: Folder[];
+      variable: Variable[];
+      trigger: Trigger[];
+      tag: Tag[];
+      builtIns: string[];
+    };
+  }[];
   published: string[];
   calls: string[];
   mergeConflicts: number;
@@ -39,6 +50,27 @@ export interface FakeState {
 
 let idCounter = 0;
 const nextId = (): string => String(++idCounter);
+
+/** Mutates in place: the collections hold references to these arrays. */
+function removeWorkspace(state: FakeState, wsPath: string): void {
+  const prune = <T>(items: T[], drop: (e: T) => boolean): void => {
+    for (let i = items.length - 1; i >= 0; i -= 1) if (drop(items[i])) items.splice(i, 1);
+  };
+  const inWs = (e: { path?: string | null }) => !!e.path?.startsWith(wsPath + "/");
+  prune(state.folders, inWs);
+  prune(state.variables, inWs);
+  prune(state.triggers, inWs);
+  prune(state.tags, inWs);
+  prune(state.builtIns, (b) => b.workspacePath === wsPath);
+  prune(state.workspaces, (w) => w.path === wsPath);
+}
+
+/** Entities as captured by the most recent version. */
+export function latestSnapshot(state: FakeState): FakeState["versions"][number]["snapshot"] {
+  const v = state.versions[state.versions.length - 1];
+  if (!v) throw new Error("no version has been created");
+  return v.snapshot;
+}
 
 interface Named {
   name?: string | null;
@@ -159,28 +191,92 @@ export function createFakeService(seed: FakeSeed = {}): {
             data: { ...created, path: `accounts/${accountId}/containers/${containerId}` },
           };
         },
+        version_headers: {
+          latest: async ({ parent }: { parent: string }) => {
+            state.calls.push("version_headers.latest");
+            const latest = state.versions[state.versions.length - 1];
+            return {
+              data: latest
+                ? { containerVersionId: latest.versionId, path: latest.path, name: latest.name }
+                : { path: `${parent}/versions/0` },
+            };
+          },
+        },
         versions: {
           publish: async ({ path }: { path: string }) => {
             state.calls.push("versions.publish");
             state.published.push(path);
             return { data: { containerVersion: { path } } };
           },
-          live: async ({ parent }: { parent: string }) => {
-            state.calls.push("versions.live");
+          get: async ({ path }: { path: string }) => {
+            state.calls.push("versions.get");
+            const v = state.versions.find((x) => x.path === path);
+            if (!v) throw Object.assign(new Error("version not found"), { code: 404 });
             return {
               data: {
-                path: `${parent}/versions/live`,
-                tag: state.tags,
-                trigger: state.triggers,
-                variable: state.variables,
-                folder: state.folders,
-                builtInVariable: state.builtIns.map((b) => ({ type: b.type })),
+                path: v.path,
+                containerVersionId: v.versionId,
+                name: v.name,
+                tag: v.snapshot.tag,
+                trigger: v.snapshot.trigger,
+                variable: v.snapshot.variable,
+                folder: v.snapshot.folder,
+                builtInVariable: v.snapshot.builtIns.map((t) => ({ type: t })),
+              },
+            };
+          },
+          live: async ({ parent }: { parent: string }) => {
+            state.calls.push("versions.live");
+            const livePath = state.published[state.published.length - 1];
+            const v = state.versions.find((x) => x.path === livePath);
+            return {
+              data: {
+                path: v?.path ?? `${parent}/versions/0`,
+                tag: v?.snapshot.tag ?? [],
+                trigger: v?.snapshot.trigger ?? [],
+                variable: v?.snapshot.variable ?? [],
+                folder: v?.snapshot.folder ?? [],
+                builtInVariable: (v?.snapshot.builtIns ?? []).map((t) => ({ type: t })),
               },
             };
           },
         },
         workspaces: {
           ...collection(state, state.workspaces, "workspaceId", "workspace"),
+          // A new workspace branches from the latest version: clone its entities in.
+          create: async ({ parent, requestBody }: { parent: string; requestBody: Workspace }) => {
+            state.calls.push("workspace.create");
+            const id = nextId();
+            const wsPath = `${parent}/workspace/${id}`;
+            const ws = { ...requestBody, workspaceId: id, path: wsPath, fingerprint: "1" };
+            state.workspaces.push(ws);
+            const latest = state.versions[state.versions.length - 1];
+            if (latest) {
+              const clone = <T extends Named>(
+                items: T[],
+                idKey: string,
+                kind: string,
+                store: T[]
+              ) => {
+                for (const e of items) {
+                  const idValue = (e as Record<string, unknown>)[idKey];
+                  store.push({ ...e, path: `${wsPath}/${kind}/${idValue}`, fingerprint: "1" });
+                }
+              };
+              clone(latest.snapshot.folder, "folderId", "folder", state.folders);
+              clone(latest.snapshot.variable, "variableId", "variable", state.variables);
+              clone(latest.snapshot.trigger, "triggerId", "trigger", state.triggers);
+              clone(latest.snapshot.tag, "tagId", "tag", state.tags);
+              for (const t of latest.snapshot.builtIns)
+                state.builtIns.push({ workspacePath: wsPath, type: t });
+            }
+            return { data: ws };
+          },
+          delete: async ({ path }: { path: string }) => {
+            state.calls.push("workspace.delete");
+            removeWorkspace(state, path);
+            return { data: {} };
+          },
           getStatus: async () => {
             state.calls.push("workspaces.getStatus");
             return {
@@ -198,8 +294,24 @@ export function createFakeService(seed: FakeSeed = {}): {
             requestBody: { name?: string };
           }) => {
             state.calls.push("workspaces.create_version");
-            const versionPath = path.replace(/\/workspace\/\d+$/, `/versions/${nextId()}`);
-            state.versions.push({ path: versionPath, name: requestBody.name });
+            const versionId = nextId();
+            const versionPath = path.replace(/\/workspace\/\d+$/, `/versions/${versionId}`);
+            const inWs = <T extends Named>(items: T[]): T[] =>
+              items.filter((e) => e.path?.startsWith(path + "/")).map((e) => ({ ...e }));
+            state.versions.push({
+              path: versionPath,
+              versionId,
+              name: requestBody.name,
+              snapshot: {
+                folder: inWs(state.folders),
+                variable: inWs(state.variables),
+                trigger: inWs(state.triggers),
+                tag: inWs(state.tags),
+                builtIns: state.builtIns.filter((b) => b.workspacePath === path).map((b) => b.type),
+              },
+            });
+            // Tag Manager deletes the workspace once a version is created from it.
+            removeWorkspace(state, path);
             return { data: { containerVersion: { path: versionPath } } };
           },
           folders: collection(state, state.folders, "folderId", "folder"),

@@ -80,9 +80,22 @@ console.log(formatPlan(plan));
 2. Resolves every reference in the spec and builds a plan. Names are identity: an entity that exists by name is compared and updated only if it differs. The plan output uses `[+]` create, `[~]` update, `[=]` unchanged, `[!]` error.
 3. Refuses to write while the plan has errors. All errors are reported together.
 4. Applies folders, then variables (ordered by their `{{ }}` references), then triggers, then tags, resolving names to ids as it goes. Updates send the current fingerprint.
-5. Checks the workspace for merge conflicts, creates a version, and publishes only with `--publish`.
+5. Checks the workspace for merge conflicts, creates a version when something changed, and publishes only with `--publish`.
 
 `--dry-run` prints the plan and makes no write calls. What the dry run shows is exactly what apply does.
+
+### Versions and workspaces
+
+Two Tag Manager behaviors shape the apply flow, both verified against the live API:
+
+- **Creating a version deletes the workspace it came from.** After an apply that changed something, the named workspace is gone and the changes live in the new version. Open a fresh workspace in the UI to preview.
+- **A new workspace branches from the latest version, not the live one.** So the next apply sees everything earlier applies created, whether or not it was published, and reports it `[=]`. The planner reads the latest version when the target workspace does not exist yet.
+
+When nothing changed, no version is created and the workspace is left in place.
+
+### Naming
+
+Tag Manager rejects `:` in entity names. The planner reports it before writing. Notes accept any text, so conventions like `#recipe:ga4-event` belong in an entity's notes field, not its name.
 
 ### What gets created implicitly
 
