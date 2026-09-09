@@ -1,0 +1,106 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-09-09 05:00:00",
+  "containerVersion": {
+    "path": "accounts/1/containers/10/versions/0",
+    "accountId": "1",
+    "containerId": "10",
+    "containerVersionId": "0",
+    "container": {
+      "path": "accounts/1/containers/10",
+      "accountId": "1",
+      "containerId": "10",
+      "name": "acme.com",
+      "publicId": "GTM-ABC123",
+      "usageContext": ["WEB"],
+      "fingerprint": "1",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/1/containers/10/workspaces?apiLink=container"
+    },
+    "folder": [
+      { "accountId": "1", "containerId": "10", "folderId": "5", "name": "Conversions", "fingerprint": "1" }
+    ],
+    "builtInVariable": [
+      { "accountId": "1", "containerId": "10", "type": "PAGE_PATH", "name": "Page Path" },
+      { "accountId": "1", "containerId": "10", "type": "FORM_ID", "name": "Form ID" }
+    ],
+    "variable": [
+      {
+        "accountId": "1",
+        "containerId": "10",
+        "variableId": "7",
+        "name": "Const - Google Ads Conversion ID",
+        "type": "c",
+        "parameter": [{ "type": "TEMPLATE", "key": "value", "value": "AW-123" }],
+        "fingerprint": "1",
+        "parentFolderId": "5"
+      },
+      {
+        "accountId": "1",
+        "containerId": "10",
+        "variableId": "8",
+        "name": "Const - Upper Value",
+        "type": "c",
+        "parameter": [{ "type": "TEMPLATE", "key": "value", "value": "KEEP_UPPER_CASE" }],
+        "fingerprint": "1"
+      }
+    ],
+    "trigger": [
+      {
+        "accountId": "1",
+        "containerId": "10",
+        "triggerId": "12",
+        "name": "Custom Event - lead",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" },
+              { "type": "TEMPLATE", "key": "arg1", "value": "lead" }
+            ]
+          }
+        ],
+        "fingerprint": "1"
+      },
+      {
+        "accountId": "1",
+        "containerId": "10",
+        "triggerId": "13",
+        "name": "Form Submit - contact",
+        "type": "FORM_SUBMISSION",
+        "filter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "type": "TEMPLATE", "key": "arg0", "value": "{{Form ID}}" },
+              { "type": "TEMPLATE", "key": "arg1", "value": "contact" }
+            ]
+          }
+        ],
+        "waitForTags": { "type": "BOOLEAN", "value": "false" },
+        "checkValidation": { "type": "BOOLEAN", "value": "false" },
+        "fingerprint": "1"
+      }
+    ],
+    "tag": [
+      {
+        "accountId": "1",
+        "containerId": "10",
+        "tagId": "20",
+        "name": "Ads - Lead",
+        "type": "awct",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "conversionId", "value": "{{Const - Google Ads Conversion ID}}" },
+          { "type": "TEMPLATE", "key": "conversionLabel", "value": "xyz" },
+          { "type": "BOOLEAN", "key": "enableConversionLinker", "value": "true" }
+        ],
+        "fingerprint": "1",
+        "firingTriggerId": ["12", "13"],
+        "parentFolderId": "5",
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": { "type": "MAP" },
+        "consentSettings": { "consentStatus": "NOT_SET" }
+      }
+    ]
+  }
+}

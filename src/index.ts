@@ -19,3 +19,34 @@ export {
 } from "./resources/entities.js";
 export type { EnsureResult, EnsureAction } from "./resources/entities.js";
 export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
+export type {
+  ContainerSpec,
+  FolderSpec,
+  VariableSpec,
+  TriggerSpec,
+  TagSpec,
+  EntityKind,
+} from "./spec/types.js";
+export {
+  BUILT_IN_VARIABLES,
+  builtInTypeForName,
+  upperSnakeToCamel,
+  referencedVariableNames,
+} from "./spec/catalog.js";
+export { normalizeExport, NormalizeError, ENUM_KEYS } from "./spec/normalize.js";
+export { emptyState, toApiVariable, toApiTrigger, toApiTag } from "./spec/convert.js";
+export type { ExistingState, Unresolved, Converted } from "./spec/convert.js";
+export {
+  planContainerSpec,
+  loadExisting,
+  sortVariablesByReference,
+  formatPlan,
+} from "./spec/plan.js";
+export type { Plan, PlannedOp, PlanTarget, PlanOptions, OpKind, OpAction } from "./spec/plan.js";
+export { executePlan, applySpec } from "./spec/execute.js";
+export type {
+  ExecuteOptions,
+  ApplyResult,
+  ApplySpecOptions,
+  ApplySpecOutcome,
+} from "./spec/execute.js";
