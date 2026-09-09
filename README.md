@@ -8,7 +8,14 @@ Spec-driven SDK and CLI for Google Tag Manager. Describe a container in the same
 pnpm add github:anthnyalxndr/gtm_v2#v2.0.0
 ```
 
-The package builds itself on install. It depends on `@googleapis/tagmanager` (the per-API client, not the monolithic `googleapis` bundle) and re-exports its `tagmanager_v2` types.
+The package builds itself on install through its `prepare` script. pnpm 10 blocks dependency build scripts by default, so approve this one in the consuming repo's `pnpm-workspace.yaml` before installing:
+
+```yaml
+onlyBuiltDependencies:
+  - "@anthnyalxndr/gtm-sdk"
+```
+
+It depends on `@googleapis/tagmanager` (the per-API client, not the monolithic `googleapis` bundle) and re-exports its `tagmanager_v2` types.
 
 ## Credentials
 

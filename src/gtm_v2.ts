@@ -93,8 +93,22 @@ export class GtmClient {
   }
 
   /** Run an API call with throttling and retry. Every SDK helper goes through this. */
-  public call<T>(fn: () => Promise<T>): Promise<T> {
-    return this.limiter(() => withRetry(fn));
+  public async call<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await this.limiter(() => withRetry(fn));
+    } catch (err) {
+      throw this.describeAuthError(err);
+    }
+  }
+
+  /** Replace Google's bare "invalid_grant" with an error that says what to do about it. */
+  private describeAuthError(err: unknown): unknown {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!/invalid_grant/i.test(message)) return err;
+    return new Error(
+      `The stored OAuth token at ${this.tokenPath} was rejected (invalid_grant): it has expired or been revoked. Delete that file and run again to re-authorize in the browser.`,
+      { cause: err }
+    );
   }
 
   public async listAccounts(): Promise<tagmanager_v2.Schema$Account[]> {

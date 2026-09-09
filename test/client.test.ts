@@ -36,6 +36,34 @@ describe("GtmClient", () => {
   });
 });
 
+describe("GtmClient.call", () => {
+  it("explains an invalid_grant refresh failure and names the token file", async () => {
+    const fake = {
+      accounts: {
+        list: async () => {
+          throw new Error("invalid_grant");
+        },
+      },
+    } as unknown as tagmanager_v2.Tagmanager;
+    const client = new GtmClient({ service: fake, tokenPath: "/tmp/x/token.json" });
+    await expect(client.listAccounts()).rejects.toThrow(
+      /token at \/tmp\/x\/token\.json was rejected \(invalid_grant\).*re-authorize/
+    );
+  });
+
+  it("passes other errors through unchanged", async () => {
+    const fake = {
+      accounts: {
+        list: async () => {
+          throw Object.assign(new Error("HTTP 403"), { code: 403 });
+        },
+      },
+    } as unknown as tagmanager_v2.Tagmanager;
+    const client = new GtmClient({ service: fake });
+    await expect(client.listAccounts()).rejects.toThrow("HTTP 403");
+  });
+});
+
 describe("package entry", () => {
   it("exports GtmClient from the index", () => {
     expect(typeof sdk.GtmClient).toBe("function");
