@@ -46,7 +46,7 @@ A spec is a GTM container export with three changes: server fields (`accountId`,
 }
 ```
 
-The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-sdk normalize export.json`. Or capture a live container with `gtm-sdk export --container GTM-XXXXXXX`. Keep customer-specific values in constant variables so the rest of the spec is reusable.
+The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-sdk normalize export.json`. Or capture a container with `gtm-sdk export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
 
 ## Applying a spec
 

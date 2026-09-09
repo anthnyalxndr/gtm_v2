@@ -32,6 +32,7 @@ describe("parseCliArgs", () => {
       file: undefined,
       dryRun: true,
       publish: true,
+      live: false,
       versionName: "v1",
     });
   });
@@ -127,27 +128,78 @@ describe("runCli", () => {
     expect(state.tags).toHaveLength(0);
   });
 
-  it("export prints the live container as a spec", async () => {
+  it("export reads the latest version by default, the live one with --live", async () => {
     const { client, state } = fresh();
-    state.versions.push({
-      path: "accounts/1/containers/10/versions/9",
-      versionId: "9",
-      name: "live",
+    const version = (id: string, tagName: string) => ({
+      path: `accounts/1/containers/10/versions/${id}`,
+      versionId: id,
+      name: `v${id}`,
       snapshot: {
         folder: [],
         variable: [],
         trigger: [{ name: "PV", type: "pageview", triggerId: "1" }],
-        tag: [{ name: "T", type: "html", tagId: "2", firingTriggerId: ["1"] }],
+        tag: [{ name: tagName, type: "html", tagId: "2", firingTriggerId: ["1"] }],
         builtIns: [],
       },
     });
-    state.published.push("accounts/1/containers/10/versions/9");
+    state.versions.push(version("8", "Published tag"), version("9", "Unpublished tag"));
+    state.published.push("accounts/1/containers/10/versions/8");
+
+    const run = async (argv: string[]) => {
+      const lines: string[] = [];
+      const code = await runCli(parseCliArgs(argv), client, (l) => lines.push(l));
+      expect(code).toBe(0);
+      return JSON.parse(lines.join("\n"));
+    };
+    const latest = await run(["export", "--container", "GTM-ABC123"]);
+    expect(latest.tag[0]).toEqual({
+      name: "Unpublished tag",
+      type: "html",
+      firingTriggerName: ["PV"],
+    });
+    const live = await run(["export", "--container", "GTM-ABC123", "--live"]);
+    expect(live.tag[0].name).toBe("Published tag");
+  });
+
+  it("export --workspace reads an open workspace", async () => {
+    const { client } = fresh();
+    await runCli(
+      parseCliArgs([
+        "apply",
+        "--container",
+        "GTM-ABC123",
+        "--workspace",
+        "wip",
+        "--spec",
+        fixturePath,
+      ]),
+      client,
+      () => undefined
+    );
+    // That apply created a version (deleting "wip"); re-applying recreates the workspace unchanged.
+    await runCli(
+      parseCliArgs([
+        "apply",
+        "--container",
+        "GTM-ABC123",
+        "--workspace",
+        "wip",
+        "--spec",
+        fixturePath,
+      ]),
+      client,
+      () => undefined
+    );
     const lines: string[] = [];
-    const code = await runCli(parseCliArgs(["export", "--container", "GTM-ABC123"]), client, (l) =>
-      lines.push(l)
+    const code = await runCli(
+      parseCliArgs(["export", "--container", "GTM-ABC123", "--workspace", "wip"]),
+      client,
+      (l) => lines.push(l)
     );
     expect(code).toBe(0);
     const spec = JSON.parse(lines.join("\n"));
-    expect(spec.tag[0]).toEqual({ name: "T", type: "html", firingTriggerName: ["PV"] });
+    expect(spec.tag.map((t: { name: string }) => t.name)).toEqual(["Ads - Lead"]);
+    expect(spec.tag[0].firingTriggerName).toEqual(["Custom Event - lead", "Form Submit - contact"]);
+    expect(spec.builtInVariable.sort()).toEqual(["formId", "pagePath"]);
   });
 });

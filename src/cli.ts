@@ -16,13 +16,15 @@ export interface CliArgs {
   file?: string;
   dryRun: boolean;
   publish: boolean;
+  live: boolean;
   versionName?: string;
 }
 
 export const USAGE = `Usage:
   gtm-sdk apply --container GTM-XXXXXXX --workspace <name> --spec <file.json> [--dry-run] [--publish] [--version-name <name>]
   gtm-sdk normalize <export.json>
-  gtm-sdk export --container GTM-XXXXXXX`;
+  gtm-sdk export --container GTM-XXXXXXX [--live | --workspace <name>]
+      (default: the latest version, published or not)`;
 
 export function parseCliArgs(argv: readonly string[]): CliArgs {
   const { values, positionals } = parseArgs({
@@ -34,6 +36,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       spec: { type: "string" },
       "dry-run": { type: "boolean", default: false },
       publish: { type: "boolean", default: false },
+      live: { type: "boolean", default: false },
       "version-name": { type: "string" },
     },
   });
@@ -49,6 +52,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     file: positionals[1],
     dryRun: values["dry-run"] ?? false,
     publish: values.publish ?? false,
+    live: values.live ?? false,
     versionName: values["version-name"],
   };
 }
@@ -73,10 +77,44 @@ export async function runCli(
       if (!args.container) throw new Error(`export needs --container.\n${USAGE}`);
       await client.init();
       const ref = await resolveContainer(client, args.container);
-      const live = await client.call(() =>
-        client.service.accounts.containers.versions.live({ parent: ref.path })
-      );
-      out(JSON.stringify(normalizeExport(live.data), null, 2));
+      const api = client.service.accounts.containers;
+      let source: unknown;
+      if (args.workspace) {
+        // Unpublished, un-versioned work in progress: read the workspace's entity lists.
+        const wsList = await client.call(() => api.workspaces.list({ parent: ref.path }));
+        const ws = (wsList.data.workspace ?? []).find((w) => w.name === args.workspace);
+        if (!ws?.path)
+          throw new Error(`Workspace "${args.workspace}" not found in ${args.container}`);
+        const parent = ws.path;
+        const [folder, variable, trigger, tag, builtIn] = await Promise.all([
+          client.call(() => api.workspaces.folders.list({ parent })),
+          client.call(() => api.workspaces.variables.list({ parent })),
+          client.call(() => api.workspaces.triggers.list({ parent })),
+          client.call(() => api.workspaces.tags.list({ parent })),
+          client.call(() => api.workspaces.built_in_variables.list({ parent })),
+        ]);
+        source = {
+          folder: folder.data.folder ?? [],
+          variable: variable.data.variable ?? [],
+          trigger: trigger.data.trigger ?? [],
+          tag: tag.data.tag ?? [],
+          builtInVariable: builtIn.data.builtInVariable ?? [],
+        };
+      } else if (args.live) {
+        const live = await client.call(() => api.versions.live({ parent: ref.path }));
+        source = live.data;
+      } else {
+        // Default: the latest version, published or not. A library container is
+        // rarely published, and new workspaces branch from the latest version anyway.
+        const header = await client.call(() => api.version_headers.latest({ parent: ref.path }));
+        const id = header.data.containerVersionId;
+        if (!id) throw new Error(`Container ${args.container} has no versions yet`);
+        const version = await client.call(() =>
+          api.versions.get({ path: `${ref.path}/versions/${id}` })
+        );
+        source = version.data;
+      }
+      out(JSON.stringify(normalizeExport(source), null, 2));
       return 0;
     }
     case "apply": {
