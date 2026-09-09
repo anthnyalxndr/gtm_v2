@@ -50,3 +50,17 @@ export type {
   ApplySpecOptions,
   ApplySpecOutcome,
 } from "./spec/execute.js";
+export type {
+  TriggerRecipe,
+  Ga4EventRecipe,
+  GoogleAdsRecipe,
+  ConversionRecipe,
+  ApplyConversionsOptions,
+} from "./recipes/types.js";
+export { triggerName, triggerRecipeToSpec } from "./recipes/triggers.js";
+export { ga4Event } from "./recipes/ga4.js";
+export { googleAdsConversion, ADS_CONVERSION_ID_VARIABLE } from "./recipes/googleAds.js";
+export { mergeSpecs, compileConversion, compileConversions } from "./recipes/compile.js";
+export { applyConversions } from "./recipes/apply.js";
+export { parseCliArgs, runCli, USAGE } from "./cli.js";
+export type { CliArgs, CliCommand } from "./cli.js";

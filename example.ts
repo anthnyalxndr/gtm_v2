@@ -1,18 +1,24 @@
-import { GtmClient } from "./src/gtm_v2";
+import { GtmClient, applyConversions, formatPlan } from "./src/index.js";
 
-try {
-  const client = new GtmClient();
-  await client.init();
-  const accounts = await client.listAccounts();
+// Dry run by default. Set GTM_CONTAINER to a container you own and flip
+// dryRun to false to write a workspace and version (nothing is published).
+const client = new GtmClient();
+await client.init();
 
-  if (accounts.length > 0) {
-    for (const account of accounts) {
-      console.log(account);
-    }
-  } else {
-    console.log("No accounts found.");
-  }
-} catch (error) {
-  console.error("Error:", error);
-  process.exit(1);
-}
+const { plan, result } = await applyConversions(client, {
+  container: process.env.GTM_CONTAINER ?? "GTM-XXXXXXX",
+  workspace: "sdk-example",
+  conversions: [
+    {
+      kind: "ga4-event",
+      name: "GA4 - generate_lead",
+      event: "generate_lead",
+      measurementId: process.env.GA4_MEASUREMENT_ID ?? "G-XXXXXXX",
+      trigger: { type: "customEvent", eventName: "lead" },
+    },
+  ],
+  dryRun: true,
+});
+
+console.log(formatPlan(plan));
+if (result) console.log(`Version: ${result.versionPath}`);
