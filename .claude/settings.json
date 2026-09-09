@@ -5,7 +5,6 @@
       "Edit",
       "Write",
       "Bash(backlog:*)",
-      "Bash(pnpm:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git branch:*)",
@@ -20,14 +19,34 @@
       "Bash(git rev-parse:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm verify:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm run:*)"
     ],
     "deny": [
       "Bash(git merge:*)",
       "Bash(git reset:*)",
       "Bash(git push --force:*)",
       "Bash(git push --force-with-lease:*)",
-      "Bash(gh pr merge:*)"
+      "Bash(gh pr merge:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(pnpx:*)",
+      "Bash(npx:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git branch -D:*)",
+      "Bash(git branch --delete --force:*)",
+      "Bash(git checkout -- :*)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit -n:*)"
     ]
   }
 }
