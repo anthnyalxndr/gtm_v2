@@ -1,9 +1,9 @@
-import { getGtmService } from "./src/gtm_v2";
+import { GtmClient } from "./src/gtm_v2";
 
 try {
-  const service = await getGtmService();
-  const res = await service.accounts.list();
-  const accounts = res.data.account || [];
+  const client = new GtmClient();
+  await client.init();
+  const accounts = await client.listAccounts();
 
   if (accounts.length > 0) {
     for (const account of accounts) {

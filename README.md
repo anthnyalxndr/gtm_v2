@@ -39,7 +39,7 @@ You can use `client_secrets.json.example` as a reference for the expected file s
 
 The service uses OAuth 2.0 authentication with an automated local server flow. When you first run the code, it will:
 
-1. Start a local server on port 8080 to receive the OAuth callback
+1. Start a local server on an available localhost port to receive the OAuth callback
 2. Automatically open your browser to the Google authorization page
 3. After you authorize, Google redirects back to the local server which captures the authorization code
 4. Save your credentials to `tagmanager.token.json` for future use
@@ -49,14 +49,13 @@ The service uses OAuth 2.0 authentication with an automated local server flow. W
 ### Example: List All Accounts
 
 ```typescript
-import { getGtmService } from "./src/gtm_v2.js";
+import { GtmClient } from "./src/gtm_v2.js";
 
-// Get an authenticated service (will prompt for browser authentication on first run)
-const service = await getGtmService();
+const client = new GtmClient();
+await client.init();
 
 // List all accounts the authenticated user has access to
-const response = await service.accounts.list();
-const accounts = response.data.account || [];
+const accounts = await client.listAccounts();
 
 console.log("Available Tag Manager Accounts:");
 for (const account of accounts) {
@@ -65,6 +64,11 @@ for (const account of accounts) {
   console.log();
 }
 ```
+
+### Migration note
+
+- `getGtmService()` has been removed.
+- Use `new GtmClient()`, then `await client.init()`, then call instance methods like `client.listAccounts()`.
 
 ### Running the Example
 
