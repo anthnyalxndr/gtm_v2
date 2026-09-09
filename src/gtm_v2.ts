@@ -2,16 +2,19 @@
  * Access and manage a Google Tag Manager account.
  */
 
-import { google, tagmanager_v2 } from "googleapis";
+import { tagmanager, tagmanager_v2 } from "@googleapis/tagmanager";
 import { OAuth2Client } from "google-auth-library";
-import { readFile, writeFile, access } from "fs/promises";
+import { readFile, writeFile, access, mkdir } from "fs/promises";
 import { constants } from "fs";
+import { dirname } from "path";
 import * as http from "http";
 import { URL } from "url";
 import open from "open";
+import { resolveConfigPaths } from "./config.js";
+import { createLimiter, withRetry } from "./throttle.js";
 
 /** Tag Manager API v2 scopes */
-const TAG_MANAGER_SCOPES: readonly string[] = [
+export const TAG_MANAGER_SCOPES: readonly string[] = [
   "https://www.googleapis.com/auth/tagmanager.manage.accounts",
   "https://www.googleapis.com/auth/tagmanager.edit.containers",
   "https://www.googleapis.com/auth/tagmanager.delete.containers",
@@ -39,21 +42,31 @@ export interface GtmClientOptions {
   clientSecretsPath?: string;
   tokenPath?: string;
   scopes?: readonly string[];
+  /** Minimum gap between API calls in milliseconds. Defaults to 250. */
+  minIntervalMs?: number;
+  /** Pre-built service. When set, init() performs no auth. Intended for tests. */
+  service?: tagmanager_v2.Tagmanager;
 }
 
 export class GtmClient {
   private readonly clientSecretsPath: string;
   private readonly tokenPath: string;
   private readonly scopes: readonly string[];
-  private oauthClient: OAuth2Client | null = null;
-  private service: tagmanager_v2.Tagmanager | null = null;
-  private initialized: boolean = false;
+  private readonly limiter: <T>(fn: () => Promise<T>) => Promise<T>;
+  private api: tagmanager_v2.Tagmanager | null = null;
+  private initialized = false;
   private initializationPromise: Promise<void> | null = null;
 
   public constructor(options: GtmClientOptions = {}) {
-    this.clientSecretsPath = options.clientSecretsPath ?? "client_secrets.json";
-    this.tokenPath = options.tokenPath ?? "tagmanager.token.json";
+    const defaults = resolveConfigPaths();
+    this.clientSecretsPath = options.clientSecretsPath ?? defaults.clientSecretsPath;
+    this.tokenPath = options.tokenPath ?? defaults.tokenPath;
     this.scopes = options.scopes ?? TAG_MANAGER_SCOPES;
+    this.limiter = createLimiter(options.minIntervalMs ?? 250);
+    if (options.service) {
+      this.api = options.service;
+      this.initialized = true;
+    }
   }
 
   public async init(): Promise<void> {
@@ -74,9 +87,19 @@ export class GtmClient {
     }
   }
 
+  /** The raw Tag Manager API v2 service. Escape hatch for calls the SDK does not wrap. */
+  public get service(): tagmanager_v2.Tagmanager {
+    return this.getInitializedService();
+  }
+
+  /** Run an API call with throttling and retry. Every SDK helper goes through this. */
+  public call<T>(fn: () => Promise<T>): Promise<T> {
+    return this.limiter(() => withRetry(fn));
+  }
+
   public async listAccounts(): Promise<tagmanager_v2.Schema$Account[]> {
     const service = this.getInitializedService();
-    const response = await service.accounts.list();
+    const response = await this.call(() => service.accounts.list());
     return response.data.account ?? [];
   }
 
@@ -84,24 +107,21 @@ export class GtmClient {
     try {
       await access(this.clientSecretsPath, constants.F_OK);
     } catch {
-      throw new Error(
-        `Client secrets file not found: ${this.clientSecretsPath}`
-      );
+      throw new Error(`Client secrets file not found: ${this.clientSecretsPath}`);
     }
 
     const auth = await this.getAuthenticatedClient();
-    this.oauthClient = auth;
-    this.service = google.tagmanager({ version: "v2", auth });
+    this.api = tagmanager({ version: "v2", auth });
     this.initialized = true;
   }
 
   private getInitializedService(): tagmanager_v2.Tagmanager {
-    if (!this.initialized || this.service === null) {
+    if (!this.initialized || this.api === null) {
       throw new Error(
         "GtmClient is not initialized. Call `await client.init()` before calling GTM methods."
       );
     }
-    return this.service;
+    return this.api;
   }
 
   private async loadCredentials(): Promise<StoredCredentials | null> {
@@ -111,24 +131,16 @@ export class GtmClient {
     } catch (err) {
       const error = err as NodeJS.ErrnoException;
       if (error.code === "ENOENT") {
-        // File doesn't exist - expected on first run
         return null;
       }
-      // File exists but couldn't be read or parsed
-      console.error(
-        `Error loading credentials from ${this.tokenPath}:`,
-        error.message
-      );
+      console.error(`Error loading credentials from ${this.tokenPath}:`, error.message);
       return null;
     }
   }
 
   private async saveCredentials(credentials: StoredCredentials): Promise<void> {
-    await writeFile(
-      this.tokenPath,
-      JSON.stringify(credentials, null, 2),
-      "utf-8"
-    );
+    await mkdir(dirname(this.tokenPath), { recursive: true });
+    await writeFile(this.tokenPath, JSON.stringify(credentials, null, 2), "utf-8");
   }
 
   private async runLocalServerFlow(
@@ -158,7 +170,7 @@ export class GtmClient {
               `<html>
                 <head><meta charset="utf-8"></head>
                 <body style="font-family: system-ui, sans-serif; text-align: center; padding: 50px;">
-                  <h1>❌ Authorization failed</h1>
+                  <h1>Authorization failed</h1>
                   <p>${error}</p>
                 </body>
               </html>`
@@ -177,7 +189,7 @@ export class GtmClient {
               `<html>
                 <head><meta charset="utf-8"></head>
                 <body style="font-family: system-ui, sans-serif; text-align: center; padding: 50px;">
-                  <h1>✅ Authorization successful!</h1>
+                  <h1>Authorization successful</h1>
                   <p>You can close this window and return to the terminal.</p>
                 </body>
               </html>`
@@ -220,9 +232,7 @@ export class GtmClient {
         console.log(`If the browser doesn't open, visit:\n${authUrl}\n`);
 
         open(authUrl).catch(() => {
-          console.log(
-            "Could not open browser automatically. Please open the URL above manually."
-          );
+          console.log("Could not open browser automatically. Please open the URL above manually.");
         });
       });
 
@@ -255,7 +265,6 @@ export class GtmClient {
         await this.saveCredentials(updated);
       } catch (err) {
         console.error("Failed to save refreshed credentials:", err);
-        // Don't throw - token refresh still succeeded, just couldn't save
       }
     });
   }
@@ -283,10 +292,7 @@ export class GtmClient {
       }
     }
 
-    const authenticatedClient = await this.runLocalServerFlow(
-      client_id,
-      client_secret
-    );
+    const authenticatedClient = await this.runLocalServerFlow(client_id, client_secret);
     const tokens = authenticatedClient.credentials;
     const credentialsToStore: StoredCredentials = {
       access_token: tokens.access_token || "",
