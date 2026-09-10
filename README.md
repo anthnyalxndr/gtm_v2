@@ -136,6 +136,10 @@ console.log(formatPlan(plan));
 
 Trigger recipes: `pageview` (with `pathEquals` or `pathContains`), `formSubmit` (by form id), `customEvent`. The Google Ads recipe stores the conversion id in a `Const - Google Ads Conversion ID` variable that the tag references.
 
+## Ad hoc work: use gtm-cli
+
+For discovery, inspection, and one-off edits, use owntag's [gtm-cli](https://github.com/owntag/gtm-cli) (`npm i -g @owntag/gtm-cli`). It covers per-resource commands with JSON output and needs no spec. gtm-apply is for the repeatable path: reconciling a container against a spec by name, with dry run and version handling. The reasoning is recorded in `backlog/decisions/`.
+
 ## Development
 
 ```bash
