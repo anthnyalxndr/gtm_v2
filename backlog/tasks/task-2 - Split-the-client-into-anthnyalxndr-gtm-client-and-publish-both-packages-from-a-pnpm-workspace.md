@@ -3,11 +3,11 @@ id: TASK-2
 title: >-
   Split the client into @anthnyalxndr/gtm-client and publish both packages from
   a pnpm workspace
-status: In Progress
+status: Review
 assignee:
   - '@claude'
 created_date: '2026-09-10 17:16'
-updated_date: '2026-09-10 17:16'
+updated_date: '2026-09-10 17:20'
 labels:
   - packaging
   - client
@@ -24,12 +24,12 @@ The GtmClient (OAuth, shared credential directory, throttle and retry, raw tagma
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 pnpm-workspace.yaml lists packages/*; root package.json is private and runs build, typecheck, test, and verify across packages in dependency order
-- [ ] #2 packages/gtm-client exports GtmClient, TAG_MANAGER_SCOPES, resolveConfigPaths, withRetry/createLimiter/isRetryable, listAccounts, resolveContainer, createContainer, and the tagmanager_v2 types; listAccounts is a function, not a class method; the client has no imports from gtm-apply
-- [ ] #3 packages/gtm-client exposes a ./testing subpath export with createFakeService and latestSnapshot, and gtm-apply's tests import it from there
-- [ ] #4 packages/gtm-apply depends on @anthnyalxndr/gtm-client (workspace:^), re-exports the client API, and contains the spec engine, workspace/entity/built-in helpers, recipes, and the gtm-apply CLI; all existing tests pass after the move
+- [x] #1 pnpm-workspace.yaml lists packages/*; root package.json is private and runs build, typecheck, test, and verify across packages in dependency order
+- [x] #2 packages/gtm-client exports GtmClient, TAG_MANAGER_SCOPES, resolveConfigPaths, withRetry/createLimiter/isRetryable, listAccounts, resolveContainer, createContainer, and the tagmanager_v2 types; listAccounts is a function, not a class method; the client has no imports from gtm-apply
+- [x] #3 packages/gtm-client exposes a ./testing subpath export with createFakeService and latestSnapshot, and gtm-apply's tests import it from there
+- [x] #4 packages/gtm-apply depends on @anthnyalxndr/gtm-client (workspace:^), re-exports the client API, and contains the spec engine, workspace/entity/built-in helpers, recipes, and the gtm-apply CLI; all existing tests pass after the move
 - [ ] #5 Both packages publish only dist, declare publishConfig.access=public, and pnpm -r publish --dry-run succeeds; tarballs from pnpm pack install into a scratch project and both @anthnyalxndr/gtm-client and @anthnyalxndr/gtm-apply import and run
-- [ ] #6 READMEs describe registry installation for each package; the git-tag install and onlyBuiltDependencies instructions are removed; decision-8 records the reversal of decision-6's keep-internal choice
+- [x] #6 READMEs describe registry installation for each package; the git-tag install and onlyBuiltDependencies instructions are removed; decision-8 records the reversal of decision-6's keep-internal choice
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +42,15 @@ The GtmClient (OAuth, shared credential directory, throttle and retry, raw tagma
 5. pnpm -r publish --dry-run; pnpm pack both; install tarballs into a scratch consumer and import both packages.
 6. READMEs (root overview, per-package), example.ts relocation, decision-8, commit.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Workspace: pnpm-workspace.yaml (packages/*), private root package.json with -r scripts; tsconfig.base.json shared; per-package tsconfig, tsconfig.test.json, vitest config. git mv preserved history. gtm-client: client.ts (from gtm_v2.ts, listAccounts removed), config.ts, throttle.ts, accounts.ts (listAccounts fn), containers.ts, testing.ts (fake service) with ./testing subpath export. gtm-apply: everything else, imports the client from @anthnyalxndr/gtm-client, re-exports it from its index. Tests: gtm-client 19, gtm-apply 59, all passing. pnpm -r publish --dry-run succeeds for both; packed gtm-apply manifest has @anthnyalxndr/gtm-client ^1.0.0 (workspace:^ rewritten). Tarball install into a scratch project outside the repo was declined by the user in-session (AC 5 second half left unchecked); tarballs are in the session scratchpad. Root README plus per-package READMEs written; git-tag install and onlyBuiltDependencies notes removed; decision-8 supersedes the keep-internal part of decision-6; plan doc carries a note that File Structure predates the split. Commit 382f9e3.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Split the repo into a pnpm workspace with @anthnyalxndr/gtm-client (auth, config dir, throttle, listAccounts, resolveContainer, createContainer, testing fake) and @anthnyalxndr/gtm-apply (workspace/entity/built-in helpers, spec engine, recipes, CLI) depending on gtm-client with workspace:^. Both publish dist only with public access. Verified with pnpm verify (build in dependency order, typecheck, 78 tests) and pnpm -r publish --dry-run. Remaining before publish: install the packed tarballs into a scratch project and run the client, testing subpath, apply, and CLI (AC 5, second half), then bump versions and pnpm -r publish from an npm-authenticated shell.
+<!-- SECTION:FINAL_SUMMARY:END -->
