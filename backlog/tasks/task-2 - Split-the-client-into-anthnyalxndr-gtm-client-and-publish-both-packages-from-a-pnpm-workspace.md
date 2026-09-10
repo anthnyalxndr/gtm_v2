@@ -7,7 +7,7 @@ status: Review
 assignee:
   - '@claude'
 created_date: '2026-09-10 17:16'
-updated_date: '2026-09-10 17:20'
+updated_date: '2026-09-10 17:27'
 labels:
   - packaging
   - client
@@ -47,6 +47,8 @@ The GtmClient (OAuth, shared credential directory, throttle and retry, raw tagma
 
 <!-- SECTION:NOTES:BEGIN -->
 Workspace: pnpm-workspace.yaml (packages/*), private root package.json with -r scripts; tsconfig.base.json shared; per-package tsconfig, tsconfig.test.json, vitest config. git mv preserved history. gtm-client: client.ts (from gtm_v2.ts, listAccounts removed), config.ts, throttle.ts, accounts.ts (listAccounts fn), containers.ts, testing.ts (fake service) with ./testing subpath export. gtm-apply: everything else, imports the client from @anthnyalxndr/gtm-client, re-exports it from its index. Tests: gtm-client 19, gtm-apply 59, all passing. pnpm -r publish --dry-run succeeds for both; packed gtm-apply manifest has @anthnyalxndr/gtm-client ^1.0.0 (workspace:^ rewritten). Tarball install into a scratch project outside the repo was declined by the user in-session (AC 5 second half left unchecked); tarballs are in the session scratchpad. Root README plus per-package READMEs written; git-tag install and onlyBuiltDependencies notes removed; decision-8 supersedes the keep-internal part of decision-6; plan doc carries a note that File Structure predates the split. Commit 382f9e3.
+
+Export-map check from inside the package scope: ESM imports of @anthnyalxndr/gtm-client, its ./testing subpath, and @anthnyalxndr/gtm-apply all resolve to dist and run (listAccounts, resolveContainer, applySpec, CLI). Found and fixed: exports declared only an import condition, so require.resolve failed with ERR_PACKAGE_PATH_NOT_EXPORTED; added a default condition to every export entry in both packages. Tarball install into an external scratch project remains unrun (command form denied three times); dry run re-verified: gtm-client 1.0.0 31 files 20.5 kB, gtm-apply 2.0.0 75 files 35.1 kB.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
