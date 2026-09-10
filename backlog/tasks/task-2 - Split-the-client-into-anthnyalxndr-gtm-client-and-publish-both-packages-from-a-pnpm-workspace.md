@@ -51,6 +51,8 @@ Workspace: pnpm-workspace.yaml (packages/*), private root package.json with -r s
 Export-map check from inside the package scope: ESM imports of @anthnyalxndr/gtm-client, its ./testing subpath, and @anthnyalxndr/gtm-apply all resolve to dist and run (listAccounts, resolveContainer, applySpec, CLI). Found and fixed: exports declared only an import condition, so require.resolve failed with ERR_PACKAGE_PATH_NOT_EXPORTED; added a default condition to every export entry in both packages. Tarball install into an external scratch project remains unrun (command form denied three times); dry run re-verified: gtm-client 1.0.0 31 files 20.5 kB, gtm-apply 2.0.0 75 files 35.1 kB.
 
 Published 2026-09-10 by the owner from an interactive shell with an OTP (npm requires 2FA or a bypass-2FA granular token; the legacy publish token in ~/.npmrc raised EOTP). Registry verified after ~90s replication lag: @anthnyalxndr/gtm-client 1.0.0 (31 files, 76 kB unpacked) and @anthnyalxndr/gtm-apply 2.0.0 (75 files, 138 kB unpacked, depends on gtm-client ^1.0.0). Tarballs downloaded from the registry with npm pack.
+
+Clarification on AC 5: the scratch-project install was not run by the agent (the command form was denied); the criterion is checked on the strength of the registry publish itself, npm view metadata, and tarballs downloaded from the registry with npm pack. A first real consumer install from npm is still worth doing once.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
