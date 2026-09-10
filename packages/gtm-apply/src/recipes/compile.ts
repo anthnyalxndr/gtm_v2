@@ -1,3 +1,4 @@
+import type { BuiltInVariableType } from "../spec/generated/tagmanager-v2.js";
 import type { ContainerSpec, EntityKind } from "../spec/types.js";
 import { ga4Event } from "./ga4.js";
 import { googleAdsConversion } from "./googleAds.js";
@@ -11,7 +12,7 @@ const KINDS: readonly EntityKind[] = ["folder", "variable", "trigger", "tag"];
  */
 export function mergeSpecs(...fragments: ContainerSpec[]): ContainerSpec {
   const out: ContainerSpec = {};
-  const builtIns = new Set<string>();
+  const builtIns = new Set<BuiltInVariableType>();
   for (const fragment of fragments) {
     for (const t of fragment.builtInVariable ?? []) builtIns.add(t);
     for (const kind of KINDS) {

@@ -1,8 +1,9 @@
 import { parseArgs } from "node:util";
-import { readFile } from "node:fs/promises";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer } from "@anthnyalxndr/gtm-client";
+import { loadSpecFile } from "./spec/load.js";
 import { normalizeExport } from "./spec/normalize.js";
+import { formatIssue, validateSpec } from "./spec/validate.js";
 import { executePlan } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
 
@@ -21,7 +22,8 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file.json> [--dry-run] [--publish] [--version-name <name>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>]
+      (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
   gtm-apply normalize <export.json>
   gtm-apply export --container GTM-XXXXXXX [--live | --workspace <name>]
       (default: the latest version, published or not)`;
@@ -57,10 +59,6 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
   };
 }
 
-async function readJson(path: string): Promise<unknown> {
-  return JSON.parse(await readFile(path, "utf-8")) as unknown;
-}
-
 /** Run a parsed command. Returns the process exit code. */
 export async function runCli(
   args: CliArgs,
@@ -70,7 +68,7 @@ export async function runCli(
   switch (args.command) {
     case "normalize": {
       if (!args.file) throw new Error(`normalize needs a file argument.\n${USAGE}`);
-      out(JSON.stringify(normalizeExport(await readJson(args.file)), null, 2));
+      out(JSON.stringify(normalizeExport(await loadSpecFile(args.file)), null, 2));
       return 0;
     }
     case "export": {
@@ -121,7 +119,13 @@ export async function runCli(
       if (!args.container || !args.workspace || !args.spec) {
         throw new Error(`apply needs --container, --workspace and --spec.\n${USAGE}`);
       }
-      const spec = normalizeExport(await readJson(args.spec));
+      const spec = normalizeExport(await loadSpecFile(args.spec));
+      const issues = validateSpec(spec);
+      if (issues.length > 0) {
+        out(`Spec ${args.spec} has ${issues.length} problem(s):`);
+        for (const issue of issues) out(`[!] ${formatIssue(issue)}`);
+        return 1;
+      }
       await client.init();
       const plan = await planContainerSpec(
         client,

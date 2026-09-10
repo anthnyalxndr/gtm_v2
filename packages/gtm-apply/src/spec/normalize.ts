@@ -1,6 +1,7 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { SERVER_FIELDS } from "../resources/entities.js";
 import { upperSnakeToCamel } from "./catalog.js";
+import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
 import type { ContainerSpec, TagSpec, TriggerSpec, VariableSpec } from "./types.js";
 
 export class NormalizeError extends Error {}
@@ -118,7 +119,7 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const builtIns = rawBuiltIns
     .map((b) => (typeof b === "string" ? b : (b.type ?? "")))
     .filter((t) => t.length > 0)
-    .map((t) => (UPPER_SNAKE.test(t) ? upperSnakeToCamel(t) : t));
+    .map((t) => (UPPER_SNAKE.test(t) ? upperSnakeToCamel(t) : t)) as BuiltInVariableType[];
 
   const spec: ContainerSpec = {};
   if (rawFolders.length) spec.folder = rawFolders.map((f) => ({ name: f.name ?? "" }));

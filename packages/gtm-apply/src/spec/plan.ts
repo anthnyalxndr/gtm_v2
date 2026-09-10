@@ -12,6 +12,7 @@ import {
   type ExistingState,
 } from "./convert.js";
 import type { ContainerSpec, VariableSpec } from "./types.js";
+import { assertValidSpec } from "./validate.js";
 
 export type OpKind =
   "workspace" | "builtIn" | "folder" | "variable" | "trigger" | "tag" | "version" | "publish";
@@ -150,6 +151,7 @@ export async function planContainerSpec(
   input: ContainerSpec,
   options: PlanOptions = {}
 ): Promise<Plan> {
+  assertValidSpec(input);
   const container = await resolveContainer(client, target.container);
   const wsApi = client.service.accounts.containers.workspaces;
   const wsList = await client.call(() => wsApi.list({ parent: container.path }));

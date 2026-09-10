@@ -8,7 +8,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "verify": "pnpm build && pnpm typecheck && pnpm test",
-    "format": "prettier --write \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" \"packages/*/*.ts\"",
+    "format": "prettier --write \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" \"packages/*/scripts/**/*.ts\" \"packages/*/*.ts\"",
     "dev": "pnpm --filter @anthnyalxndr/gtm-apply dev",
     "prepare": "husky || true"
   },

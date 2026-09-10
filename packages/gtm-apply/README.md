@@ -41,6 +41,38 @@ A spec is a GTM container export with three changes: server fields (`accountId`,
 
 The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-apply normalize export.json`. Or capture a container with `gtm-apply export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
 
+### Writing a spec in TypeScript
+
+A spec file can also be a `.ts`, `.js`, or `.mjs` module whose default export is the spec. Wrap it in `defineContainer()` and every enum-valued field is a string-literal union, so your editor completes `type: "customEvent"` and `tsc` rejects `"custom_event"` before anything reaches Tag Manager. See [`spec.example.ts`](spec.example.ts).
+
+```ts
+import { defineContainer } from "@anthnyalxndr/gtm-apply";
+
+export default defineContainer({
+  trigger: [{ name: "Custom Event - lead", type: "customEvent", customEventFilter: [/* ... */] }],
+  tag: [{ name: "Ads - Lead", type: "awct", firingTriggerName: ["Custom Event - lead"],
+          tagFiringOption: "oncePerEvent", parameter: [/* ... */] }],
+});
+```
+
+```bash
+gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --spec spec.ts --dry-run
+```
+
+TypeScript files are imported through Node's own type stripping, which is on by default from Node 22.18 and 23.6. On Node 22.6 to 22.17 run `node --experimental-strip-types $(which gtm-apply) …` or go through `tsx`. Type stripping handles types only: a spec module can't use enums or parameter properties.
+
+The types come from Google's [Discovery document](https://tagmanager.googleapis.com/$discovery/rest?version=v2) for the Tag Manager API v2 (Google publishes no OpenAPI spec). `pnpm gen:discovery --fetch` refreshes the committed copy under `scripts/discovery/` and regenerates `src/spec/generated/tagmanager-v2.ts`; a test fails if the two drift. Two things the document does not carry: which parameter keys a given tag or variable template (`awct`, `gaawe`, `c`) accepts, and which trigger fields belong to which trigger type. Those are still checked by the API at apply time.
+
+### Validation
+
+Before any API call, `gtm-apply apply` checks the spec against the same schemas: unknown fields, wrong primitive types, `null` values, leftover id fields, and enum values the API would reject are all reported at once with the entity name and field path, and the command exits 1. From code, `validateSpec(spec)` returns the issues and `planContainerSpec` throws a `SpecValidationError` listing them.
+
+```
+Spec spec.json has 2 problem(s):
+[!] trigger "Custom Event - lead": type must be one of pageview, domReady, … (got "custom_event")
+[!] tag "Ads - Lead": tagFiringOption must be one of unlimited, oncePerEvent, oncePerLoad (got "once")
+```
+
 ## Applying a spec
 
 ```bash
@@ -100,6 +132,7 @@ The default workspace is never written to.
 
 - Tags built on custom or community templates (`cvt_*` types) are rejected by the normalizer. Import the template into the target container first; direct support is a backlog item.
 - Trigger groups (`triggerReference` parameters) are rejected.
+- Validation covers field names, primitive types, and enum values, not which parameter keys a tag template accepts or which fields a trigger type uses. Those errors still come back from the API during apply.
 - The planner compares only the fields the spec provides. Fields stripped from an export, such as `monitoringMetadata`, are not corrected if someone changes them in the UI.
 - The Tag Manager API has tight per-minute quotas. Every call is throttled and retried with backoff; large specs take a while.
 

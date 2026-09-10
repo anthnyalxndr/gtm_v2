@@ -4,6 +4,7 @@ import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { normalizeExport } from "../src/spec/normalize.js";
 import { planContainerSpec, sortVariablesByReference, formatPlan } from "../src/spec/plan.js";
 import { executePlan } from "../src/spec/execute.js";
+import { SpecValidationError } from "../src/spec/validate.js";
 import type { ContainerSpec } from "../src/spec/types.js";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
 
@@ -125,20 +126,28 @@ describe("planContainerSpec", () => {
     expect(plan.spec.folder).toEqual([{ name: "Core" }]);
   });
 
-  it("rejects duplicate names and missing names", async () => {
+  it("rejects duplicate names", async () => {
     const { client } = fresh();
     const spec: ContainerSpec = {
       trigger: [
         { name: "PV", type: "pageview" },
         { name: "PV", type: "pageview" },
-        { type: "pageview" },
       ],
     };
     const plan = await planContainerSpec(client, target, spec);
-    expect(plan.errors).toEqual([
-      'duplicate trigger name "PV" in spec',
-      "trigger entry without a name",
-    ]);
+    expect(plan.errors).toEqual(['duplicate trigger name "PV" in spec']);
+  });
+
+  it("rejects a malformed spec before any API call", async () => {
+    const { client, state } = fresh();
+    const spec = { trigger: [{ name: "PV", type: "page_view" }, { type: "pageview" }] };
+    await expect(planContainerSpec(client, target, spec as ContainerSpec)).rejects.toThrow(
+      SpecValidationError
+    );
+    await expect(planContainerSpec(client, target, spec as ContainerSpec)).rejects.toThrow(
+      /trigger\[1\]: name is required/
+    );
+    expect(state.calls).toEqual([]);
   });
 
   it("includes a publish op when requested", async () => {

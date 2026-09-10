@@ -12,6 +12,7 @@ export {
 } from "./resources/entities.js";
 export type { EnsureResult, EnsureAction } from "./resources/entities.js";
 export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
+export { defineContainer } from "./spec/types.js";
 export type {
   ContainerSpec,
   FolderSpec,
@@ -20,6 +21,41 @@ export type {
   TagSpec,
   EntityKind,
 } from "./spec/types.js";
+export {
+  DISCOVERY_REVISION,
+  TRIGGER_TYPES,
+  CONDITION_TYPES,
+  PARAMETER_TYPES,
+  TAG_FIRING_OPTIONS,
+  CONSENT_STATUSES,
+  CASE_CONVERSION_TYPES,
+  CONVERT_TO_NUMBERS,
+  BUILT_IN_VARIABLE_TYPES,
+} from "./spec/generated/tagmanager-v2.js";
+export type {
+  TriggerType,
+  ConditionType,
+  ParameterType,
+  TagFiringOption,
+  ConsentStatus,
+  CaseConversionType,
+  ConvertToNumber,
+  BuiltInVariableType,
+  Parameter,
+  Condition,
+  VariableFormatValue,
+  TagConsentSetting,
+  SetupTag,
+  TeardownTag,
+} from "./spec/generated/tagmanager-v2.js";
+export {
+  validateSpec,
+  assertValidSpec,
+  formatIssue,
+  SpecValidationError,
+} from "./spec/validate.js";
+export type { SpecIssue } from "./spec/validate.js";
+export { loadSpecFile } from "./spec/load.js";
 export {
   BUILT_IN_VARIABLES,
   builtInTypeForName,

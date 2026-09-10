@@ -128,6 +128,61 @@ describe("runCli", () => {
     expect(state.tags).toHaveLength(0);
   });
 
+  it("apply reports every schema problem and makes no API call", async () => {
+    const { client, state } = fresh();
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const bad = join(dir, "bad.json");
+    await writeFile(
+      bad,
+      JSON.stringify({
+        trigger: [{ name: "CE", type: "custom_event" }],
+        tag: [{ name: "T", type: "html", tagFiringOption: "once", nonsense: true }],
+      })
+    );
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["apply", "--container", "GTM-ABC123", "--workspace", "ws", "--spec", bad]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(1);
+    expect(lines).toEqual([
+      `Spec ${bad} has 3 problem(s):`,
+      expect.stringMatching(/^\[!\] trigger "CE": type must be one of /),
+      expect.stringMatching(/^\[!\] tag "T": tagFiringOption must be one of /),
+      expect.stringMatching(/^\[!\] tag "T": nonsense is not a field of Tag/),
+    ]);
+    expect(state.calls).toEqual([]);
+  });
+
+  it("apply accepts a TypeScript spec module", async () => {
+    const { client, state } = fresh();
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const spec = join(dir, "spec.ts");
+    await writeFile(
+      spec,
+      [
+        `const eventName: string = "lead";`,
+        `export default {`,
+        `  trigger: [{ name: "CE", type: "customEvent" as const, customEventFilter: [{ type: "equals" as const,`,
+        `    parameter: [{ type: "template" as const, key: "arg0", value: "{{_event}}" },`,
+        `                { type: "template" as const, key: "arg1", value: eventName }] }] }],`,
+        `  tag: [{ name: "T", type: "html", firingTriggerName: ["CE"],`,
+        `    parameter: [{ type: "template" as const, key: "html", value: "<script></script>" }] }],`,
+        `};`,
+      ].join("\n")
+    );
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["apply", "--container", "GTM-ABC123", "--workspace", "ws", "--spec", spec]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    expect(state.versions[0].snapshot.tag.map((t) => t.name)).toEqual(["T"]);
+    expect(lines.join("\n")).toContain('[+] trigger "CE"');
+  });
+
   it("export reads the latest version by default, the live one with --live", async () => {
     const { client, state } = fresh();
     const version = (id: string, tagName: string) => ({

@@ -1,9 +1,11 @@
+import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
+
 /**
  * GTM built-in variables: display name (as written inside {{ }}) to the API
  * enum type used by built_in_variables.create. Extend as needed; the live
  * smoke test in the plan verifies entries against a real container.
  */
-export const BUILT_IN_VARIABLES: Readonly<Record<string, string>> = {
+export const BUILT_IN_VARIABLES: Readonly<Record<string, BuiltInVariableType>> = {
   "Page URL": "pageUrl",
   "Page Hostname": "pageHostname",
   "Page Path": "pagePath",
@@ -50,7 +52,7 @@ export const BUILT_IN_VARIABLES: Readonly<Record<string, string>> = {
   "On-Screen Duration": "elementVisibilityTime",
 };
 
-export function builtInTypeForName(name: string): string | undefined {
+export function builtInTypeForName(name: string): BuiltInVariableType | undefined {
   return BUILT_IN_VARIABLES[name];
 }
 

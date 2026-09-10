@@ -1,8 +1,6 @@
-import type { tagmanager_v2 } from "@googleapis/tagmanager";
+import type { Condition } from "../spec/generated/tagmanager-v2.js";
 import type { TriggerSpec } from "../spec/types.js";
 import type { TriggerRecipe } from "./types.js";
-
-type Condition = tagmanager_v2.Schema$Condition;
 
 function condition(type: "equals" | "contains", left: string, right: string): Condition {
   return {

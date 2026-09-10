@@ -32,7 +32,8 @@
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "dev": "tsx example.ts",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "gen:discovery": "tsx scripts/generate-discovery.ts"
   },
   "keywords": [
     "google-tag-manager",

@@ -6,6 +6,7 @@ import { googleAdsConversion, ADS_CONVERSION_ID_VARIABLE } from "../src/recipes/
 import { mergeSpecs, compileConversions } from "../src/recipes/compile.js";
 import { applyConversions } from "../src/recipes/apply.js";
 import type { ConversionRecipe } from "../src/recipes/types.js";
+import type { ContainerSpec } from "../src/spec/types.js";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 
 describe("trigger recipes", () => {
@@ -78,8 +79,14 @@ describe("conversion recipes", () => {
 
 describe("mergeSpecs", () => {
   it("dedupes identical entities and unions built-ins", () => {
-    const a = { trigger: [{ name: "T", type: "pageview" }], builtInVariable: ["pagePath"] };
-    const b = { trigger: [{ name: "T", type: "pageview" }], builtInVariable: ["formId"] };
+    const a: ContainerSpec = {
+      trigger: [{ name: "T", type: "pageview" }],
+      builtInVariable: ["pagePath"],
+    };
+    const b: ContainerSpec = {
+      trigger: [{ name: "T", type: "pageview" }],
+      builtInVariable: ["formId"],
+    };
     const merged = mergeSpecs(a, b);
     expect(merged.trigger).toHaveLength(1);
     expect(merged.builtInVariable).toEqual(["pagePath", "formId"]);
