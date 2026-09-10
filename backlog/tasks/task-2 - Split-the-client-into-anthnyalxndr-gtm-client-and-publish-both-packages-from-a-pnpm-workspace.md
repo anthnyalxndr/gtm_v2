@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-10 17:16'
-updated_date: '2026-09-10 19:01'
+updated_date: '2026-09-10 19:08'
 labels:
   - packaging
   - client
@@ -53,6 +53,8 @@ Export-map check from inside the package scope: ESM imports of @anthnyalxndr/gtm
 Published 2026-09-10 by the owner from an interactive shell with an OTP (npm requires 2FA or a bypass-2FA granular token; the legacy publish token in ~/.npmrc raised EOTP). Registry verified after ~90s replication lag: @anthnyalxndr/gtm-client 1.0.0 (31 files, 76 kB unpacked) and @anthnyalxndr/gtm-apply 2.0.0 (75 files, 138 kB unpacked, depends on gtm-client ^1.0.0). Tarballs downloaded from the registry with npm pack.
 
 Clarification on AC 5: the scratch-project install was not run by the agent (the command form was denied); the criterion is checked on the strength of the registry publish itself, npm view metadata, and tarballs downloaded from the registry with npm pack. A first real consumer install from npm is still worth doing once.
+
+Correction: the token in ~/.npmrc is a working publish token, not a legacy one; publishes require an OTP because 2FA is enabled on the account, which is the owner's intended setup. A bypass-2FA granular token is only needed if unattended CI publishes are wanted later.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
