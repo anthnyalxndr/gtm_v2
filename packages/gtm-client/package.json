@@ -1,0 +1,50 @@
+{
+  "name": "@anthnyalxndr/gtm-client",
+  "version": "1.0.0",
+  "description": "Authenticated, throttled Google Tag Manager API v2 client: OAuth with a shared credential directory, retry with backoff, and typed helpers for accounts and containers.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthnyalxndr/gtm_v2.git",
+    "directory": "packages/gtm-client"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "google-tag-manager",
+    "gtm",
+    "tagmanager",
+    "oauth"
+  ],
+  "dependencies": {
+    "@googleapis/tagmanager": "^16.0.0",
+    "google-auth-library": "^10.5.0",
+    "open": "^11.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,47 +1,19 @@
 {
-  "name": "@anthnyalxndr/gtm-apply",
-  "version": "2.0.0",
-  "description": "Declarative apply tool for Google Tag Manager: plan and reconcile a container against a JSON spec in the shape of a GTM container export.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "name": "gtm-workspace",
+  "private": true,
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "bin": {
-    "gtm-apply": "dist/bin.js"
-  },
-  "files": [
-    "dist"
-  ],
+  "description": "Workspace for @anthnyalxndr/gtm-client and @anthnyalxndr/gtm-apply.",
   "scripts": {
-    "build": "tsc",
-    "prepare": "tsc && (husky || true)",
-    "dev": "tsx example.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.test.json",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" example.ts",
-    "verify": "pnpm typecheck && pnpm test"
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "verify": "pnpm build && pnpm typecheck && pnpm test",
+    "format": "prettier --write \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" \"packages/*/*.ts\"",
+    "dev": "pnpm --filter @anthnyalxndr/gtm-apply dev",
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "*.ts": "prettier --write"
-  },
-  "keywords": [
-    "google-tag-manager",
-    "gtm",
-    "google-api",
-    "tag-manager"
-  ],
-  "author": "",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "@googleapis/tagmanager": "^16.0.0",
-    "google-auth-library": "^10.5.0",
-    "open": "^11.0.2"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -54,5 +26,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.30.2"
 }

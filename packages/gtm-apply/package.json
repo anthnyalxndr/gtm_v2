@@ -1,0 +1,49 @@
+{
+  "name": "@anthnyalxndr/gtm-apply",
+  "version": "2.0.0",
+  "description": "Declarative apply tool for Google Tag Manager: plan and reconcile a container against a JSON spec in the shape of a GTM container export.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "gtm-apply": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthnyalxndr/gtm_v2.git",
+    "directory": "packages/gtm-apply"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "dev": "tsx example.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "google-tag-manager",
+    "gtm",
+    "tagmanager",
+    "infrastructure-as-code"
+  ],
+  "dependencies": {
+    "@anthnyalxndr/gtm-client": "workspace:^",
+    "@googleapis/tagmanager": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

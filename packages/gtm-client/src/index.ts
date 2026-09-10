@@ -1,0 +1,10 @@
+export { GtmClient, TAG_MANAGER_SCOPES } from "./client.js";
+export type { GtmClientOptions } from "./client.js";
+export { resolveConfigPaths } from "./config.js";
+export type { ConfigPaths } from "./config.js";
+export { withRetry, createLimiter, isRetryable } from "./throttle.js";
+export type { RetryOptions } from "./throttle.js";
+export { listAccounts } from "./accounts.js";
+export { resolveContainer, createContainer } from "./containers.js";
+export type { ContainerRef } from "./containers.js";
+export type { tagmanager_v2 } from "@googleapis/tagmanager";
