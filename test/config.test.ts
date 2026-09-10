@@ -4,15 +4,15 @@ import { join } from "path";
 import { resolveConfigPaths } from "../src/config.js";
 
 describe("resolveConfigPaths", () => {
-  it("defaults to ~/.config/gtm-sdk", () => {
+  it("defaults to ~/.config/gtm-apply", () => {
     const paths = resolveConfigPaths({});
-    expect(paths.configDir).toBe(join(homedir(), ".config", "gtm-sdk"));
+    expect(paths.configDir).toBe(join(homedir(), ".config", "gtm-apply"));
     expect(paths.clientSecretsPath).toBe(join(paths.configDir, "client_secrets.json"));
     expect(paths.tokenPath).toBe(join(paths.configDir, "token.json"));
   });
 
-  it("honors GTM_SDK_CONFIG_DIR", () => {
-    const paths = resolveConfigPaths({ GTM_SDK_CONFIG_DIR: "/tmp/gtm" });
+  it("honors GTM_APPLY_CONFIG_DIR", () => {
+    const paths = resolveConfigPaths({ GTM_APPLY_CONFIG_DIR: "/tmp/gtm" });
     expect(paths.configDir).toBe("/tmp/gtm");
     expect(paths.tokenPath).toBe("/tmp/gtm/token.json");
   });

@@ -87,12 +87,12 @@ export class GtmClient {
     }
   }
 
-  /** The raw Tag Manager API v2 service. Escape hatch for calls the SDK does not wrap. */
+  /** The raw Tag Manager API v2 service. Escape hatch for calls the tool does not wrap. */
   public get service(): tagmanager_v2.Tagmanager {
     return this.getInitializedService();
   }
 
-  /** Run an API call with throttling and retry. Every SDK helper goes through this. */
+  /** Run an API call with throttling and retry. Every helper goes through this. */
   public async call<T>(fn: () => Promise<T>): Promise<T> {
     try {
       return await this.limiter(() => withRetry(fn));

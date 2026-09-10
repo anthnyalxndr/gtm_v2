@@ -7,7 +7,7 @@ await client.init();
 
 const { plan, result } = await applyConversions(client, {
   container: process.env.GTM_CONTAINER ?? "GTM-XXXXXXX",
-  workspace: "sdk-example",
+  workspace: "gtm-apply-example",
   conversions: [
     {
       kind: "ga4-event",

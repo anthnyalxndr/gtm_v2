@@ -1,6 +1,6 @@
-# @anthnyalxndr/gtm-sdk
+# @anthnyalxndr/gtm-apply
 
-Spec-driven SDK and CLI for Google Tag Manager. Describe a container in the same JSON shape the GTM UI exports, and apply it to any container you can access. The engine plans every change first, reports every problem at once, and only then writes, in dependency order, into a named workspace.
+Declarative apply tool and CLI for Google Tag Manager. Describe a container in the same JSON shape the GTM UI exports, and apply it to any container you can access. The engine plans every change first, reports every problem at once, and only then writes, in dependency order, into a named workspace.
 
 ## Install
 
@@ -12,14 +12,14 @@ The package builds itself on install through its `prepare` script. pnpm 10 block
 
 ```yaml
 onlyBuiltDependencies:
-  - "@anthnyalxndr/gtm-sdk"
+  - "@anthnyalxndr/gtm-apply"
 ```
 
 It depends on `@googleapis/tagmanager` (the per-API client, not the monolithic `googleapis` bundle) and re-exports its `tagmanager_v2` types.
 
 ## Credentials
 
-Place your OAuth client file at `~/.config/gtm-sdk/client_secrets.json` (see `client_secrets.json.example`). On first run the SDK opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-sdk/token.json`. That one token serves every repo on the machine. Set `GTM_SDK_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client.
+Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `client_secrets.json.example`). On first run gtm-apply opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-apply/token.json`. That one token serves every repo on the machine. Set `GTM_APPLY_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client.
 
 ## The spec
 
@@ -46,20 +46,20 @@ A spec is a GTM container export with three changes: server fields (`accountId`,
 }
 ```
 
-The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-sdk normalize export.json`. Or capture a container with `gtm-sdk export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
+The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-apply normalize export.json`. Or capture a container with `gtm-apply export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
 
 ## Applying a spec
 
 ```bash
-gtm-sdk apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --dry-run
-gtm-sdk apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json
-gtm-sdk apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --publish
+gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --dry-run
+gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json
+gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --publish
 ```
 
 Or from code:
 
 ```ts
-import { GtmClient, applySpec, normalizeExport, formatPlan } from "@anthnyalxndr/gtm-sdk";
+import { GtmClient, applySpec, normalizeExport, formatPlan } from "@anthnyalxndr/gtm-apply";
 
 const client = new GtmClient();
 await client.init();
@@ -115,7 +115,7 @@ The default workspace is never written to.
 For the common onboarding case, recipes compile to spec fragments and go through the same engine:
 
 ```ts
-import { GtmClient, applyConversions, formatPlan } from "@anthnyalxndr/gtm-sdk";
+import { GtmClient, applyConversions, formatPlan } from "@anthnyalxndr/gtm-apply";
 
 const client = new GtmClient();
 await client.init();

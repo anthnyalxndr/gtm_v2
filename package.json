@@ -1,7 +1,7 @@
 {
-  "name": "@anthnyalxndr/gtm-sdk",
+  "name": "@anthnyalxndr/gtm-apply",
   "version": "2.0.0",
-  "description": "Spec-driven SDK for Google Tag Manager: apply a container export-shaped JSON spec, or compile conversion recipes, against any GTM container.",
+  "description": "Declarative apply tool for Google Tag Manager: plan and reconcile a container against a JSON spec in the shape of a GTM container export.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -12,7 +12,7 @@
     }
   },
   "bin": {
-    "gtm-sdk": "dist/bin.js"
+    "gtm-apply": "dist/bin.js"
   },
   "files": [
     "dist"

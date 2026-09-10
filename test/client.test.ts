@@ -4,7 +4,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { GtmClient } from "../src/gtm_v2.js";
-import * as sdk from "../src/index.js";
+import * as pkg from "../src/index.js";
 
 describe("GtmClient", () => {
   it("throws a clear error when a method is called before init()", async () => {
@@ -14,7 +14,7 @@ describe("GtmClient", () => {
   });
 
   it("init() fails with a clear error when the secrets file is missing", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "gtm-sdk-"));
+    const dir = await mkdtemp(join(tmpdir(), "gtm-apply-"));
     const client = new GtmClient({
       clientSecretsPath: join(dir, "missing.json"),
       tokenPath: join(dir, "token.json"),
@@ -66,6 +66,6 @@ describe("GtmClient.call", () => {
 
 describe("package entry", () => {
   it("exports GtmClient from the index", () => {
-    expect(typeof sdk.GtmClient).toBe("function");
+    expect(typeof pkg.GtmClient).toBe("function");
   });
 });

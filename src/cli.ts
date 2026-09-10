@@ -21,9 +21,9 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-sdk apply --container GTM-XXXXXXX --workspace <name> --spec <file.json> [--dry-run] [--publish] [--version-name <name>]
-  gtm-sdk normalize <export.json>
-  gtm-sdk export --container GTM-XXXXXXX [--live | --workspace <name>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file.json> [--dry-run] [--publish] [--version-name <name>]
+  gtm-apply normalize <export.json>
+  gtm-apply export --container GTM-XXXXXXX [--live | --workspace <name>]
       (default: the latest version, published or not)`;
 
 export function parseCliArgs(argv: readonly string[]): CliArgs {
