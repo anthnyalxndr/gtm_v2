@@ -45,10 +45,14 @@ export interface Recipe {
   dependencies: ExternalDependency[];
 }
 
-/** What a content package commits: the API snapshot plus the recipe index computed at pull time. */
-export interface GtmSnapshotData extends ApiSnapshotData {
+/** What a content package commits: the API pull plus what was read and computed from it. */
+export interface GtmSnapshotData {
+  /** The pull, exactly as the API returned it. */
+  data: ApiSnapshotData;
   manifest: LibraryManifest | null;
+  /** The encoding in effect, by registered name. */
   encoding: { name: string; options?: Record<string, unknown> };
+  /** The recipe index computed at pull time. */
   recipes: Recipe[];
 }
 
@@ -68,7 +72,7 @@ export type RecipeNameOf<S> = S extends {
   ? N & string
   : string;
 
-type ConstantNames<S> = S extends { readonly variable: readonly (infer V)[] }
+type ConstantNames<S> = S extends { readonly data: { readonly variable: readonly (infer V)[] } }
   ? V extends { readonly name: infer N extends string; readonly type: "c" }
     ? N
     : never
@@ -102,72 +106,32 @@ export interface SelectOptions {
   destinations?: readonly string[];
 }
 
+type Named = { name?: string | null };
+type Entities<T extends Named> = ReadonlyMap<string, T> | readonly T[];
+
 const ROOT_KINDS = ["tag", "client", "transformation"] as const;
 
-const DATA_KEYS = [
-  "pulledAt",
-  "source",
-  "container",
-  "containerType",
-  "workspace",
-  "containerVersionHeader",
-  "environments",
-  "environment",
-  "destinations",
-  "folder",
-  "variable",
-  "trigger",
-  "tag",
-  "builtInVariable",
-  "gtagConfig",
-  "customTemplate",
-  "client",
-  "transformation",
-  "manifest",
-  "encoding",
-  "recipes",
-] as const satisfies readonly (keyof GtmSnapshotData)[];
-
 /**
- * A GTM container used as a recipe library. The pulled data are the
- * instance's own members (serialize it with JSON.stringify); name-keyed maps,
- * recipe selection, lint and push sit on top.
+ * A container pulled at one moment, with a recipe index over it. `data` is
+ * the pull as the API returned it and never changes. The entity views
+ * (`tags`, `triggers`, …) are a working copy: assign them to stage edits,
+ * `spec` and `push()` reflect the staged state, `reset()` discards it, and
+ * `toJSON()` always writes the pristine pull.
  *
  *   const lib = await new GtmSnapshot(client, { container: "GTM-XXXX" }).init();
  *   const same = GtmSnapshot.fromData(JSON.parse(await readFile("library.json", "utf-8")));
  */
-export class GtmSnapshot<
-  R extends string = string,
-  C extends string = string,
-> implements GtmSnapshotData {
-  pulledAt!: string;
-  source!: SnapshotSource;
-  container!: tagmanager_v2.Schema$Container;
-  containerType!: ContainerType;
-  workspace!: tagmanager_v2.Schema$Workspace | null;
-  containerVersionHeader!: tagmanager_v2.Schema$ContainerVersionHeader | null;
-  environments!: tagmanager_v2.Schema$Environment[];
-  environment!: tagmanager_v2.Schema$Environment | null;
-  destinations!: tagmanager_v2.Schema$Destination[];
-  folder!: tagmanager_v2.Schema$Folder[];
-  variable!: tagmanager_v2.Schema$Variable[];
-  trigger!: tagmanager_v2.Schema$Trigger[];
-  tag!: tagmanager_v2.Schema$Tag[];
-  builtInVariable!: tagmanager_v2.Schema$BuiltInVariable[];
-  gtagConfig!: tagmanager_v2.Schema$GtagConfig[];
-  customTemplate!: tagmanager_v2.Schema$CustomTemplate[];
-  client!: tagmanager_v2.Schema$Client[];
-  transformation!: tagmanager_v2.Schema$Transformation[];
-  manifest!: LibraryManifest | null;
-  encoding!: { name: string; options?: Record<string, unknown> };
-  recipes!: Recipe[];
-
+export class GtmSnapshot<R extends string = string, C extends string = string> {
   readonly #client: GtmClient | null;
   readonly #source: SnapshotSource | null;
   readonly #options: GtmSnapshotOptions;
-  #spec: ContainerSpec | null = null;
+  #data: ApiSnapshotData | null = null;
+  #manifest: LibraryManifest | null = null;
   #encoding: RecipeEncoding | null = null;
-  #index: Map<string, Recipe> = new Map();
+  #encodingOptions: Record<string, unknown> | undefined;
+  #spec: ContainerSpec | null = null;
+  #recipes: Recipe[] = [];
+  #index = new Map<string, Recipe>();
 
   /** Pull on init() from the container the source names. */
   constructor(client: GtmClient, source: SnapshotSource, options?: GtmSnapshotOptions);
@@ -178,7 +142,7 @@ export class GtmSnapshot<
     sourceOrOptions?: SnapshotSource | GtmSnapshotOptions,
     options: GtmSnapshotOptions = {}
   ) {
-    if ("container" in clientOrData && "recipes" in clientOrData) {
+    if ("data" in clientOrData && "recipes" in clientOrData) {
       this.#client = null;
       this.#source = null;
       this.#options = (sourceOrOptions as GtmSnapshotOptions | undefined) ?? {};
@@ -192,7 +156,7 @@ export class GtmSnapshot<
     this.#options = options;
   }
 
-  /** Build from committed data. Recipe names become literal types for a const literal. */
+  /** Build from committed data. Recipe and constant names become literal types for a const literal. */
   static fromData<const S extends GtmSnapshotInput>(
     data: S,
     options: GtmSnapshotOptions = {}
@@ -205,56 +169,71 @@ export class GtmSnapshot<
 
   /** Pull from Tag Manager. A no-op once loaded. */
   async init(): Promise<this> {
-    if (this.#spec) return this;
+    if (this.#data) return this;
     if (!this.#client || !this.#source) throw new Error("GtmSnapshot has no client to pull with");
-    const api = await pullSnapshot(this.#client, this.#source);
-    const spec = snapshotToSpec(api);
-    const manifest = readManifest(spec);
+    const data = await pullSnapshot(this.#client, this.#source);
+    const manifest = readManifest(snapshotToSpec(data));
     const encoding = this.#options.encoding ?? encodingFrom(manifest);
     this.#load({
-      ...api,
+      data,
       manifest,
       encoding: { name: encoding.name, options: manifest?.encoding?.options },
-      recipes: indexRecipes(spec, encoding, manifest),
+      recipes: [],
     });
     return this;
   }
 
-  #load(data: GtmSnapshotData): void {
-    for (const key of DATA_KEYS) (this as Record<string, unknown>)[key] = data[key];
-    const spec = snapshotToSpec(data);
-    const manifest = data.manifest ?? readManifest(spec);
-    const encoding =
+  #load(input: GtmSnapshotData): void {
+    this.#data = input.data;
+    this.#spec = snapshotToSpec(input.data);
+    this.#manifest = input.manifest ?? readManifest(this.#spec);
+    this.#encodingOptions = input.encoding?.options;
+    this.#encoding =
       this.#options.encoding ??
-      (data.encoding
-        ? resolveEncoding(data.encoding.name, data.encoding.options)
-        : encodingFrom(manifest));
-    const recipes = indexRecipes(spec, encoding, manifest);
-    this.manifest = manifest;
-    this.encoding = { name: encoding.name, options: data.encoding?.options };
-    this.recipes = recipes;
-    this.#spec = spec;
-    this.#encoding = encoding;
-    this.#index = new Map(recipes.map((r) => [r.name, r]));
+      (input.encoding
+        ? resolveEncoding(input.encoding.name, input.encoding.options)
+        : encodingFrom(this.#manifest));
+    this.#reindex();
   }
 
-  #ready(): { spec: ContainerSpec; encoding: RecipeEncoding } {
-    if (!this.#spec || !this.#encoding) {
+  #reindex(): void {
+    this.#recipes = indexRecipes(this.#spec!, this.#encoding!, this.#manifest);
+    this.#index = new Map(this.#recipes.map((r) => [r.name, r]));
+  }
+
+  #ready(): { spec: ContainerSpec; encoding: RecipeEncoding; data: ApiSnapshotData } {
+    if (!this.#data || !this.#spec || !this.#encoding) {
       throw new Error("GtmSnapshot is not initialized; call init() first");
     }
-    return { spec: this.#spec, encoding: this.#encoding };
+    return { spec: this.#spec, encoding: this.#encoding, data: this.#data };
   }
 
-  /** The whole library as a normalized spec, manifest included. */
-  get spec(): ContainerSpec {
-    return this.#ready().spec;
+  /** The pull as the API returned it. Never changes; see the entity views for staged edits. */
+  get data(): ApiSnapshotData {
+    return this.#ready().data;
+  }
+  get manifest(): LibraryManifest | null {
+    this.#ready();
+    return this.#manifest;
   }
   /** The encoding in effect (the manifest's, or the override given at construction). */
-  get recipeEncoding(): RecipeEncoding {
+  get encoding(): RecipeEncoding {
     return this.#ready().encoding;
   }
+  get containerType(): ContainerType {
+    return this.data.containerType;
+  }
+  /** The recipe index over the staged state. */
+  get recipes(): readonly Recipe[] {
+    this.#ready();
+    return this.#recipes;
+  }
+  recipe(name: R): Recipe | undefined {
+    this.#ready();
+    return this.#index.get(name);
+  }
   get recipeNames(): R[] {
-    return [...this.#index.keys()] as R[];
+    return this.recipes.map((r) => r.name as R);
   }
   /** Names of the library's constant variables (type "c"), the manifest excluded. */
   get constantNames(): C[] {
@@ -262,32 +241,83 @@ export class GtmSnapshot<
       .filter((v) => v.type === "c" && v.name && v.name !== MANIFEST_VARIABLE_NAME)
       .map((v) => v.name as C);
   }
-  recipe(name: R): Recipe | undefined {
-    return this.#index.get(name);
+
+  /** The staged state as a normalized spec, manifest included. Assign the entity views to change it. */
+  get spec(): ContainerSpec {
+    return this.#ready().spec;
   }
+  /** True when an entity view has been assigned since the pull or the last reset(). */
+  get isDirty(): boolean {
+    const { spec, data } = this.#ready();
+    return JSON.stringify(spec) !== JSON.stringify(snapshotToSpec(data));
+  }
+  /** Discard staged edits and rebuild the views from the pull. */
+  reset(): void {
+    this.#spec = snapshotToSpec(this.data);
+    this.#reindex();
+  }
+
+  #set<K extends "tag" | "trigger" | "variable" | "folder" | "client" | "transformation">(
+    key: K,
+    value: Entities<NonNullable<ContainerSpec[K]>[number]>
+  ): void {
+    const { spec } = this.#ready();
+    const items = (
+      value instanceof Map ? [...value.values()] : [...(value as Iterable<never>)]
+    ) as NonNullable<ContainerSpec[K]>;
+    if (items.length) spec[key] = items;
+    else delete spec[key];
+    this.#reindex();
+  }
+
   get tags(): ReadonlyMap<string, TagSpec> {
     return byName(this.spec.tag);
+  }
+  set tags(value: Entities<TagSpec>) {
+    this.#set("tag", value);
   }
   get triggers(): ReadonlyMap<string, TriggerSpec> {
     return byName(this.spec.trigger);
   }
+  set triggers(value: Entities<TriggerSpec>) {
+    this.#set("trigger", value);
+  }
   get variables(): ReadonlyMap<string, VariableSpec> {
     return byName(this.spec.variable);
+  }
+  set variables(value: Entities<VariableSpec>) {
+    this.#set("variable", value);
   }
   get folders(): ReadonlyMap<string, FolderSpec> {
     return byName(this.spec.folder);
   }
+  set folders(value: Entities<FolderSpec>) {
+    this.#set("folder", value);
+  }
   get clients(): ReadonlyMap<string, ClientSpec> {
     return byName(this.spec.client);
+  }
+  set clients(value: Entities<ClientSpec>) {
+    this.#set("client", value);
   }
   get transformations(): ReadonlyMap<string, TransformationSpec> {
     return byName(this.spec.transformation);
   }
-  get templates(): ReadonlyMap<string, tagmanager_v2.Schema$CustomTemplate> {
-    return byName(this.customTemplate);
+  set transformations(value: Entities<TransformationSpec>) {
+    this.#set("transformation", value);
   }
   get builtIns(): ReadonlySet<string> {
     return new Set(this.spec.builtInVariable ?? []);
+  }
+  set builtIns(value: Iterable<string>) {
+    const { spec } = this.#ready();
+    const list = [...new Set(value)] as ContainerSpec["builtInVariable"];
+    if (list?.length) spec.builtInVariable = list;
+    else delete spec.builtInVariable;
+  }
+  /** Custom templates from the pull; not stageable until the engine applies templates. */
+  get templates(): ReadonlyMap<string, tagmanager_v2.Schema$CustomTemplate> {
+    return byName(this.data.customTemplate);
   }
 
   /** Naming rules in effect: defaults, then the manifest's, then the constructor's. Null when neither declares any. */
@@ -336,7 +366,7 @@ export class GtmSnapshot<
       }
     }
     const wanted = new Set(closure(spec, roots).map(refKey));
-    const pick = <T extends { name?: string | null }>(kind: EntityRef["kind"], items?: T[]) =>
+    const pick = <T extends Named>(kind: EntityRef["kind"], items?: T[]) =>
       (items ?? []).filter((e) => e.name && wanted.has(refKey({ kind, name: e.name })));
     const strip = <T extends RecipeRoot>(e: T): T => (encoding.strip?.(e) as T | undefined) ?? e;
     const out: ContainerSpec = {};
@@ -382,7 +412,7 @@ export class GtmSnapshot<
         }
       }
     }
-    for (const recipe of this.recipes) {
+    for (const recipe of this.#recipes) {
       const entity = `recipe "${recipe.name}"`;
       if (recipe.roots.length === 0) {
         issues.push({ entity, path: "", message: "has no entities declaring it" });
@@ -406,13 +436,13 @@ export class GtmSnapshot<
     return issues;
   }
 
-  /** Apply the whole library, manifest included, back to its container. Never strips declarations. */
+  /** Apply the staged state, manifest included, back to the container. Never strips declarations. */
   push(
     client: GtmClient,
     target: { container?: string; workspace: string },
     options: { dryRun?: boolean; publish?: boolean; versionName?: string } = {}
   ): Promise<ApplySpecOutcome> {
-    const container = target.container ?? this.#source?.container ?? this.container.publicId;
+    const container = target.container ?? this.#source?.container ?? this.data.container.publicId;
     if (!container) throw new Error("push needs a target container");
     return applySpec(client, {
       ...options,
@@ -422,17 +452,22 @@ export class GtmSnapshot<
     });
   }
 
-  /** The data members only; what a content package writes to its committed file. */
+  /** The pristine pull with its manifest, encoding and recipe index; what a content package commits. */
   toJSON(): GtmSnapshotData {
-    const out = {} as Record<string, unknown>;
-    for (const key of DATA_KEYS) out[key] = this[key];
-    return out as unknown as GtmSnapshotData;
+    const { data, encoding } = this.#ready();
+    return {
+      data,
+      manifest: this.#manifest,
+      encoding: {
+        name: encoding.name,
+        ...(this.#encodingOptions ? { options: this.#encodingOptions } : {}),
+      },
+      recipes: indexRecipes(snapshotToSpec(data), encoding, this.#manifest),
+    };
   }
 }
 
-function byName<T extends { name?: string | null }>(
-  items: readonly T[] | undefined
-): ReadonlyMap<string, T> {
+function byName<T extends Named>(items: readonly T[] | undefined): ReadonlyMap<string, T> {
   return new Map((items ?? []).filter((e) => e.name).map((e) => [e.name as string, e]));
 }
 

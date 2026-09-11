@@ -20,6 +20,6 @@ export async function writeLibrary(library: GtmSnapshot): Promise<void> {
   }
   await writeFile(LIBRARY_PATH, libraryModuleSource(library.toJSON()));
   console.log(
-    `Wrote ${LIBRARY_PATH}: ${library.containerType} container ${library.container.publicId}, recipes ${library.recipeNames.join(", ")}`
+    `Wrote ${LIBRARY_PATH}: ${library.containerType} container ${library.data.container.publicId}, recipes ${library.recipeNames.join(", ")}`
   );
 }

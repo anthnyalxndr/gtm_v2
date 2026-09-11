@@ -297,7 +297,10 @@ describe("applyPlan", () => {
     const typed = GtmSnapshot.fromData({
       ...library.toJSON(),
       recipes: [{ name: "form_submit", roots: [], entities: [], dependencies: [] }],
-      variable: [{ name: "Const - GA4 Measurement ID", type: "c" }],
+      data: {
+        ...library.toJSON().data,
+        variable: [{ name: "Const - GA4 Measurement ID", type: "c" }],
+      },
     } as const);
     expect(typed.constantNames).toEqual(["Const - GA4 Measurement ID"]);
     defineTrackingPlan(typed, {

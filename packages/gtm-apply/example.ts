@@ -1,17 +1,14 @@
-import { GtmClient, GtmSnapshot, applyPlan, formatPlan } from "./src/index.js";
+import { Gtm, formatPlan } from "./src/index.js";
 
 // Dry run by default. Set GTM_LIBRARY to the template container that holds
 // your recipes and GTM_CONTAINER to a container you own, then flip dryRun to
 // false to write a workspace and version (nothing is published).
-const client = new GtmClient();
-await client.init();
+const gtm = await Gtm.fromConfig().init();
 
-const library = await new GtmSnapshot(client, {
-  container: process.env.GTM_LIBRARY ?? "GTM-TPLXXXX",
-}).init();
+const library = await gtm.snapshot({ container: process.env.GTM_LIBRARY ?? "GTM-TPLXXXX" });
 console.log(`Library recipes: ${library.recipeNames.join(", ")}`);
 
-const { plan, result, warnings } = await applyPlan(client, {
+const { plan, result, warnings } = await gtm.applyPlan({
   library,
   plan: {
     recipes: library.recipeNames.slice(0, 1),

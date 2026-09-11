@@ -185,7 +185,7 @@ describe("GtmSnapshot", () => {
     const { client } = await libraryFake();
     const lib = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
     expect(lib.encoding.name).toBe("metadata");
-    expect(lib.recipeEncoding.name).toBe("metadata");
+    expect(lib.toJSON().encoding).toEqual({ name: "metadata" });
     expect(lib.containerType).toBe("web");
     expect(lib.recipeNames).toEqual(["form_submit", "call_click"]);
     const form = lib.recipe("form_submit")!;
@@ -210,16 +210,18 @@ describe("GtmSnapshot", () => {
     expect(lib.folders.get("Shared")).toEqual({ name: "Shared" });
     expect(lib.builtIns.has("clickUrl")).toBe(true);
     expect(lib.recipes.map((r) => r.name)).toEqual(["form_submit", "call_click"]);
-    expect(lib.destinations).toEqual([]);
-    expect(lib.environment).toBeNull();
-    expect(lib.containerVersionHeader?.containerVersionId).toBeDefined();
+    expect(lib.data.destinations).toEqual([]);
+    expect(lib.data.environment).toBeNull();
+    expect(lib.data.containerVersionHeader?.containerVersionId).toBeDefined();
+    expect(lib.data.tag.map((t) => t.name)).toContain("Ads - lead");
+    expect(lib.isDirty).toBe(false);
   });
 
   it("fromSnapshot yields the same library without a client", async () => {
     const { client } = await libraryFake();
     const pulled = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
     const json = JSON.parse(JSON.stringify(pulled)) as GtmSnapshotData;
-    expect(Object.keys(json)).not.toContain("spec");
+    expect(Object.keys(json).sort()).toEqual(["data", "encoding", "manifest", "recipes"]);
     const loaded = GtmSnapshot.fromData(json);
     expect(loaded.recipes).toEqual(pulled.recipes);
     expect(loaded.spec).toEqual(pulled.spec);
@@ -361,6 +363,40 @@ describe("GtmSnapshot", () => {
     expect(
       lib.spec.tag?.find((t) => t.name === "GA4 - lead")?.monitoringMetadata?.map
     ).toHaveLength(1);
+  });
+
+  it("stages entity edits without touching the pull, and reset() discards them", async () => {
+    const { client } = await libraryFake();
+    const lib = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
+    const before = JSON.stringify(lib.toJSON());
+    const tags = new Map(lib.tags);
+    tags.set("GA4 - call", {
+      name: "GA4 - call",
+      type: "gaawe",
+      firingTriggerName: ["Click - call"],
+      monitoringMetadata: meta("call_click"),
+      parameter: [{ type: "template", key: "eventName", value: "call" }],
+    });
+    tags.delete("Unrelated");
+    lib.tags = tags;
+    expect(lib.isDirty).toBe(true);
+    expect(lib.tags.has("Unrelated")).toBe(false);
+    expect(lib.recipe("call_click")?.roots.map((r) => r.name)).toContain("GA4 - call");
+    expect(lib.select(["call_click"]).tag?.map((t) => t.name)).toEqual([
+      "Ads - call",
+      "Conversion Linker",
+      "GA4 - call",
+    ]);
+    expect(lib.spec.tag?.some((t) => t.name === "GA4 - call")).toBe(true);
+    expect(lib.data.tag.some((t) => t.name === "GA4 - call")).toBe(false);
+    expect(JSON.stringify(lib.toJSON())).toBe(before);
+    lib.variables = [...lib.variables.values()].filter((v) => v.name !== "DLV - phone");
+    expect(lib.variables.has("DLV - phone")).toBe(false);
+    lib.reset();
+    expect(lib.isDirty).toBe(false);
+    expect(lib.tags.has("Unrelated")).toBe(true);
+    expect(lib.variables.has("DLV - phone")).toBe(true);
+    expect(lib.recipe("call_click")?.roots.map((r) => r.name)).not.toContain("GA4 - call");
   });
 
   it("gives literal recipe names for a const snapshot", async () => {

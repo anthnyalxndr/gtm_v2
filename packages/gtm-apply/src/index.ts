@@ -14,6 +14,8 @@ export {
 } from "./resources/entities.js";
 export type { EnsureResult, EnsureAction } from "./resources/entities.js";
 export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
+export { Gtm } from "./gtm.js";
+export type { SnapshotCallOptions } from "./gtm.js";
 export { defineContainer } from "./spec/types.js";
 export { SECTIONS_BY_CONTAINER_TYPE, ALL_SECTIONS, sectionsFor } from "./spec/kinds.js";
 export {

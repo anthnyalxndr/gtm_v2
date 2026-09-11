@@ -188,7 +188,13 @@ export async function runCli(
 async function loadLibrary(path: string): Promise<GtmSnapshot> {
   const loaded = await loadSpecFile(path);
   if (loaded instanceof GtmSnapshot) return loaded;
-  return GtmSnapshot.fromData(loaded as GtmSnapshotData);
+  const data = loaded as GtmSnapshotData;
+  if (!("data" in data) || !("recipes" in data)) {
+    throw new Error(
+      `${path} is not a library snapshot (expected { data, manifest, encoding, recipes })`
+    );
+  }
+  return GtmSnapshot.fromData(data);
 }
 
 async function applyFromPlan(

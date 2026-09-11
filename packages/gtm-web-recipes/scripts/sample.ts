@@ -18,5 +18,5 @@ const { service } = createFakeService({
 const client = new GtmClient({ service, minIntervalMs: 0 });
 await applySpec(client, { container: "GTM-SAMPLE", workspace: "sample", spec: sampleTemplate });
 const library = await new GtmSnapshot(client, { container: "GTM-SAMPLE" }).init();
-library.pulledAt = "1970-01-01T00:00:00.000Z";
+library.data.pulledAt = "1970-01-01T00:00:00.000Z";
 await writeLibrary(library);

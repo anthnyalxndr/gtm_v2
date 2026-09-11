@@ -14,6 +14,21 @@ Auth, throttling, and the raw API service come from [`@anthnyalxndr/gtm-client`]
 
 Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `client_secrets.json.example`). On first run gtm-apply opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-apply/token.json`. That one token serves every repo on the machine. Set `GTM_APPLY_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client.
 
+## Getting started
+
+`Gtm` is the entry point. It holds the client and nothing else, so one instance serves every container a script touches; everything it does is also available as a function that takes the client first.
+
+```ts
+import { Gtm } from "@anthnyalxndr/gtm-apply";
+import { library } from "@anthnyalxndr/gtm-web-recipes";
+
+const gtm = await Gtm.fromConfig().init();               // OAuth from ~/.config/gtm-apply
+const spec = await gtm.export({ container: "GTM-XXXXXXX" });          // normalized spec
+const snap = await gtm.snapshot({ container: "GTM-TPLXXXX" });        // GtmSnapshot, memoized per source
+await gtm.apply({ container: "GTM-XXXXXXX", workspace: "fix", spec, dryRun: true });
+await gtm.applyPlan({ library, plan, container: "GTM-XXXXXXX", workspace: "onboarding" });
+```
+
 ## The spec
 
 A spec is a GTM container export with three changes: server fields (`accountId`, `*Id`, `fingerprint`, `path`) are removed, id references become name references (`firingTriggerName`, `blockingTriggerName`, `parentFolderName`), and enum values are lower camel case (`customEvent`, `template`, `equals`). Everything else is exactly what the Tag Manager API accepts.
@@ -155,22 +170,23 @@ The default workspace is never written to.
 
 ## Libraries and recipes
 
-A library is a GTM container you build in the UI and pull into a committed snapshot. Recipes are declared on the entities that fire, tags (and clients and transformations in a server container), through an encoding the library chooses; everything else a recipe needs, triggers, variables, setup tags, folders and built-ins, is discovered by following references. `GtmSnapshot` holds the pulled data as its own members (`tag`, `trigger`, `destinations`, `environment`, `containerType`, …) plus name-keyed maps per entity kind (`tags`, `triggers`, `clients`, …), a `recipes` index and a `recipe(name)` lookup.
+A library is a GTM container you build in the UI and pull into a committed snapshot. Recipes are declared on the entities that fire, tags (and clients and transformations in a server container), through an encoding the library chooses; everything else a recipe needs, triggers, variables, setup tags, folders and built-ins, is discovered by following references. `GtmSnapshot` is a container pulled at one moment. `data` is the pull exactly as the API returned it (`ApiSnapshotData`: container, environments, destinations, version header, every entity collection) and never changes. On top of it sit name-keyed views per entity kind (`tags`, `triggers`, `variables`, `clients`, …), a `recipes` index with `recipe(name)`, and `select`, `lint`, `push`.
 
 ```ts
-import { GtmSnapshot } from "@anthnyalxndr/gtm-apply";
-
-const lib = await new GtmSnapshot(client, { container: "GTM-TPLXXXX" }).init();
+const lib = await gtm.snapshot({ container: "GTM-TPLXXXX" });   // or new GtmSnapshot(client, source).init()
+lib.data.destinations;                          // raw pull
 lib.recipe("form_submit");                      // roots, entities, description, dependencies
 lib.tags.get("Ads - lead");
 const spec = lib.select(["form_submit"], { destinations: ["ga4", "googleAds"] });
-await applySpec(client, { container: "GTM-CUST", workspace: "onboarding", spec });
+await gtm.apply({ container: "GTM-CUST", workspace: "onboarding", spec });
 
-await writeFile("library.json", JSON.stringify(lib, null, 2));            // commit this
-const same = GtmSnapshot.fromData(JSON.parse(await readFile("library.json", "utf-8")));
+await writeFile("library.json", JSON.stringify(lib, null, 2));            // { data, manifest, encoding, recipes }
+const same = gtm.snapshotFrom(JSON.parse(await readFile("library.json", "utf-8")));
 ```
 
-`select` returns the union of the recipes' closures in library order, strips recipe declarations from tags, leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the whole library, declarations intact, back to its own container. `lint()` reports tags naming recipes the manifest doesn't declare, recipes that reach no trigger, and dependencies naming constants outside the recipe.
+The views are a working copy. Assign one to stage an edit: `lib.tags = tags` (a Map or an array) replaces the tags, re-indexes recipes, and changes what `spec`, `select` and `push` produce, while `data` and `toJSON()` still describe the pull. `isDirty` says whether anything is staged and `reset()` discards it. This is the seam a change report hangs off: the pull is the before, the staged state is the after.
+
+`select` returns the union of the recipes' closures in library order, strips recipe declarations from tags, leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, declarations intact, back to its own container. `lint()` reports tags naming recipes the manifest doesn't declare, recipes that reach no trigger, and dependencies naming constants outside the recipe.
 
 ### Encodings
 
@@ -235,7 +251,7 @@ const plan = defineTrackingPlan(library, {
   },
 });
 
-const { plan: ops, warnings } = await applyPlan(client, {
+const { plan: ops, warnings } = await gtm.applyPlan({
   library, plan, container: "GTM-XXXXXXX", workspace: "onboarding-2026-09", dryRun: true,
   writeSpecTo: "compiled.json",
 });
