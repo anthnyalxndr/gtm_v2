@@ -57,7 +57,7 @@ export class Gtm {
   snapshotFrom<const S extends GtmSnapshotInput>(
     data: S,
     options: GtmSnapshotOptions = {}
-  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>> {
+  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>, S> {
     return GtmSnapshot.fromData(data, options);
   }
 
