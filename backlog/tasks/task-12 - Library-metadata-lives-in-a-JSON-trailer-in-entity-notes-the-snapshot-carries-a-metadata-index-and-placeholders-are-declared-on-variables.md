@@ -3,10 +3,10 @@ id: TASK-12
 title: >-
   Library metadata lives in a JSON trailer in entity notes, the snapshot carries
   a metadata index, and placeholders are declared on variables
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-11 16:06'
-updated_date: '2026-09-11 16:17'
+updated_date: '2026-09-11 22:51'
 labels:
   - sdk
   - library

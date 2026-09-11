@@ -103,7 +103,7 @@ From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snap
 
 ### Container types
 
-A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates and gtag configs are carried in snapshots but not yet applied.
+A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates are first-class: a spec carries a `customTemplate` section (name, `templateData`, optional `galleryReference`), a tag or variable built on one has a portable `cvt:<template name>` type, and the engine creates or updates templates before the entities that use them, rewriting the type to the target container's `cvt_…` id (gallery-backed templates install through `import_from_gallery`). gtag configs are carried in snapshots but not yet applied.
 
 ## Applying a spec
 
@@ -162,7 +162,6 @@ The default workspace is never written to.
 
 ### Limits
 
-- Tags built on custom or community templates (`cvt_*` types) are rejected by the normalizer. Import the template into the target container first; direct support is a backlog item.
 - Trigger groups (`triggerReference` parameters) are rejected.
 - Validation covers field names, primitive types, and enum values, not which parameter keys a tag template accepts or which fields a trigger type uses. Those errors still come back from the API during apply.
 - The planner compares only the fields the spec provides. Fields stripped from an export, such as `monitoringMetadata`, are not corrected if someone changes them in the UI.
@@ -186,7 +185,7 @@ const same = gtm.snapshotFrom(JSON.parse(await readFile("library.json", "utf-8")
 
 The views are a working copy. Assign one to stage an edit: `lib.tags = tags` (a Map or an array) replaces the tags, re-indexes recipes, and changes what `spec`, `select` and `push` produce, while `data` and `toJSON()` still describe the pull. `isDirty` says whether anything is staged and `reset()` discards it. This is the seam a change report hangs off: the pull is the before, the staged state is the after.
 
-`select` returns the union of the recipes' closures in library order, hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, placeholder entries that disagree with their value, inline literals that look site-specific (below), and notes longer than Tag Manager saves (`NOTES_MAX_LENGTH`, 512,000 characters as measured by `scripts/probe-notes-cap.ts`; the manifest's `notesMaxLength` tightens it).
+`select` returns the union of the recipes' closures in library order (a tag or variable built on a custom template brings that template along), hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, placeholder entries that disagree with their value, inline literals that look site-specific (below), and notes longer than Tag Manager saves (`NOTES_MAX_LENGTH`, 512,000 characters as measured by `scripts/probe-notes-cap.ts`; the manifest's `notesMaxLength` tightens it).
 
 ### Metadata in notes
 

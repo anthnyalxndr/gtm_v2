@@ -3,10 +3,10 @@ id: TASK-14
 title: >-
   Lint flags inline site-specific literals in recipe entities and asks for a
   placeholder constant
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-11 21:45'
-updated_date: '2026-09-11 21:52'
+updated_date: '2026-09-11 22:51'
 labels:
   - sdk
   - library

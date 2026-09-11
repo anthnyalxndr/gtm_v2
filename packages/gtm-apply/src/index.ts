@@ -9,6 +9,7 @@ export {
   ensureTag,
   ensureClient,
   ensureTransformation,
+  ensureTemplate,
   matches,
   SERVER_FIELDS,
 } from "./resources/entities.js";
@@ -17,6 +18,14 @@ export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
 export { Gtm } from "./gtm.js";
 export type { SnapshotCallOptions } from "./gtm.js";
 export { defineContainer } from "./spec/types.js";
+export {
+  CVT_SENTINEL,
+  cvtSentinel,
+  templateNameOf,
+  sourceCvtType,
+  targetCvtType,
+  cleanGalleryReference,
+} from "./spec/cvt.js";
 export { SECTIONS_BY_CONTAINER_TYPE, ALL_SECTIONS, sectionsFor } from "./spec/kinds.js";
 export {
   DEFAULT_CONVENTIONS,
@@ -34,6 +43,7 @@ export type {
   TagSpec,
   ClientSpec,
   TransformationSpec,
+  CustomTemplateSpec,
   EntityKind,
 } from "./spec/types.js";
 export {

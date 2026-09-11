@@ -33,6 +33,7 @@ import {
   type NotedEntity,
 } from "./metadata.js";
 import { describeLiteral, findLiterals, type LiteralBearer } from "./literals.js";
+import { templateNameOf } from "../spec/cvt.js";
 import {
   DEFAULT_PLACEHOLDER_PATTERN,
   MANIFEST_VARIABLE_NAME,
@@ -447,6 +448,7 @@ export class GtmSnapshot<
     const tag = pick("tag", spec.tag).map(customer);
     const client = pick("client", spec.client).map(customer);
     const transformation = pick("transformation", spec.transformation).map(customer);
+    const customTemplate = pick("customTemplate", spec.customTemplate);
     const builtInVariable = (spec.builtInVariable ?? []).filter((b) =>
       wanted.has(refKey({ kind: "builtInVariable", name: b }))
     );
@@ -455,6 +457,7 @@ export class GtmSnapshot<
     if (variable.length) out.variable = variable;
     if (client.length) out.client = client;
     if (transformation.length) out.transformation = transformation;
+    if (customTemplate.length) out.customTemplate = customTemplate;
     if (trigger.length) out.trigger = trigger;
     if (tag.length) out.tag = tag;
     return out;
@@ -565,6 +568,19 @@ export class GtmSnapshot<
           path: "notes",
           message: `holds the placeholder value ${JSON.stringify(value)} but declares no placeholder entry`,
         });
+      }
+    }
+    const templateNames = new Set((spec.customTemplate ?? []).map((t) => t.name).filter(Boolean));
+    for (const kind of ["tag", "variable"] as const) {
+      for (const entity of spec[kind] ?? []) {
+        const templateName = templateNameOf(entity.type);
+        if (templateName && !templateNames.has(templateName)) {
+          issues.push({
+            entity: `${kind} "${entity.name}"`,
+            path: "type",
+            message: `is built on custom template "${templateName}", which is not in the library`,
+          });
+        }
       }
     }
     const rules = this.manifest?.literals ?? {};

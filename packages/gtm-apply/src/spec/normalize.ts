@@ -5,12 +5,14 @@ import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
 import type {
   ClientSpec,
   ContainerSpec,
+  CustomTemplateSpec,
   TagSpec,
   TransformationSpec,
   TriggerSpec,
   VariableSpec,
 } from "./types.js";
 import { containerTypeOf } from "../snapshot/pull.js";
+import { cleanGalleryReference, cvtSentinel } from "./cvt.js";
 
 export class NormalizeError extends Error {}
 
@@ -75,6 +77,33 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const rawBuiltIns = (cv.builtInVariable ?? []) as (string | { type?: string | null })[];
   const rawClients = (cv.client ?? []) as ClientSpec[];
   const rawTransformations = (cv.transformation ?? []) as TransformationSpec[];
+  const rawTemplates = (cv.customTemplate ?? []) as tagmanager_v2.Schema$CustomTemplate[];
+
+  // Make a tag or variable built on a custom template name-portable. A local
+  // template's type is cvt_<containerId>_<templateId> and a gallery template's
+  // is cvt_<galleryTemplateId>, so match a local type by its trailing template
+  // id and a gallery type by its gallery id. Types already normalized to the
+  // cvt:<name> sentinel are left alone (normalizeExport is idempotent).
+  const templateByTemplateId = new Map<string, string>();
+  const templateByGalleryId = new Map<string, string>();
+  for (const t of rawTemplates) {
+    if (!t.name) continue;
+    if (t.templateId) templateByTemplateId.set(String(t.templateId), t.name);
+    const gid = t.galleryReference?.galleryTemplateId;
+    if (gid) templateByGalleryId.set(gid, t.name);
+  }
+  const resolveCvt = (kind: string, name: string | null | undefined, type: unknown): unknown => {
+    if (typeof type !== "string" || !type.startsWith("cvt_")) return type;
+    const rest = type.slice("cvt_".length);
+    const local = /^(\d+)_(\d+)$/.exec(rest);
+    const templateName = local ? templateByTemplateId.get(local[2]) : templateByGalleryId.get(rest);
+    if (!templateName) {
+      throw new NormalizeError(
+        `${kind} "${name}" uses custom template ${type}, but no matching template is in the export`
+      );
+    }
+    return cvtSentinel(templateName);
+  };
 
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
@@ -94,18 +123,14 @@ export function normalizeExport(input: unknown): ContainerSpec {
   };
 
   const tags = rawTags.map((t) => {
-    if (t.type?.startsWith("cvt_")) {
-      throw new NormalizeError(
-        `Tag "${t.name}" uses custom template ${t.type}, which is bound to the source container. Import the template into the target first; custom templates are not supported by the normalizer yet.`
-      );
-    }
+    const type = resolveCvt("Tag", t.name, t.type);
     if (containsTriggerReference(t.parameter)) {
       throw new NormalizeError(
         `Tag "${t.name}" contains a triggerReference parameter (trigger group). Not supported yet.`
       );
     }
     const { firingTriggerId, blockingTriggerId, ...rest } = t;
-    const spec: TagSpec = withFolder(rest);
+    const spec: TagSpec = withFolder({ ...rest, type: type as string });
     if (firingTriggerId?.length) {
       spec.firingTriggerName = firingTriggerId.map((id) => nameFor(triggerNames, id, "trigger"));
     }
@@ -125,7 +150,16 @@ export function normalizeExport(input: unknown): ContainerSpec {
     }
     return clean(withFolder(t)) as TriggerSpec;
   });
-  const variables = rawVariables.map((v) => clean(withFolder(v)) as VariableSpec);
+  const variables = rawVariables.map((v) => {
+    const type = resolveCvt("Variable", v.name, v.type);
+    return clean(withFolder({ ...v, type: type as string })) as VariableSpec;
+  });
+  const templates = rawTemplates.map((t): CustomTemplateSpec => {
+    const gallery = cleanGalleryReference(t.galleryReference);
+    const base = clean({ name: t.name, templateData: t.templateData }) as Record<string, unknown>;
+    if (gallery) base.galleryReference = gallery;
+    return base as CustomTemplateSpec;
+  });
   const clients = rawClients.map((c) => clean(withFolder(c)) as ClientSpec);
   const transformations = rawTransformations.map((t) => clean(withFolder(t)) as TransformationSpec);
   const builtIns = rawBuiltIns
@@ -143,6 +177,7 @@ export function normalizeExport(input: unknown): ContainerSpec {
   if (tags.length) spec.tag = tags;
   if (clients.length) spec.client = clients;
   if (transformations.length) spec.transformation = transformations;
+  if (templates.length) spec.customTemplate = templates;
   return spec;
 }
 

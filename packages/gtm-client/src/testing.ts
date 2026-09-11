@@ -444,7 +444,22 @@ export function createFakeService(seed: FakeSeed = {}): {
             "transformationId",
             "transformation"
           ),
-          templates: collection(state, state.templates, "templateId", "template"),
+          templates: {
+            ...collection(state, state.templates, "templateId", "template"),
+            import_from_gallery: async ({ parent }: { parent: string }) => {
+              // Installs a bare template from the gallery; the caller reconciles
+              // templateData and the gallery reference with a follow-up update.
+              state.calls.push("template.import_from_gallery");
+              const id = nextId();
+              const entity: CustomTemplate = {
+                templateId: id,
+                path: `${parent}/template/${id}`,
+                fingerprint: "1",
+              };
+              state.templates.push(entity);
+              return { data: entity };
+            },
+          },
           gtag_config: collection(state, state.gtagConfigs, "gtagConfigId", "gtagConfig"),
           built_in_variables: {
             list: async ({ parent }: { parent: string }) => {

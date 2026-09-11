@@ -1,10 +1,10 @@
 ---
 id: TASK-15
 title: Lint reports entity notes that exceed Tag Manager's note length cap
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-11 21:45'
-updated_date: '2026-09-11 21:55'
+updated_date: '2026-09-11 22:51'
 labels:
   - sdk
   - library

@@ -3,10 +3,10 @@ id: TASK-13
 title: >-
   Plans require the placeholder constants of their selected recipes at the type
   level
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-11 21:45'
-updated_date: '2026-09-11 21:49'
+updated_date: '2026-09-11 22:51'
 labels:
   - sdk
   - library

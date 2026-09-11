@@ -3,9 +3,10 @@ id: TASK-10
 title: >-
   Custom and community templates round-trip through snapshots, libraries and
   apply
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-11 15:27'
+updated_date: '2026-09-11 22:51'
 labels:
   - sdk
   - templates
@@ -23,9 +24,15 @@ A real template container will use community templates within days, and today th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A spec may declare a template section (name, templateData, galleryReference); normalizeExport converts a cvt_<container>_<id> type on tags and variables to a name reference, and the planner and executor create or update templates before the entities that use them and resolve the reference back to the target container's template id
-- [ ] #2 Reference closure includes the template a tag or variable is built on, so select() brings templates along and lint() reports a cvt_ type whose template is missing
-- [ ] #3 A gallery-backed template is created through import_from_gallery when the target lacks it, and compared by galleryReference plus templateData on later runs
-- [ ] #4 The gtm-client fake serves templates with templateData and import_from_gallery; tests cover normalize, plan, execute, closure, and a library round trip with a custom template tag
-- [ ] #5 README removes the cvt_ limitation
+- [x] #1 A spec may declare a template section (name, templateData, galleryReference); normalizeExport converts a cvt_<container>_<id> type on tags and variables to a name reference, and the planner and executor create or update templates before the entities that use them and resolve the reference back to the target container's template id
+- [x] #2 Reference closure includes the template a tag or variable is built on, so select() brings templates along and lint() reports a cvt_ type whose template is missing
+- [x] #3 A gallery-backed template is created through import_from_gallery when the target lacks it, and compared by galleryReference plus templateData on later runs
+- [x] #4 The gtm-client fake serves templates with templateData and import_from_gallery; tests cover normalize, plan, execute, closure, and a library round trip with a custom template tag
+- [x] #5 README removes the cvt_ limitation
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Custom templates are first-class: CustomTemplateSpec + customTemplate section; cvt.ts resolves the two live cvt_ formats (gallery cvt_<galleryId>, local cvt_<containerId>_<templateId>); normalize rewrites cvt_ types to a cvt:<name> sentinel and carries templates by name; plan/execute create templates first (gallery via import_from_gallery + reconcile) and rewrite the tag/variable type to the target's cvt_ id; closure + select bring templates along; lint reports a cvt whose template is missing. Verified the cvt_ formats against live containers (GTM-KK24CHH gallery, GTM-W5XBLRZ local). Found an orthogonal blocker (reserved built-in trigger ids) filed as its own task. 148 gtm-apply tests pass.
+<!-- SECTION:NOTES:END -->
