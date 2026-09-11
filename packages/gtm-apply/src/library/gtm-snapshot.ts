@@ -87,6 +87,35 @@ type ConstantNames<S> = S extends { readonly data: { readonly variable: readonly
 /** Literal names of the library's constant variables when the data is a const literal; string otherwise. */
 export type ConstantNameOf<S> = [ConstantNames<S>] extends [never] ? string : ConstantNames<S>;
 
+/** Names of constants whose metadata declares a placeholder, when the data is a const literal; never otherwise. */
+export type PlaceholderConstantNameOf<S> = S extends { readonly metadata: infer M }
+  ? {
+      [K in keyof M]: K extends `variable:${infer N}`
+        ? M[K] extends { readonly placeholder: object }
+          ? N
+          : never
+        : never;
+    }[keyof M]
+  : never;
+
+type RecipeVariableNames<S, RS extends readonly string[]> = S extends {
+  readonly recipes: readonly (infer Rec)[];
+}
+  ? Rec extends { readonly name: RS[number]; readonly entities: readonly (infer E)[] }
+    ? E extends { readonly kind: "variable"; readonly name: infer N extends string }
+      ? N
+      : never
+    : never
+  : never;
+
+/**
+ * Constants a plan selecting the recipes `RS` must supply: placeholder
+ * constants reached by those recipes. Literal when the data is a const
+ * literal; never otherwise, so plans against a pulled library are unchecked.
+ */
+export type RequiredConstantNameOf<S, RS extends readonly string[]> = PlaceholderConstantNameOf<S> &
+  RecipeVariableNames<S, RS>;
+
 /** Tag types grouped into destination families a plan can enable or disable. */
 export const DEFAULT_DESTINATION_FAMILIES: Readonly<Record<string, string>> = {
   gaawe: "ga4",
@@ -128,7 +157,13 @@ const ROOT_KINDS = ["tag", "client", "transformation"] as const;
  *   const lib = await new GtmSnapshot(client, { container: "GTM-XXXX" }).init();
  *   const same = GtmSnapshot.fromData(JSON.parse(await readFile("library.json", "utf-8")));
  */
-export class GtmSnapshot<R extends string = string, C extends string = string> {
+export class GtmSnapshot<
+  R extends string = string,
+  C extends string = string,
+  S extends GtmSnapshotInput = GtmSnapshotInput,
+> {
+  /** Phantom: the literal this library was built from, so plans can be typed against it. Never set. */
+  declare readonly literal?: S;
   readonly #client: GtmClient | null;
   readonly #source: SnapshotSource | null;
   readonly #options: GtmSnapshotOptions;
@@ -169,8 +204,8 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   static fromData<const S extends GtmSnapshotInput>(
     data: S,
     options: GtmSnapshotOptions = {}
-  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>> {
-    return new GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>>(
+  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>, S> {
+    return new GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>, S>(
       data as unknown as GtmSnapshotData,
       options
     );

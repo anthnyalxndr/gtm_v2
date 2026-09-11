@@ -79,6 +79,8 @@ export type {
   GtmSnapshotInput,
   RecipeNameOf,
   ConstantNameOf,
+  PlaceholderConstantNameOf,
+  RequiredConstantNameOf,
   GtmSnapshotOptions,
   SelectOptions,
 } from "./library/gtm-snapshot.js";
@@ -159,6 +161,7 @@ export {
 } from "./plan/tracking-plan.js";
 export type {
   TrackingPlan,
+  TrackingPlanFor,
   CompiledPlan,
   ApplyPlanOptions,
   ApplyPlanOutcome,
