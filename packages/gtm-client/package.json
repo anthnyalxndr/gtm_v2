@@ -1,6 +1,6 @@
 {
   "name": "@anthnyalxndr/gtm-client",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Authenticated, throttled Google Tag Manager API v2 client: OAuth with a shared credential directory, retry with backoff, and typed helpers for accounts and containers.",
   "license": "Apache-2.0",
   "type": "module",
