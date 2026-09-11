@@ -17,6 +17,7 @@ const template = defineContainer({
   folder: [{ name: "Shared" }],
   variable: [
     manifestVariable({
+      literals: { allow: ["AW-1"] },
       recipes: {
         form_submit: {
           description: "Lead form submitted",
@@ -305,6 +306,123 @@ describe("GtmSnapshot", () => {
     expect(lib.metadataOf({ kind: "tag", name: "Broken" })).toBeUndefined();
     expect(lib.select(["a"]).tag?.map((t) => t.notes)).toEqual([undefined]);
     expect(lib.select(["a"]).variable).toBeUndefined();
+  });
+
+  it("lints inline literals that look site-specific, honouring the allowlist and the site's hosts", async () => {
+    const spec = defineContainer({
+      variable: [
+        manifestVariable({
+          literals: { allow: ["/allowed"], hosts: ["example.com"] },
+          recipes: { a: {} },
+        }),
+        {
+          name: "Const - Thanks URL",
+          type: "c",
+          parameter: [{ type: "template", key: "value", value: "https://www.example.com/thanks" }],
+        },
+        {
+          name: "Const - Placeholder",
+          type: "c",
+          notes: formatNotes("", { placeholder: { kind: "url" } }),
+          parameter: [{ type: "template", key: "value", value: "<url>" }],
+        },
+        {
+          name: "LT - page names",
+          type: "smm",
+          parameter: [
+            { type: "template", key: "input", value: "{{Page Path}}" },
+            {
+              type: "list",
+              key: "map",
+              list: [
+                {
+                  type: "map",
+                  map: [
+                    { type: "template", key: "key", value: "/pricing" },
+                    { type: "template", key: "value", value: "pricing" },
+                  ],
+                },
+                {
+                  type: "map",
+                  map: [
+                    { type: "template", key: "key", value: "/allowed" },
+                    { type: "template", key: "value", value: "allowed" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      trigger: [
+        {
+          name: "Page View - contact",
+          type: "pageview",
+          filter: [
+            {
+              type: "equals",
+              parameter: [
+                { type: "template", key: "arg0", value: "{{Page Path}}" },
+                { type: "template", key: "arg1", value: "/contact" },
+              ],
+            },
+          ],
+        },
+        {
+          name: "Click - buy",
+          type: "click",
+          autoEventFilter: [
+            {
+              type: "cssSelector",
+              parameter: [
+                { type: "template", key: "arg0", value: "{{Click Element}}" },
+                { type: "template", key: "arg1", value: "#buy-now" },
+              ],
+            },
+          ],
+        },
+      ],
+      tag: [
+        {
+          name: "T",
+          type: "gaawe",
+          notes: meta("a"),
+          firingTriggerName: ["Page View - contact", "Click - buy"],
+          parameter: [
+            { type: "template", key: "eventName", value: "contact_view" },
+            { type: "template", key: "measurementIdOverride", value: "{{Const - Placeholder}}" },
+            {
+              type: "list",
+              key: "eventSettingsTable",
+              list: [
+                {
+                  type: "map",
+                  map: [
+                    { type: "template", key: "parameter", value: "site" },
+                    { type: "template", key: "parameterValue", value: "Example.com" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const { service } = createFakeService({
+      containers: [{ accountId: "1", containerId: "10", publicId: "GTM-LIT", name: "lit" }],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await applySpec(client, { container: "GTM-LIT", workspace: "seed", spec });
+    const lib = await new GtmSnapshot(client, { container: "GTM-LIT" }).init();
+    const tail =
+      "; hoist it into a Const with a placeholder entry, or list it in the manifest's literals.allow";
+    expect(lib.lint().map(formatIssue)).toEqual([
+      `variable "Const - Thanks URL": parameter.value holds "https://www.example.com/thanks", which names the template site${tail}`,
+      `variable "LT - page names": parameter.map.list[0].map.key holds "/pricing", which looks like a path${tail}`,
+      `trigger "Page View - contact": filter[0].arg1 holds "/contact", which looks like a path${tail}`,
+      `trigger "Click - buy": autoEventFilter[0].arg1 holds "#buy-now", which looks like a CSS selector${tail}`,
+      `tag "T": parameter.eventSettingsTable.list[0].map.parameterValue holds "Example.com", which names the template site${tail}`,
+    ]);
   });
 
   it("lints unknown recipe names, missing triggers, and dependencies outside the closure", async () => {

@@ -3,9 +3,10 @@ id: TASK-14
 title: >-
   Lint flags inline site-specific literals in recipe entities and asks for a
   placeholder constant
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-11 21:45'
+updated_date: '2026-09-11 21:52'
 labels:
   - sdk
   - library
@@ -23,7 +24,7 @@ A site-specific value that an author types straight into a trigger condition or 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A literal classifier reports url, hostname, path, selector, platformId, email and siteHost matches with unit tests for hits and misses (mailto:, tel:, event names, {{refs}}, placeholders are misses)
-- [ ] #2 lint() reports each matching literal with the entity, the parameter or condition path, the value and the heuristic, and skips allowlisted literals and constants with a placeholder entry
-- [ ] #3 The manifest accepts literals.allow and literals.hosts; both READMEs document the rule; pnpm verify passes
+- [x] #1 A literal classifier reports url, hostname, path, selector, platformId, email and siteHost matches with unit tests for hits and misses (mailto:, tel:, event names, {{refs}}, placeholders are misses)
+- [x] #2 lint() reports each matching literal with the entity, the parameter or condition path, the value and the heuristic, and skips allowlisted literals and constants with a placeholder entry
+- [x] #3 The manifest accepts literals.allow and literals.hosts; both READMEs document the rule; pnpm verify passes
 <!-- AC:END -->

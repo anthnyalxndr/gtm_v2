@@ -31,6 +31,7 @@ import {
   type MetadataIndex,
   type NotedEntity,
 } from "./metadata.js";
+import { describeLiteral, findLiterals, type LiteralBearer } from "./literals.js";
 import {
   DEFAULT_PLACEHOLDER_PATTERN,
   MANIFEST_VARIABLE_NAME,
@@ -458,8 +459,8 @@ export class GtmSnapshot<
    * Problems in how the library declares itself: unreadable metadata
    * trailers, recipes declared where they cannot be, recipes the manifest
    * does not know, recipes that never fire, dependencies outside their
-   * recipe, placeholders that disagree with their value, and naming when
-   * conventions are in effect.
+   * recipe, placeholders that disagree with their value, literals that look
+   * site-specific, and naming when conventions are in effect.
    */
   lint(): SpecIssue[] {
     const { spec } = this.#ready();
@@ -546,6 +547,26 @@ export class GtmSnapshot<
           path: "notes",
           message: `holds the placeholder value ${JSON.stringify(value)} but declares no placeholder entry`,
         });
+      }
+    }
+    const rules = this.manifest?.literals ?? {};
+    const isPlaceholderValue = (value: string) => placeholder.test(value.trim());
+    for (const kind of NOTED_KINDS) {
+      for (const entity of spec[kind] ?? []) {
+        if (!entity.name || entity.name === MANIFEST_VARIABLE_NAME) continue;
+        const ref = { kind, name: entity.name };
+        if (kind === "variable" && this.#metadata[refKey(ref)]?.placeholder) continue;
+        for (const { path, hit } of findLiterals(
+          entity as LiteralBearer,
+          rules,
+          isPlaceholderValue
+        )) {
+          issues.push({
+            entity: `${kind} "${entity.name}"`,
+            path,
+            message: `holds ${JSON.stringify(hit.value)}, which ${describeLiteral(hit)}; hoist it into a Const with a placeholder entry, or list it in the manifest's literals.allow`,
+          });
+        }
       }
     }
     return issues;
