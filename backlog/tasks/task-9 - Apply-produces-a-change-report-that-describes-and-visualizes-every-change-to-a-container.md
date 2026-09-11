@@ -3,10 +3,10 @@ id: TASK-9
 title: >-
   Apply produces a change report that describes and visualizes every change to a
   container
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-11 08:48'
-updated_date: '2026-09-11 15:27'
+updated_date: '2026-09-11 22:59'
 labels:
   - sdk
   - report
@@ -24,11 +24,17 @@ Owners and customers need to see what an apply will do or did, per entity, befor
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A ChangeReport is computed from an ExistingState and a ContainerSpec: per entity kind, lists of added, removed (when a removal mode is requested) and changed entities, and for changed entities a field-level diff that ignores server fields
-- [ ] #2 When the source is a tracking plan, each change is attributed to the recipe(s) whose closure includes the entity, and constants show the value being set
-- [ ] #3 GtmSnapshot.changes() reports the staged state against the pull with the same model
-- [ ] #4 Renderers produce Markdown and a self-contained HTML page with summary counts, grouping by recipe and kind, and highlighted before/after values; the HTML renders with no external resources
-- [ ] #5 gtm-apply apply accepts --report <file.md|file.html> for both --spec and --plan runs, and applyPlan accepts reportTo; dry runs produce the same report as real runs
-- [ ] #6 Tests cover the diff model, recipe attribution, the snapshot staged-versus-pull case, and a snapshot test of both renderers
-- [ ] #7 gtm.push(snapshot, { workspace, container? }, options) applies a snapshot's staged state without passing the client twice, and the report can be produced for that push
+- [x] #1 A ChangeReport is computed from an ExistingState and a ContainerSpec: per entity kind, lists of added, removed (when a removal mode is requested) and changed entities, and for changed entities a field-level diff that ignores server fields
+- [x] #2 When the source is a tracking plan, each change is attributed to the recipe(s) whose closure includes the entity, and constants show the value being set
+- [x] #3 GtmSnapshot.changes() reports the staged state against the pull with the same model
+- [x] #4 Renderers produce Markdown and a self-contained HTML page with summary counts, grouping by recipe and kind, and highlighted before/after values; the HTML renders with no external resources
+- [x] #5 gtm-apply apply accepts --report <file.md|file.html> for both --spec and --plan runs, and applyPlan accepts reportTo; dry runs produce the same report as real runs
+- [x] #6 Tests cover the diff model, recipe attribution, the snapshot staged-versus-pull case, and a snapshot test of both renderers
+- [x] #7 gtm.push(snapshot, { workspace, container? }, options) applies a snapshot's staged state without passing the client twice, and the report can be produced for that push
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+ChangeReport model in src/report: computeChanges (apply path, convert-based diff), computeSpecChanges (snapshot staged-vs-pull), attributeRecipes; Markdown + self-contained HTML renderers (no external resources). Hooks: applySpec {report}, applyPlan {reportTo} (attributes to selected recipes), CLI --report for --spec and --plan, GtmSnapshot.changes(), gtm.push(snapshot, target, {reportTo}). Dry run == real run (report computed from the plan). 155 gtm-apply tests.
+<!-- SECTION:NOTES:END -->

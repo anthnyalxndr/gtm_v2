@@ -160,6 +160,16 @@ If an entity needs no information beyond its name, the engine creates it and mar
 
 The default workspace is never written to.
 
+### Change reports
+
+`apply` prints an op list (`[+]`/`[~]`/`[=]`); a change report says what actually differs, per entity, grouped by recipe. `computeChanges(existing, spec)` returns a model of what is added, changed (with a field-level diff that ignores server fields), and, when asked, removed; `attributeRecipes` tags each change with the recipes whose closure includes the entity, and a plan run does this automatically. `renderMarkdownReport` and `renderHtmlReport` render it; the HTML is a single self-contained page (no external resources). Because the report is computed from the plan, a dry run produces the same report as a real run.
+
+```bash
+gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --plan plan.ts --library src/index.ts --dry-run --report change.html
+```
+
+`applyPlan({ reportTo })` and `applySpec({ report })` take a path (`.md` or `.html`). `GtmSnapshot.changes()` reports the staged state against the pull, and `gtm.push(snapshot, { workspace }, { reportTo })` applies a snapshot's staged edits and writes that report.
+
 ### Limits
 
 - Trigger groups (`triggerReference` parameters) are rejected.

@@ -23,6 +23,9 @@ import {
 import { targetCvtType } from "./cvt.js";
 import { planContainerSpec, type OpAction, type Plan, type PlannedOp } from "./plan.js";
 import type { ContainerSpec } from "./types.js";
+import { writeFile } from "node:fs/promises";
+import { computeChanges } from "../report/change-report.js";
+import { renderReport } from "../report/render.js";
 
 export interface ExecuteOptions {
   publish?: boolean;
@@ -174,6 +177,18 @@ export interface ApplySpecOptions {
   dryRun?: boolean;
   publish?: boolean;
   versionName?: string;
+  /** Write a change report here (.md or .html). Produced from the plan, so a dry run reports the same as a real run. */
+  report?: string;
+}
+
+/** Compute a change report from a planned apply and write it by file extension. */
+export async function writePlanReport(plan: Plan, path: string): Promise<void> {
+  const report = computeChanges(plan.existing, plan.spec, {
+    container: plan.target.container,
+    workspace: plan.target.workspace,
+    source: "spec",
+  });
+  await writeFile(path, renderReport(report, path));
 }
 
 export interface ApplySpecOutcome {
@@ -192,6 +207,7 @@ export async function applySpec(
     options.spec,
     { publish: options.publish }
   );
+  if (options.report) await writePlanReport(plan, options.report);
   if (options.dryRun) return { plan };
   const result = await executePlan(client, plan, {
     publish: options.publish,

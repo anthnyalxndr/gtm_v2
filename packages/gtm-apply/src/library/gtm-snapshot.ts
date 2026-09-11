@@ -21,6 +21,12 @@ import {
   type NamingConventions,
 } from "../spec/conventions.js";
 import { closure, refKey, type EntityRef } from "./closure.js";
+import {
+  attributeRecipes,
+  computeSpecChanges,
+  type ChangeReport,
+  type ComputeChangesOptions,
+} from "../report/change-report.js";
 import { notesEncoding, resolveEncoding } from "./encoding.js";
 import {
   NOTED_KINDS,
@@ -620,6 +626,25 @@ export class GtmSnapshot<
       workspace: target.workspace,
       spec: this.spec,
     });
+  }
+
+  /** Recipe name to the refKeys of the entities in its closure. */
+  #recipeEntityKeys(): Map<string, Set<string>> {
+    return new Map(this.#recipes.map((r) => [r.name, new Set(r.entities.map(refKey))]));
+  }
+
+  /**
+   * The changes staged since the pull: the staged state (spec) against the
+   * pristine pull, attributed to the recipes each changed entity belongs to.
+   */
+  changes(options: ComputeChangesOptions = {}): ChangeReport {
+    const { data } = this.#ready();
+    const report = computeSpecChanges(snapshotToSpec(data), this.spec, {
+      source: "snapshot",
+      container: this.data.container.publicId ?? undefined,
+      ...options,
+    });
+    return attributeRecipes(report, this.#recipeEntityKeys());
   }
 
   /** The pristine pull with its manifest, encoding, metadata and recipe index; what a content package commits. */

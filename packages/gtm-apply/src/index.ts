@@ -135,6 +135,16 @@ export type {
   ExternalDependency,
 } from "./library/manifest.js";
 export { closure, referencesOf, refKey } from "./library/closure.js";
+export { computeChanges, computeSpecChanges, attributeRecipes } from "./report/change-report.js";
+export type {
+  ChangeReport,
+  ChangeKind,
+  EntityChange,
+  FieldDiff,
+  ChangeReportCounts,
+  ComputeChangesOptions,
+} from "./report/change-report.js";
+export { renderMarkdownReport, renderHtmlReport, renderReport } from "./report/render.js";
 export type { EntityRef, RefKind } from "./library/closure.js";
 export type { ApiSnapshotData, ContainerType, SnapshotSource } from "./snapshot/types.js";
 export { mergeSpecs } from "./spec/merge.js";

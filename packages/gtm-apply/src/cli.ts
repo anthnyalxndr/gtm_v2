@@ -4,7 +4,7 @@ import { resolveContainer } from "@anthnyalxndr/gtm-client";
 import { loadSpecFile } from "./spec/load.js";
 import { normalizeExport } from "./spec/normalize.js";
 import { formatIssue, validateSpec } from "./spec/validate.js";
-import { executePlan } from "./spec/execute.js";
+import { executePlan, writePlanReport } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
 import { pullSnapshot } from "./snapshot/pull.js";
 import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
@@ -14,6 +14,7 @@ import { formatIssue as formatSpecIssue } from "./spec/validate.js";
 export type CliCommand = "apply" | "normalize" | "export" | "snapshot";
 
 export interface CliArgs {
+  report?: string;
   command: CliCommand;
   container?: string;
   workspace?: string;
@@ -30,7 +31,7 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>] [--report <file.md|file.html>]
       (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
   gtm-apply apply --container GTM-XXXXXXX --workspace <name> --plan <plan.ts> --library <library.json|module> [--write-spec <file>] [...]
       (compile a tracking plan against a library, then apply it)
@@ -56,6 +57,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       plan: { type: "string" },
       library: { type: "string" },
       "write-spec": { type: "string" },
+      report: { type: "string" },
     },
   });
   const command = positionals[0];
@@ -76,6 +78,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     plan: values.plan,
     library: values.library,
     writeSpec: values["write-spec"],
+    report: values.report,
   };
 }
 
@@ -171,6 +174,7 @@ export async function runCli(
         out("Dry run: no changes made.");
         return 0;
       }
+      if (args.report) await writePlanReport(plan, args.report);
       const result = await executePlan(client, plan, {
         publish: args.publish,
         versionName: args.versionName,
@@ -224,6 +228,7 @@ async function applyFromPlan(
     publish: args.publish,
     versionName: args.versionName,
     writeSpecTo: args.writeSpec,
+    reportTo: args.report,
   });
   out(formatPlan(outcome.plan));
   if (outcome.plan.errors.length > 0) return 1;

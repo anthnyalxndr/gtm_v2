@@ -1,5 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
+import { attributeRecipes, computeChanges } from "../report/change-report.js";
+import { renderReport } from "../report/render.js";
+import { refKey } from "../library/closure.js";
 import type {
   GtmSnapshot,
   GtmSnapshotData,
@@ -184,6 +187,8 @@ export interface ApplyPlanOptions<R extends string, C extends string> {
   versionName?: string;
   /** Also write the compiled spec here as JSON, for review or a later `gtm-apply apply --spec`. */
   writeSpecTo?: string;
+  /** Write a change report here (.md or .html), attributed to the selected recipes. */
+  reportTo?: string;
 }
 
 export interface ApplyPlanOutcome extends ApplySpecOutcome {
@@ -196,11 +201,27 @@ export async function applyPlan<R extends string, C extends string>(
   client: GtmClient,
   options: ApplyPlanOptions<R, C>
 ): Promise<ApplyPlanOutcome> {
-  const { library, plan, writeSpecTo, ...rest } = options;
+  const { library, plan, writeSpecTo, reportTo, ...rest } = options;
   const compiled = compilePlan(library, plan);
   if (compiled.issues.length > 0) throw new TrackingPlanError(compiled.issues);
   if (writeSpecTo) await writeFile(writeSpecTo, JSON.stringify(compiled.spec, null, 2) + "\n");
   const outcome = await applySpec(client, { ...rest, spec: compiled.spec });
+  if (reportTo) {
+    const recipeEntities = new Map<string, Set<string>>();
+    for (const name of plan.recipes) {
+      const recipe = library.recipe(name);
+      if (recipe) recipeEntities.set(name, new Set(recipe.entities.map(refKey)));
+    }
+    const report = attributeRecipes(
+      computeChanges(outcome.plan.existing, outcome.plan.spec, {
+        container: outcome.plan.target.container,
+        workspace: outcome.plan.target.workspace,
+        source: "plan",
+      }),
+      recipeEntities
+    );
+    await writeFile(reportTo, renderReport(report, reportTo));
+  }
   return { ...outcome, spec: compiled.spec, warnings: compiled.warnings };
 }
 
