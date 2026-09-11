@@ -12,6 +12,15 @@ import { refKey, type EntityRef } from "./closure.js";
  */
 export const NOTES_DELIMITER = "---";
 
+/**
+ * The longest notes value known to save. Verified on 2026-09-11 with
+ * scripts/probe-notes-cap.ts against the web test container GTM-WNX8FFXW: the
+ * API accepted and stored every length tried up to 512,000 characters on a
+ * variable, and nothing longer was tried, so lint treats that as the cap. A
+ * library can tighten it with the manifest's `notesMaxLength`.
+ */
+export const NOTES_MAX_LENGTH = 512_000;
+
 /** How a variable's placeholder value should be replaced by a plan. */
 export interface PlaceholderMetadata {
   /** What kind of value goes here, e.g. "path", "url", "ga4MeasurementId". */
@@ -89,7 +98,11 @@ export function parseNotes(notes: string | null | undefined): ParsedNotes {
   return { text, metadata: normalize(parsed as Record<string, unknown>) };
 }
 
-/** The inverse of parseNotes: customer text, then the trailer when there is metadata. */
+/**
+ * The inverse of parseNotes: customer text, then the trailer when there is
+ * metadata. The result must stay within NOTES_MAX_LENGTH (or the manifest's
+ * `notesMaxLength`) to save; lint checks that, this does not.
+ */
 export function formatNotes(text: string, metadata?: EntityMetadata): string {
   const body = text.trimEnd();
   if (!metadata || Object.keys(metadata).length === 0) return body;

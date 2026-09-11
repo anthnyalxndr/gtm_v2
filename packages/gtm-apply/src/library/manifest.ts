@@ -37,6 +37,8 @@ export interface LibraryManifest {
   placeholderPattern?: string;
   /** Exemptions and the template site's hostnames for the inline-literal lint. */
   literals?: LiteralRules;
+  /** Longest notes value lint accepts on an entity; default NOTES_MAX_LENGTH. */
+  notesMaxLength?: number;
 }
 
 export function findManifestVariable(spec: ContainerSpec): VariableSpec | undefined {

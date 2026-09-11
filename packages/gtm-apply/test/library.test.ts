@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 import { GtmSnapshot, type GtmSnapshotData } from "../src/library/gtm-snapshot.js";
-import { formatNotes } from "../src/library/metadata.js";
+import { formatNotes, NOTES_MAX_LENGTH } from "../src/library/metadata.js";
 import { manifestVariable, MANIFEST_VARIABLE_NAME } from "../src/library/manifest.js";
 import { closure } from "../src/library/closure.js";
 import { applySpec } from "../src/spec/execute.js";
@@ -306,6 +306,53 @@ describe("GtmSnapshot", () => {
     expect(lib.metadataOf({ kind: "tag", name: "Broken" })).toBeUndefined();
     expect(lib.select(["a"]).tag?.map((t) => t.notes)).toEqual([undefined]);
     expect(lib.select(["a"]).variable).toBeUndefined();
+  });
+
+  it("lints notes longer than Tag Manager saves, by default and per the manifest", async () => {
+    const seed = async (publicId: string, spec: ReturnType<typeof defineContainer>) => {
+      const { service } = createFakeService({
+        containers: [{ accountId: "1", containerId: "10", publicId, name: publicId }],
+      });
+      const client = new GtmClient({ service, minIntervalMs: 0 });
+      await applySpec(client, { container: publicId, workspace: "seed", spec });
+      return new GtmSnapshot(client, { container: publicId }).init();
+    };
+    const atCap = await seed("GTM-CAP", {
+      trigger: [{ name: "PV", type: "pageview", notes: "n".repeat(NOTES_MAX_LENGTH) }],
+      tag: [
+        {
+          name: "T",
+          type: "html",
+          firingTriggerName: ["PV"],
+          notes: "n".repeat(NOTES_MAX_LENGTH + 1),
+        },
+      ],
+    });
+    expect(atCap.notesMaxLength).toBe(NOTES_MAX_LENGTH);
+    expect(atCap.lint().map(formatIssue)).toEqual([
+      `tag "T": notes is ${NOTES_MAX_LENGTH + 1} characters, over the ${NOTES_MAX_LENGTH} Tag Manager saves`,
+    ]);
+    const tight = await seed("GTM-TIGHT", {
+      variable: [
+        manifestVariable({ notesMaxLength: 40 }),
+        {
+          name: "Const - Short",
+          type: "c",
+          notes: "x".repeat(40),
+          parameter: [{ type: "template", key: "value", value: "v" }],
+        },
+        {
+          name: "Const - Long",
+          type: "c",
+          notes: "x".repeat(41),
+          parameter: [{ type: "template", key: "value", value: "v" }],
+        },
+      ],
+    });
+    expect(tight.notesMaxLength).toBe(40);
+    expect(tight.lint().map(formatIssue)).toEqual([
+      'variable "Const - Long": notes is 41 characters, over the 40 Tag Manager saves',
+    ]);
   });
 
   it("lints inline literals that look site-specific, honouring the allowlist and the site's hosts", async () => {
