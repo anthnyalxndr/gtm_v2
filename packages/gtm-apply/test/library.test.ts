@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 import { GtmSnapshot, type GtmSnapshotData } from "../src/library/gtm-snapshot.js";
-import { formatNotes } from "../src/library/metadata.js";
+import { formatNotes, NOTES_MAX_LENGTH } from "../src/library/metadata.js";
 import { manifestVariable, MANIFEST_VARIABLE_NAME } from "../src/library/manifest.js";
 import { closure } from "../src/library/closure.js";
 import { applySpec } from "../src/spec/execute.js";
@@ -17,6 +17,7 @@ const template = defineContainer({
   folder: [{ name: "Shared" }],
   variable: [
     manifestVariable({
+      literals: { allow: ["AW-1"] },
       recipes: {
         form_submit: {
           description: "Lead form submitted",
@@ -305,6 +306,170 @@ describe("GtmSnapshot", () => {
     expect(lib.metadataOf({ kind: "tag", name: "Broken" })).toBeUndefined();
     expect(lib.select(["a"]).tag?.map((t) => t.notes)).toEqual([undefined]);
     expect(lib.select(["a"]).variable).toBeUndefined();
+  });
+
+  it("lints notes longer than Tag Manager saves, by default and per the manifest", async () => {
+    const seed = async (publicId: string, spec: ReturnType<typeof defineContainer>) => {
+      const { service } = createFakeService({
+        containers: [{ accountId: "1", containerId: "10", publicId, name: publicId }],
+      });
+      const client = new GtmClient({ service, minIntervalMs: 0 });
+      await applySpec(client, { container: publicId, workspace: "seed", spec });
+      return new GtmSnapshot(client, { container: publicId }).init();
+    };
+    const atCap = await seed("GTM-CAP", {
+      trigger: [{ name: "PV", type: "pageview", notes: "n".repeat(NOTES_MAX_LENGTH) }],
+      tag: [
+        {
+          name: "T",
+          type: "html",
+          firingTriggerName: ["PV"],
+          notes: "n".repeat(NOTES_MAX_LENGTH + 1),
+        },
+      ],
+    });
+    expect(atCap.notesMaxLength).toBe(NOTES_MAX_LENGTH);
+    expect(atCap.lint().map(formatIssue)).toEqual([
+      `tag "T": notes is ${NOTES_MAX_LENGTH + 1} characters, over the ${NOTES_MAX_LENGTH} Tag Manager saves`,
+    ]);
+    const tight = await seed("GTM-TIGHT", {
+      variable: [
+        manifestVariable({ notesMaxLength: 40 }),
+        {
+          name: "Const - Short",
+          type: "c",
+          notes: "x".repeat(40),
+          parameter: [{ type: "template", key: "value", value: "v" }],
+        },
+        {
+          name: "Const - Long",
+          type: "c",
+          notes: "x".repeat(41),
+          parameter: [{ type: "template", key: "value", value: "v" }],
+        },
+      ],
+    });
+    expect(tight.notesMaxLength).toBe(40);
+    expect(tight.lint().map(formatIssue)).toEqual([
+      'variable "Const - Long": notes is 41 characters, over the 40 Tag Manager saves',
+    ]);
+  });
+
+  it("lints inline literals that look site-specific, honouring the allowlist and the site's hosts", async () => {
+    const spec = defineContainer({
+      variable: [
+        manifestVariable({
+          literals: { allow: ["/allowed"], hosts: ["example.com"] },
+          recipes: { a: {} },
+        }),
+        {
+          name: "Const - Thanks URL",
+          type: "c",
+          parameter: [{ type: "template", key: "value", value: "https://www.example.com/thanks" }],
+        },
+        {
+          name: "Const - Placeholder",
+          type: "c",
+          notes: formatNotes("", { placeholder: { kind: "url" } }),
+          parameter: [{ type: "template", key: "value", value: "<url>" }],
+        },
+        {
+          name: "LT - page names",
+          type: "smm",
+          parameter: [
+            { type: "template", key: "input", value: "{{Page Path}}" },
+            {
+              type: "list",
+              key: "map",
+              list: [
+                {
+                  type: "map",
+                  map: [
+                    { type: "template", key: "key", value: "/pricing" },
+                    { type: "template", key: "value", value: "pricing" },
+                  ],
+                },
+                {
+                  type: "map",
+                  map: [
+                    { type: "template", key: "key", value: "/allowed" },
+                    { type: "template", key: "value", value: "allowed" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      trigger: [
+        {
+          name: "Page View - contact",
+          type: "pageview",
+          filter: [
+            {
+              type: "equals",
+              parameter: [
+                { type: "template", key: "arg0", value: "{{Page Path}}" },
+                { type: "template", key: "arg1", value: "/contact" },
+              ],
+            },
+          ],
+        },
+        {
+          name: "Click - buy",
+          type: "click",
+          autoEventFilter: [
+            {
+              type: "cssSelector",
+              parameter: [
+                { type: "template", key: "arg0", value: "{{Click Element}}" },
+                { type: "template", key: "arg1", value: "#buy-now" },
+              ],
+            },
+          ],
+        },
+      ],
+      tag: [
+        {
+          name: "T",
+          type: "gaawe",
+          notes: meta("a"),
+          firingTriggerName: ["Page View - contact", "Click - buy"],
+          parameter: [
+            { type: "template", key: "eventName", value: "contact_view" },
+            { type: "template", key: "measurementIdOverride", value: "{{Const - Placeholder}}" },
+            {
+              type: "list",
+              key: "eventSettingsTable",
+              list: [
+                {
+                  type: "map",
+                  map: [
+                    { type: "template", key: "parameter", value: "site" },
+                    { type: "template", key: "parameterValue", value: "Example.com" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const { service } = createFakeService({
+      containers: [{ accountId: "1", containerId: "10", publicId: "GTM-LIT", name: "lit" }],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await applySpec(client, { container: "GTM-LIT", workspace: "seed", spec });
+    const lib = await new GtmSnapshot(client, { container: "GTM-LIT" }).init();
+    const tail =
+      "; hoist it into a Const with a placeholder entry, or list it in the manifest's literals.allow";
+    expect(lib.lint().map(formatIssue)).toEqual([
+      `variable "Const - Thanks URL": parameter.value holds "https://www.example.com/thanks", which names the template site${tail}`,
+      `variable "LT - page names": parameter.map.list[0].map.key holds "/pricing", which looks like a path${tail}`,
+      `trigger "Page View - contact": filter[0].arg1 holds "/contact", which looks like a path${tail}`,
+      `trigger "Click - buy": autoEventFilter[0].arg1 holds "#buy-now", which looks like a CSS selector${tail}`,
+      `tag "T": parameter.eventSettingsTable.list[0].map.parameterValue holds "Example.com", which names the template site${tail}`,
+    ]);
   });
 
   it("lints unknown recipe names, missing triggers, and dependencies outside the closure", async () => {

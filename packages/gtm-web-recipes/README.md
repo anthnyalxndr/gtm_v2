@@ -34,6 +34,6 @@ pnpm pull                              # latest version of the template containe
 GTM_LIBRARY_WORKSPACE=wip pnpm pull    # work in progress
 ```
 
-The pull lints the container first (recipe names not in the manifest, recipes that reach no trigger, naming rules) and refuses to write on findings. Commit the regenerated `src/library.ts`; a package version pins a library snapshot.
+The pull lints the container first (recipe names not in the manifest, recipes that reach no trigger, placeholder entries that disagree with their value, inline literals that look site-specific such as a page path typed into a trigger condition, naming rules) and refuses to write on findings. Commit the regenerated `src/library.ts`; a package version pins a library snapshot.
 
 Until the first real pull, `src/library.ts` holds a sample built by `pnpm sample` from an in-code template with three recipes: `form_submit`, `email_click`, `call_click`.

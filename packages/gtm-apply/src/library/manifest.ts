@@ -1,5 +1,6 @@
 import type { ConventionOverrides } from "../spec/conventions.js";
 import type { ContainerSpec, VariableSpec } from "../spec/types.js";
+import type { LiteralRules } from "./literals.js";
 
 /** The Constant variable that carries a library's manifest. Never referenced by a tag, so never selected. */
 export const MANIFEST_VARIABLE_NAME = "Library - Manifest";
@@ -34,6 +35,10 @@ export interface LibraryManifest {
   conventions?: ConventionOverrides;
   /** Regular expression for constant values a plan must replace; default DEFAULT_PLACEHOLDER_PATTERN. */
   placeholderPattern?: string;
+  /** Exemptions and the template site's hostnames for the inline-literal lint. */
+  literals?: LiteralRules;
+  /** Longest notes value lint accepts on an entity; default NOTES_MAX_LENGTH. */
+  notesMaxLength?: number;
 }
 
 export function findManifestVariable(spec: ContainerSpec): VariableSpec | undefined {
