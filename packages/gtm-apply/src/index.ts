@@ -107,7 +107,10 @@ export type { ApiSnapshotData, ContainerType, SnapshotSource } from "./snapshot/
 export { mergeSpecs } from "./spec/merge.js";
 export {
   BUILT_IN_VARIABLES,
+  BUILT_IN_TRIGGERS,
   builtInTypeForName,
+  builtInTriggerIdForName,
+  builtInTriggerNameForId,
   upperSnakeToCamel,
   referencedVariableNames,
 } from "./spec/catalog.js";

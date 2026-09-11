@@ -472,3 +472,33 @@ describe("GtmSnapshot on a server container", () => {
     expect(validateSpec(spec)).toEqual([]);
   });
 });
+
+describe("built-in triggers in a library", () => {
+  it("counts a built-in trigger as reached, so a Google tag recipe lints clean and pulls back by name", async () => {
+    const { service } = createFakeService({
+      containers: [{ accountId: "1", containerId: "10", publicId: "GTM-INIT", name: "init" }],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    const spec = defineContainer({
+      variable: [manifestVariable({ encoding: { name: "metadata" }, recipes: { google_tag: {} } })],
+      tag: [
+        {
+          name: "Google Tag",
+          type: "googtag",
+          firingTriggerName: ["Initialization - All Pages"],
+          monitoringMetadata: meta("google_tag"),
+          parameter: [{ type: "template", key: "tagId", value: "G-1" }],
+        },
+      ],
+    });
+    await applySpec(client, { container: "GTM-INIT", workspace: "w", spec });
+    const lib = await new GtmSnapshot(client, { container: "GTM-INIT" }).init();
+    expect(lib.tags.get("Google Tag")?.firingTriggerName).toEqual(["Initialization - All Pages"]);
+    expect(lib.lint()).toEqual([]);
+    expect(lib.recipe("google_tag")?.entities.map((r) => `${r.kind}:${r.name}`)).toEqual([
+      "tag:Google Tag",
+      "trigger:Initialization - All Pages",
+    ]);
+    expect(lib.select(["google_tag"]).trigger).toBeUndefined();
+  });
+});

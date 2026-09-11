@@ -65,6 +65,25 @@ export function builtInTypeForName(name: string): BuiltInVariableType | undefine
   return BUILT_IN_VARIABLES[name];
 }
 
+/**
+ * GTM built-in triggers: the display name to the fixed trigger id. They exist
+ * in every web container but are never listed as trigger resources, so a
+ * spec names them like any trigger and the engine maps the name to the id.
+ */
+export const BUILT_IN_TRIGGERS: Readonly<Record<string, string>> = {
+  "All Pages": "2147479553",
+  "Initialization - All Pages": "2857720",
+  "Consent Initialization - All Pages": "2857719",
+};
+
+export function builtInTriggerIdForName(name: string): string | undefined {
+  return BUILT_IN_TRIGGERS[name];
+}
+
+export function builtInTriggerNameForId(id: string): string | undefined {
+  return Object.keys(BUILT_IN_TRIGGERS).find((name) => BUILT_IN_TRIGGERS[name] === id);
+}
+
 /** "CUSTOM_EVENT" -> "customEvent", "TEMPLATE" -> "template", "PAGE_PATH" -> "pagePath". */
 export function upperSnakeToCamel(value: string): string {
   return value.toLowerCase().replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
