@@ -13,9 +13,22 @@ import {
 } from "./convert.js";
 import type { ContainerSpec, VariableSpec } from "./types.js";
 import { assertValidSpec } from "./validate.js";
+import { SECTIONS_BY_CONTAINER_TYPE } from "./kinds.js";
+import { containerTypeOf } from "../snapshot/pull.js";
+import type { ContainerType } from "../snapshot/types.js";
+import { toApiClient, toApiTransformation } from "./convert.js";
 
 export type OpKind =
-  "workspace" | "builtIn" | "folder" | "variable" | "trigger" | "tag" | "version" | "publish";
+  | "workspace"
+  | "builtIn"
+  | "folder"
+  | "variable"
+  | "trigger"
+  | "tag"
+  | "client"
+  | "transformation"
+  | "version"
+  | "publish";
 export type OpAction = "create" | "update" | "unchanged";
 
 export interface PlannedOp {
@@ -56,22 +69,35 @@ const has = (list: readonly Named[] | undefined, name: string): boolean =>
 
 export async function loadExisting(
   client: GtmClient,
-  workspacePath: string
+  workspacePath: string,
+  containerType: ContainerType = "web"
 ): Promise<ExistingState> {
   const ws = client.service.accounts.containers.workspaces;
   const parent = workspacePath;
-  const [folders, variables, triggers, tags, builtIns] = await Promise.all([
-    client.call(() => ws.folders.list({ parent })),
-    client.call(() => ws.variables.list({ parent })),
-    client.call(() => ws.triggers.list({ parent })),
-    client.call(() => ws.tags.list({ parent })),
-    listEnabledBuiltIns(client, workspacePath),
-  ]);
+  const serverKinds = SECTIONS_BY_CONTAINER_TYPE[containerType].includes("client");
+  const [folders, variables, triggers, tags, builtIns, clients, transformations] =
+    await Promise.all([
+      client.call(() => ws.folders.list({ parent })),
+      client.call(() => ws.variables.list({ parent })),
+      client.call(() => ws.triggers.list({ parent })),
+      client.call(() => ws.tags.list({ parent })),
+      listEnabledBuiltIns(client, workspacePath),
+      serverKinds ? client.call(() => ws.clients.list({ parent })) : null,
+      serverKinds ? client.call(() => ws.transformations.list({ parent })) : null,
+    ]);
   const state = emptyState();
   state.raw.folder = folders.data.folder ?? [];
   state.raw.variable = variables.data.variable ?? [];
   state.raw.trigger = triggers.data.trigger ?? [];
   state.raw.tag = tags.data.tag ?? [];
+  state.raw.client = clients?.data.client ?? [];
+  state.raw.transformation = transformations?.data.transformation ?? [];
+  indexState(state);
+  state.builtIns = builtIns;
+  return state;
+}
+
+function indexState(state: ExistingState): void {
   for (const f of state.raw.folder) if (f.name && f.folderId) state.folders.set(f.name, f.folderId);
   for (const v of state.raw.variable) {
     if (v.name && v.variableId) state.variables.set(v.name, v.variableId);
@@ -80,8 +106,10 @@ export async function loadExisting(
     if (t.name && t.triggerId) state.triggers.set(t.name, t.triggerId);
   }
   for (const t of state.raw.tag) if (t.name && t.tagId) state.tags.set(t.name, t.tagId);
-  state.builtIns = builtIns;
-  return state;
+  for (const c of state.raw.client) if (c.name && c.clientId) state.clients.set(c.name, c.clientId);
+  for (const t of state.raw.transformation) {
+    if (t.name && t.transformationId) state.transformations.set(t.name, t.transformationId);
+  }
 }
 
 /**
@@ -106,14 +134,9 @@ export async function loadExistingFromLatestVersion(
   state.raw.variable = cv.variable ?? [];
   state.raw.trigger = cv.trigger ?? [];
   state.raw.tag = cv.tag ?? [];
-  for (const f of state.raw.folder) if (f.name && f.folderId) state.folders.set(f.name, f.folderId);
-  for (const v of state.raw.variable) {
-    if (v.name && v.variableId) state.variables.set(v.name, v.variableId);
-  }
-  for (const t of state.raw.trigger) {
-    if (t.name && t.triggerId) state.triggers.set(t.name, t.triggerId);
-  }
-  for (const t of state.raw.tag) if (t.name && t.tagId) state.tags.set(t.name, t.tagId);
+  state.raw.client = cv.client ?? [];
+  state.raw.transformation = cv.transformation ?? [];
+  indexState(state);
   for (const b of cv.builtInVariable ?? []) if (b.type) state.builtIns.add(b.type);
   return state;
 }
@@ -153,16 +176,38 @@ export async function planContainerSpec(
 ): Promise<Plan> {
   assertValidSpec(input);
   const container = await resolveContainer(client, target.container);
+  const containerType = containerTypeOf(container.usageContext);
+  const ops: PlannedOp[] = [];
+  const errors: string[] = [];
+  if (input.containerType && input.containerType !== containerType) {
+    errors.push(
+      `spec is for a ${input.containerType} container but ${target.container} is a ${containerType} container`
+    );
+  }
+  const allowed = SECTIONS_BY_CONTAINER_TYPE[containerType];
+  for (const section of ["client", "transformation"] as const) {
+    if (input[section]?.length && !allowed.includes(section)) {
+      errors.push(`${section} entities are not supported by a ${containerType} container`);
+    }
+  }
+  if (errors.length > 0) {
+    return {
+      target,
+      container,
+      workspacePath: null,
+      spec: input,
+      existing: emptyState(),
+      ops,
+      errors,
+    };
+  }
   const wsApi = client.service.accounts.containers.workspaces;
   const wsList = await client.call(() => wsApi.list({ parent: container.path }));
   const found = (wsList.data.workspace ?? []).find((w) => w.name === target.workspace);
   const workspacePath = found?.path ?? null;
   const existing = workspacePath
-    ? await loadExisting(client, workspacePath)
+    ? await loadExisting(client, workspacePath, containerType)
     : await loadExistingFromLatestVersion(client, container.path);
-
-  const ops: PlannedOp[] = [];
-  const errors: string[] = [];
 
   ops.push({
     kind: "workspace",
@@ -183,10 +228,19 @@ export async function planContainerSpec(
     variable: sortedVariables,
     trigger: input.trigger ?? [],
     tag: input.tag ?? [],
+    client: input.client ?? [],
+    transformation: input.transformation ?? [],
   };
 
   // Duplicate names within a kind.
-  for (const kind of ["folder", "variable", "trigger", "tag"] as const) {
+  for (const kind of [
+    "folder",
+    "variable",
+    "trigger",
+    "tag",
+    "client",
+    "transformation",
+  ] as const) {
     const seen = new Set<string>();
     for (const e of spec[kind] ?? []) {
       if (!e.name) {
@@ -203,7 +257,13 @@ export async function planContainerSpec(
 
   // Folders: declared plus referenced (implicit).
   const declaredFolders = new Set((input.folder ?? []).map((f) => f.name));
-  for (const e of [...spec.variable!, ...spec.trigger!, ...spec.tag!]) {
+  for (const e of [
+    ...spec.variable!,
+    ...spec.trigger!,
+    ...spec.tag!,
+    ...spec.client!,
+    ...spec.transformation!,
+  ]) {
     const f = e.parentFolderName;
     if (f && !has(spec.folder, f) && !existing.folders.has(f)) spec.folder!.push({ name: f });
   }
@@ -219,7 +279,13 @@ export async function planContainerSpec(
   // Built-ins: declared plus inferred from {{ }} references (implicit).
   const declaredBuiltIns = new Set(input.builtInVariable ?? []);
   const builtIns = new Set(declaredBuiltIns);
-  for (const name of referencedVariableNames([spec.variable, spec.trigger, spec.tag])) {
+  for (const name of referencedVariableNames([
+    spec.variable,
+    spec.trigger,
+    spec.tag,
+    spec.client,
+    spec.transformation,
+  ])) {
     if (name.startsWith("_")) continue;
     if (has(spec.variable, name) || existing.variables.has(name)) continue;
     const type = builtInTypeForName(name);
@@ -253,7 +319,7 @@ export async function planContainerSpec(
   }
 
   const planEntities = <S extends Named, A extends Named>(
-    kind: "variable" | "trigger" | "tag",
+    kind: "variable" | "trigger" | "tag" | "client" | "transformation",
     items: readonly S[],
     current: readonly A[],
     convert: (item: S) => Converted<unknown>
@@ -275,6 +341,10 @@ export async function planContainerSpec(
   };
   planEntities("variable", spec.variable!, existing.raw.variable, (v) =>
     toApiVariable(v, existing)
+  );
+  planEntities("client", spec.client!, existing.raw.client, (c) => toApiClient(c, existing));
+  planEntities("transformation", spec.transformation!, existing.raw.transformation, (t) =>
+    toApiTransformation(t, existing)
   );
   planEntities("trigger", spec.trigger!, existing.raw.trigger, (t) => toApiTrigger(t, existing));
   planEntities("tag", spec.tag!, existing.raw.tag, (t) => toApiTag(t, existing));

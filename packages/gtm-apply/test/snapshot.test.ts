@@ -166,6 +166,7 @@ describe("pullSnapshot", () => {
     expect(snap.environment).toBeNull();
     expect(state.calls).toContain("containers.get");
     expect(snapshotToSpec(snap)).toEqual({
+      containerType: "web",
       folder: [{ name: "Core" }],
       trigger: [{ name: "PV", type: "pageview", parentFolderName: "Core" }],
     });

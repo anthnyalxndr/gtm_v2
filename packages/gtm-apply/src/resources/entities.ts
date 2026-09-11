@@ -16,6 +16,8 @@ export const SERVER_FIELDS: readonly string[] = [
   "triggerId",
   "variableId",
   "folderId",
+  "clientId",
+  "transformationId",
   "fingerprint",
   "path",
   "tagManagerUrl",
@@ -127,6 +129,34 @@ export function ensureTrigger(
     client,
     col(client, (ws) => ws.triggers),
     "trigger",
+    workspacePath,
+    body
+  );
+}
+
+export function ensureClient(
+  client: GtmClient,
+  workspacePath: string,
+  body: tagmanager_v2.Schema$Client
+): Promise<EnsureResult<tagmanager_v2.Schema$Client>> {
+  return ensureEntity(
+    client,
+    col(client, (ws) => ws.clients),
+    "client",
+    workspacePath,
+    body
+  );
+}
+
+export function ensureTransformation(
+  client: GtmClient,
+  workspacePath: string,
+  body: tagmanager_v2.Schema$Transformation
+): Promise<EnsureResult<tagmanager_v2.Schema$Transformation>> {
+  return ensureEntity(
+    client,
+    col(client, (ws) => ws.transformations),
+    "transformation",
     workspacePath,
     body
   );

@@ -1,5 +1,11 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
-import type { TagSpec, TriggerSpec, VariableSpec } from "./types.js";
+import type {
+  ClientSpec,
+  TagSpec,
+  TransformationSpec,
+  TriggerSpec,
+  VariableSpec,
+} from "./types.js";
 
 /** Name-to-id maps and raw entities for a workspace, used to resolve spec references. */
 export interface ExistingState {
@@ -7,12 +13,16 @@ export interface ExistingState {
   variables: Map<string, string>;
   triggers: Map<string, string>;
   tags: Map<string, string>;
+  clients: Map<string, string>;
+  transformations: Map<string, string>;
   builtIns: Set<string>;
   raw: {
     folder: tagmanager_v2.Schema$Folder[];
     variable: tagmanager_v2.Schema$Variable[];
     trigger: tagmanager_v2.Schema$Trigger[];
     tag: tagmanager_v2.Schema$Tag[];
+    client: tagmanager_v2.Schema$Client[];
+    transformation: tagmanager_v2.Schema$Transformation[];
   };
 }
 
@@ -22,8 +32,10 @@ export function emptyState(): ExistingState {
     variables: new Map(),
     triggers: new Map(),
     tags: new Map(),
+    clients: new Map(),
+    transformations: new Map(),
     builtIns: new Set(),
-    raw: { folder: [], variable: [], trigger: [], tag: [] },
+    raw: { folder: [], variable: [], trigger: [], tag: [], client: [], transformation: [] },
   };
 }
 
@@ -67,6 +79,30 @@ export function toApiTrigger(
   const { parentFolderName, ...rest } = spec;
   const unresolved: Unresolved[] = [];
   const body: tagmanager_v2.Schema$Trigger = { ...rest };
+  const folderId = resolveFolder(parentFolderName, ids, unresolved);
+  if (folderId) body.parentFolderId = folderId;
+  return { body, unresolved };
+}
+
+export function toApiClient(
+  spec: ClientSpec,
+  ids: ExistingState
+): Converted<tagmanager_v2.Schema$Client> {
+  const { parentFolderName, ...rest } = spec;
+  const unresolved: Unresolved[] = [];
+  const body: tagmanager_v2.Schema$Client = { ...rest };
+  const folderId = resolveFolder(parentFolderName, ids, unresolved);
+  if (folderId) body.parentFolderId = folderId;
+  return { body, unresolved };
+}
+
+export function toApiTransformation(
+  spec: TransformationSpec,
+  ids: ExistingState
+): Converted<tagmanager_v2.Schema$Transformation> {
+  const { parentFolderName, ...rest } = spec;
+  const unresolved: Unresolved[] = [];
+  const body: tagmanager_v2.Schema$Transformation = { ...rest };
   const folderId = resolveFolder(parentFolderName, ids, unresolved);
   if (folderId) body.parentFolderId = folderId;
   return { body, unresolved };

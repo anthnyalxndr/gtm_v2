@@ -2,13 +2,22 @@ import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { ensureWorkspace } from "../resources/workspaces.js";
 import { ensureBuiltIns } from "../resources/builtins.js";
 import {
+  ensureClient,
   ensureFolder,
   ensureTag,
+  ensureTransformation,
   ensureTrigger,
   ensureVariable,
   type EnsureAction,
 } from "../resources/entities.js";
-import { toApiTag, toApiTrigger, toApiVariable, type Unresolved } from "./convert.js";
+import {
+  toApiClient,
+  toApiTag,
+  toApiTransformation,
+  toApiTrigger,
+  toApiVariable,
+  type Unresolved,
+} from "./convert.js";
 import { planContainerSpec, type OpAction, type Plan, type PlannedOp } from "./plan.js";
 import type { ContainerSpec } from "./types.js";
 
@@ -73,6 +82,24 @@ export async function executePlan(
     const r = await ensureVariable(client, ws.path, body);
     if (r.entity.variableId) ids.variables.set(name, r.entity.variableId);
     ops.push({ kind: "variable", name, action: toOpAction(r.action) });
+  }
+
+  for (const c of plan.spec.client ?? []) {
+    const name = c.name ?? "";
+    const { body, unresolved } = toApiClient(c, ids);
+    assertResolved("client", name, unresolved);
+    const r = await ensureClient(client, ws.path, body);
+    if (r.entity.clientId) ids.clients.set(name, r.entity.clientId);
+    ops.push({ kind: "client", name, action: toOpAction(r.action) });
+  }
+
+  for (const t of plan.spec.transformation ?? []) {
+    const name = t.name ?? "";
+    const { body, unresolved } = toApiTransformation(t, ids);
+    assertResolved("transformation", name, unresolved);
+    const r = await ensureTransformation(client, ws.path, body);
+    if (r.entity.transformationId) ids.transformations.set(name, r.entity.transformationId);
+    ops.push({ kind: "transformation", name, action: toOpAction(r.action) });
   }
 
   for (const t of plan.spec.trigger ?? []) {

@@ -7,18 +7,24 @@ export {
   ensureVariable,
   ensureTrigger,
   ensureTag,
+  ensureClient,
+  ensureTransformation,
   matches,
   SERVER_FIELDS,
 } from "./resources/entities.js";
 export type { EnsureResult, EnsureAction } from "./resources/entities.js";
 export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
 export { defineContainer } from "./spec/types.js";
+export { SECTIONS_BY_CONTAINER_TYPE, ALL_SECTIONS, sectionsFor } from "./spec/kinds.js";
+export type { SpecSection } from "./spec/kinds.js";
 export type {
   ContainerSpec,
   FolderSpec,
   VariableSpec,
   TriggerSpec,
   TagSpec,
+  ClientSpec,
+  TransformationSpec,
   EntityKind,
 } from "./spec/types.js";
 export {
@@ -65,7 +71,14 @@ export {
   referencedVariableNames,
 } from "./spec/catalog.js";
 export { normalizeExport, NormalizeError, ENUM_KEYS } from "./spec/normalize.js";
-export { emptyState, toApiVariable, toApiTrigger, toApiTag } from "./spec/convert.js";
+export {
+  emptyState,
+  toApiVariable,
+  toApiTrigger,
+  toApiTag,
+  toApiClient,
+  toApiTransformation,
+} from "./spec/convert.js";
 export type { ExistingState, Unresolved, Converted } from "./spec/convert.js";
 export {
   planContainerSpec,

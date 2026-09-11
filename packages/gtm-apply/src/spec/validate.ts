@@ -5,7 +5,11 @@ import {
   type SchemaName,
 } from "./generated/tagmanager-v2.js";
 import { SERVER_FIELDS } from "../resources/entities.js";
+import { sectionsFor } from "./kinds.js";
 import type { ContainerSpec } from "./types.js";
+import type { ContainerType } from "../snapshot/types.js";
+
+const CONTAINER_TYPES: readonly ContainerType[] = ["web", "server", "amp", "android", "ios"];
 
 /** One problem found in a spec, located by entity and field path. */
 export interface SpecIssue {
@@ -47,6 +51,8 @@ const SPEC_FIELDS: Partial<Record<SchemaName, Record<string, PropertyDef>>> = {
     blockingTriggerName: { kind: "string[]" },
   },
   Folder: {},
+  Client: { parentFolderName: { kind: "string" } },
+  Transformation: { parentFolderName: { kind: "string" } },
 };
 /** API id references that a spec expresses by name instead. */
 const ID_FIELDS = new Set([
@@ -61,6 +67,8 @@ const TOP_LEVEL: Record<string, SchemaName | "builtIn"> = {
   variable: "Variable",
   trigger: "Trigger",
   tag: "Tag",
+  client: "Client",
+  transformation: "Transformation",
   builtInVariable: "builtIn",
 };
 
@@ -172,11 +180,32 @@ export function validateSpec(spec: unknown): SpecIssue[] {
   if (!isRecord(spec)) {
     return [{ entity: "spec", path: "", message: `must be an object (got ${show(spec)})` }];
   }
+  const top: Ctx = { entity: "spec", issues };
+  let containerType: ContainerType | undefined;
+  if (spec.containerType !== undefined) {
+    if (
+      typeof spec.containerType === "string" &&
+      CONTAINER_TYPES.includes(spec.containerType as ContainerType)
+    ) {
+      containerType = spec.containerType as ContainerType;
+    } else {
+      push(
+        top,
+        "containerType",
+        `must be one of ${CONTAINER_TYPES.join(", ")} (got ${show(spec.containerType)})`
+      );
+    }
+  }
+  const allowed = sectionsFor(containerType);
   for (const [key, value] of Object.entries(spec)) {
+    if (key === "containerType") continue;
     const kind = TOP_LEVEL[key];
-    const top: Ctx = { entity: "spec", issues };
     if (!kind) {
       push(top, key, `is not a spec section; expected one of ${Object.keys(TOP_LEVEL).join(", ")}`);
+      continue;
+    }
+    if (containerType && !allowed.includes(key as (typeof allowed)[number])) {
+      push(top, key, `is not supported by a ${containerType} container`);
       continue;
     }
     if (value === undefined) continue;

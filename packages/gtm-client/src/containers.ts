@@ -6,6 +6,8 @@ export interface ContainerRef {
   path: string;
   name: string;
   publicId: string;
+  /** Container.usageContext, e.g. ["web"] or ["server"]. */
+  usageContext: string[];
 }
 
 /** Find a container by its public id (GTM-XXXXXXX) across every account the user can see. */
@@ -23,6 +25,7 @@ export async function resolveContainer(client: GtmClient, publicId: string): Pro
           path: c.path ?? `accounts/${c.accountId}/containers/${c.containerId}`,
           name: c.name ?? "",
           publicId,
+          usageContext: c.usageContext ?? [],
         };
       }
     }
@@ -57,5 +60,6 @@ export async function createContainer(
     path: c.path ?? `accounts/${c.accountId}/containers/${c.containerId}`,
     name: c.name ?? name,
     publicId: c.publicId,
+    usageContext: c.usageContext ?? usageContext,
   };
 }

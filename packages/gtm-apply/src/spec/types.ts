@@ -1,10 +1,13 @@
 import type {
   BuiltInVariableType,
+  Client,
   Folder,
   Tag,
+  Transformation,
   Trigger,
   Variable,
 } from "./generated/tagmanager-v2.js";
+import type { ContainerType } from "../snapshot/types.js";
 
 /**
  * A ContainerSpec is the shape of a GTM container export (the API's
@@ -25,6 +28,8 @@ type ServerField =
   | "triggerId"
   | "variableId"
   | "folderId"
+  | "clientId"
+  | "transformationId"
   | "fingerprint"
   | "path"
   | "tagManagerUrl";
@@ -36,6 +41,10 @@ export interface FolderSpec extends Pick<Folder, "name"> {
 }
 export type VariableSpec = WithFolder<Variable>;
 export type TriggerSpec = WithFolder<Trigger>;
+/** Server containers only. */
+export type ClientSpec = WithFolder<Client>;
+/** Server containers only. */
+export type TransformationSpec = WithFolder<Transformation>;
 export type TagSpec = Omit<WithFolder<Tag>, "firingTriggerId" | "blockingTriggerId"> & {
   /** Names of the triggers this tag fires on; resolved to firingTriggerId at apply time. */
   firingTriggerName?: string[];
@@ -44,15 +53,21 @@ export type TagSpec = Omit<WithFolder<Tag>, "firingTriggerId" | "blockingTrigger
 };
 
 export interface ContainerSpec {
+  /** The kind of container this spec is for. When set, the target container must match. */
+  containerType?: ContainerType;
   folder?: FolderSpec[];
   /** Built-in variable API types to enable, e.g. "pagePath". Referenced built-ins are inferred. */
   builtInVariable?: BuiltInVariableType[];
   variable?: VariableSpec[];
   trigger?: TriggerSpec[];
   tag?: TagSpec[];
+  /** Server containers only. */
+  client?: ClientSpec[];
+  /** Server containers only. */
+  transformation?: TransformationSpec[];
 }
 
-export type EntityKind = "folder" | "variable" | "trigger" | "tag";
+export type EntityKind = "folder" | "variable" | "trigger" | "tag" | "client" | "transformation";
 
 /** Identity helper so a spec written in a .ts file is inferred and checked without an annotation. */
 export function defineContainer(spec: ContainerSpec): ContainerSpec {

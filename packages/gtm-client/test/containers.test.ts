@@ -23,6 +23,7 @@ describe("resolveContainer", () => {
       path: "accounts/2/containers/20",
       name: "b",
       publicId: "GTM-BBB",
+      usageContext: ["web"],
     });
   });
 

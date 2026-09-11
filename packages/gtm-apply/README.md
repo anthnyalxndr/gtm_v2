@@ -84,7 +84,11 @@ gtm-apply snapshot --container GTM-XXXXXXX --version 42
 gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
 ```
 
-From code, `pullSnapshot(client, source)` returns a `ContainerSnapshot` and `snapshotToSpec(snapshot)` normalizes the apply-able part. Clients and transformations are carried in the snapshot but not yet applied; server-container support is a backlog item.
+From code, `pullSnapshot(client, source)` returns a `ContainerSnapshot` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`.
+
+### Container types
+
+A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates, zones and gtag configs are carried in snapshots but not yet applied.
 
 ## Applying a spec
 

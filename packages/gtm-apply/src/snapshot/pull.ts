@@ -154,13 +154,16 @@ export async function pullSnapshot(
   };
 }
 
-/** The apply-able part of a snapshot, normalized like an export. Clients and transformations wait on server-container support. */
+/** The apply-able part of a snapshot, normalized like an export, tagged with its container type. */
 export function snapshotToSpec(snapshot: ContainerSnapshot): ContainerSpec {
   return normalizeExport({
+    containerType: snapshot.containerType,
     folder: snapshot.folder,
     variable: snapshot.variable,
     trigger: snapshot.trigger,
     tag: snapshot.tag,
     builtInVariable: snapshot.builtInVariable,
+    client: snapshot.client,
+    transformation: snapshot.transformation,
   });
 }

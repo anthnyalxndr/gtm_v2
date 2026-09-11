@@ -49,6 +49,15 @@ export const BUILT_IN_VARIABLES: Readonly<Record<string, BuiltInVariableType>> =
   "Video Status": "videoStatus",
   "Video Current Time": "videoCurrentTime",
   "Percent Visible": "elementVisibilityRatio",
+  // Server containers. Display names follow the server container UI; the live
+  // smoke test verifies them like the web entries.
+  "Event Name": "eventName",
+  "Request Path": "requestPath",
+  "Request Method": "requestMethod",
+  "Client Name": "clientName",
+  "Query String": "queryString",
+  "Page Location": "serverPageLocationUrl",
+  "Visitor Region": "visitorRegion",
   "On-Screen Duration": "elementVisibilityTime",
 };
 

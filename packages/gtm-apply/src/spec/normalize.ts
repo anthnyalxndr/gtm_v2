@@ -2,7 +2,15 @@ import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { SERVER_FIELDS } from "../resources/entities.js";
 import { upperSnakeToCamel } from "./catalog.js";
 import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
-import type { ContainerSpec, TagSpec, TriggerSpec, VariableSpec } from "./types.js";
+import type {
+  ClientSpec,
+  ContainerSpec,
+  TagSpec,
+  TransformationSpec,
+  TriggerSpec,
+  VariableSpec,
+} from "./types.js";
+import { containerTypeOf } from "../snapshot/pull.js";
 
 export class NormalizeError extends Error {}
 
@@ -65,6 +73,8 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const rawTriggers = (cv.trigger ?? []) as (tagmanager_v2.Schema$Trigger & TriggerSpec)[];
   const rawTags = (cv.tag ?? []) as (tagmanager_v2.Schema$Tag & TagSpec)[];
   const rawBuiltIns = (cv.builtInVariable ?? []) as (string | { type?: string | null })[];
+  const rawClients = (cv.client ?? []) as ClientSpec[];
+  const rawTransformations = (cv.transformation ?? []) as TransformationSpec[];
 
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
@@ -116,16 +126,42 @@ export function normalizeExport(input: unknown): ContainerSpec {
     return clean(withFolder(t)) as TriggerSpec;
   });
   const variables = rawVariables.map((v) => clean(withFolder(v)) as VariableSpec);
+  const clients = rawClients.map((c) => clean(withFolder(c)) as ClientSpec);
+  const transformations = rawTransformations.map((t) => clean(withFolder(t)) as TransformationSpec);
   const builtIns = rawBuiltIns
     .map((b) => (typeof b === "string" ? b : (b.type ?? "")))
     .filter((t) => t.length > 0)
     .map((t) => (UPPER_SNAKE.test(t) ? upperSnakeToCamel(t) : t)) as BuiltInVariableType[];
 
   const spec: ContainerSpec = {};
+  const containerType = containerTypeFrom(cv, input);
+  if (containerType) spec.containerType = containerType;
   if (rawFolders.length) spec.folder = rawFolders.map((f) => ({ name: f.name ?? "" }));
   if (builtIns.length) spec.builtInVariable = [...new Set(builtIns)];
   if (variables.length) spec.variable = variables;
   if (triggers.length) spec.trigger = triggers;
   if (tags.length) spec.tag = tags;
+  if (clients.length) spec.client = clients;
+  if (transformations.length) spec.transformation = transformations;
   return spec;
+}
+
+/** A UI export carries container.usageContext; a normalized spec carries containerType. */
+function containerTypeFrom(
+  cv: Record<string, unknown>,
+  input: Record<string, unknown>
+): ContainerSpec["containerType"] {
+  if (typeof cv.containerType === "string")
+    return cv.containerType as ContainerSpec["containerType"];
+  if (typeof input.containerType === "string") {
+    return input.containerType as ContainerSpec["containerType"];
+  }
+  const container = isRecord(cv.container) ? cv.container : undefined;
+  const usage = container?.usageContext;
+  if (Array.isArray(usage) && usage.length > 0) {
+    return containerTypeOf(
+      usage.map((u) => (UPPER_SNAKE.test(String(u)) ? upperSnakeToCamel(String(u)) : String(u)))
+    );
+  }
+  return undefined;
 }
