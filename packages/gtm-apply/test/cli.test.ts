@@ -5,7 +5,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { parseCliArgs, runCli } from "../src/cli.js";
-import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
+import { createFakeService, emptyEntities } from "@anthnyalxndr/gtm-client/testing";
 
 const fixturePath = fileURLToPath(new URL("./fixtures/ui-export.json", import.meta.url));
 
@@ -34,6 +34,7 @@ describe("parseCliArgs", () => {
       publish: true,
       live: false,
       versionName: "v1",
+      version: undefined,
     });
   });
 
@@ -183,6 +184,29 @@ describe("runCli", () => {
     expect(lines.join("\n")).toContain('[+] trigger "CE"');
   });
 
+  it("snapshot prints everything the API exposes for the container", async () => {
+    const { client, state } = fresh();
+    const ws = client.service.accounts.containers.workspaces;
+    const created = await ws.create({
+      parent: "accounts/1/containers/10",
+      requestBody: { name: "s" },
+    });
+    await ws.tags.create({ parent: created.data.path!, requestBody: { name: "T", type: "html" } });
+    await ws.create_version({ path: created.data.path!, requestBody: { name: "v1" } });
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["snapshot", "--container", "GTM-ABC123"]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    const snap = JSON.parse(lines.join("\n"));
+    expect(snap.containerType).toBe("web");
+    expect(snap.tag.map((t: { name: string }) => t.name)).toEqual(["T"]);
+    expect(snap.versionHeader.containerVersionId).toBe(state.versions[0].versionId);
+    expect(snap.destinations).toEqual([]);
+  });
+
   it("export reads the latest version by default, the live one with --live", async () => {
     const { client, state } = fresh();
     const version = (id: string, tagName: string) => ({
@@ -190,11 +214,9 @@ describe("runCli", () => {
       versionId: id,
       name: `v${id}`,
       snapshot: {
-        folder: [],
-        variable: [],
+        ...emptyEntities(),
         trigger: [{ name: "PV", type: "pageview", triggerId: "1" }],
         tag: [{ name: tagName, type: "html", tagId: "2", firingTriggerId: ["1"] }],
-        builtIns: [],
       },
     });
     state.versions.push(version("8", "Published tag"), version("9", "Unpublished tag"));

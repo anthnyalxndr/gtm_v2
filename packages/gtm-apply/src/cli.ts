@@ -6,8 +6,9 @@ import { normalizeExport } from "./spec/normalize.js";
 import { formatIssue, validateSpec } from "./spec/validate.js";
 import { executePlan } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
+import { pullSnapshot } from "./snapshot/pull.js";
 
-export type CliCommand = "apply" | "normalize" | "export";
+export type CliCommand = "apply" | "normalize" | "export" | "snapshot";
 
 export interface CliArgs {
   command: CliCommand;
@@ -19,6 +20,7 @@ export interface CliArgs {
   publish: boolean;
   live: boolean;
   versionName?: string;
+  version?: string;
 }
 
 export const USAGE = `Usage:
@@ -26,7 +28,9 @@ export const USAGE = `Usage:
       (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
   gtm-apply normalize <export.json>
   gtm-apply export --container GTM-XXXXXXX [--live | --workspace <name>]
-      (default: the latest version, published or not)`;
+      (default: the latest version, published or not)
+  gtm-apply snapshot --container GTM-XXXXXXX [--live | --version <id> | --workspace <name>]
+      (everything the API exposes for the container, as returned by the API)`;
 
 export function parseCliArgs(argv: readonly string[]): CliArgs {
   const { values, positionals } = parseArgs({
@@ -40,14 +44,15 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       publish: { type: "boolean", default: false },
       live: { type: "boolean", default: false },
       "version-name": { type: "string" },
+      version: { type: "string" },
     },
   });
   const command = positionals[0];
-  if (command !== "apply" && command !== "normalize" && command !== "export") {
+  if (!["apply", "normalize", "export", "snapshot"].includes(command)) {
     throw new Error(USAGE);
   }
   return {
-    command,
+    command: command as CliCommand,
     container: values.container,
     workspace: values.workspace,
     spec: values.spec,
@@ -56,6 +61,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     publish: values.publish ?? false,
     live: values.live ?? false,
     versionName: values["version-name"],
+    version: values.version,
   };
 }
 
@@ -113,6 +119,17 @@ export async function runCli(
         source = version.data;
       }
       out(JSON.stringify(normalizeExport(source), null, 2));
+      return 0;
+    }
+    case "snapshot": {
+      if (!args.container) throw new Error(`snapshot needs --container.\n${USAGE}`);
+      await client.init();
+      const snapshot = await pullSnapshot(client, {
+        container: args.container,
+        ...(args.workspace ? { workspace: args.workspace } : {}),
+        ...(args.live ? { version: "live" } : args.version ? { version: args.version } : {}),
+      });
+      out(JSON.stringify(snapshot, null, 2));
       return 0;
     }
     case "apply": {

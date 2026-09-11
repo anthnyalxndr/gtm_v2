@@ -15,7 +15,23 @@ import prettier from "prettier";
 
 const DISCOVERY_URL = "https://tagmanager.googleapis.com/$discovery/rest?version=v2";
 /** Every schema reachable from these is kept. */
-const ROOTS = ["Tag", "Trigger", "Variable", "Folder", "BuiltInVariable"];
+export const ROOTS = [
+  "Tag",
+  "Trigger",
+  "Variable",
+  "Folder",
+  "BuiltInVariable",
+  "Container",
+  "Workspace",
+  "Environment",
+  "Destination",
+  "ContainerVersionHeader",
+  "Client",
+  "Transformation",
+  "Zone",
+  "CustomTemplate",
+  "GtagConfig",
+];
 
 interface DiscoveryProperty {
   type?: string;

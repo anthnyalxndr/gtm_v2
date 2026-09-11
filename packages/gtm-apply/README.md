@@ -73,6 +73,19 @@ Spec spec.json has 2 problem(s):
 [!] tag "Ads - Lead": tagFiringOption must be one of unlimited, oncePerEvent, oncePerLoad (got "once")
 ```
 
+### Snapshots
+
+A spec is the apply-able part of a container. A snapshot is everything the API exposes for it, as the API returns it: the container and its type (from `usageContext`), the workspace or version read, the container's environments and the one serving that version, linked Google tag destinations, version headers, and every entity collection including gtag configs, custom templates, clients, transformations and zones. It's the input for a library, an audit, or anything that needs more than tags, triggers and variables.
+
+```bash
+gtm-apply snapshot --container GTM-XXXXXXX                  # latest version
+gtm-apply snapshot --container GTM-XXXXXXX --live           # published version
+gtm-apply snapshot --container GTM-XXXXXXX --version 42
+gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
+```
+
+From code, `pullSnapshot(client, source)` returns a `ContainerSnapshot` and `snapshotToSpec(snapshot)` normalizes the apply-able part. Clients and transformations are carried in the snapshot but not yet applied; server-container support is a backlog item.
+
 ## Applying a spec
 
 ```bash

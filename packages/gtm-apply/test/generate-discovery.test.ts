@@ -5,6 +5,7 @@ import {
   enumTypeName,
   generate,
   OUTPUT_PATH,
+  ROOTS,
   SCHEMAS_PATH,
   trimDiscovery,
   type TrimmedDiscovery,
@@ -32,26 +33,16 @@ describe("generate-discovery", () => {
       revision: "1",
       version: "v2",
       schemas: {
+        ...Object.fromEntries(ROOTS.map((n) => [n, { id: n, properties: {} }])),
         Tag: {
           id: "Tag",
           properties: { setupTag: { type: "array", items: { $ref: "SetupTag" } } },
         },
-        Trigger: { id: "Trigger", properties: {} },
-        Variable: { id: "Variable", properties: {} },
-        Folder: { id: "Folder", properties: {} },
-        BuiltInVariable: { id: "BuiltInVariable", properties: {} },
         SetupTag: { id: "SetupTag", properties: {} },
         Account: { id: "Account", properties: {} },
       },
     };
-    expect(Object.keys(trimDiscovery(doc).schemas)).toEqual([
-      "BuiltInVariable",
-      "Folder",
-      "SetupTag",
-      "Tag",
-      "Trigger",
-      "Variable",
-    ]);
+    expect(Object.keys(trimDiscovery(doc).schemas)).toEqual([...ROOTS, "SetupTag"].sort());
   });
 
   it("checked-in output matches the committed Discovery schemas", async () => {

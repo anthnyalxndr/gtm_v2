@@ -56,6 +56,8 @@ export {
 } from "./spec/validate.js";
 export type { SpecIssue } from "./spec/validate.js";
 export { loadSpecFile } from "./spec/load.js";
+export { pullSnapshot, snapshotToSpec, containerTypeOf } from "./snapshot/pull.js";
+export type { ContainerSnapshot, ContainerType, SnapshotSource } from "./snapshot/types.js";
 export {
   BUILT_IN_VARIABLES,
   builtInTypeForName,

@@ -5,6 +5,13 @@ type Trigger = tagmanager_v2.Schema$Trigger;
 type Variable = tagmanager_v2.Schema$Variable;
 type Folder = tagmanager_v2.Schema$Folder;
 type Workspace = tagmanager_v2.Schema$Workspace;
+type Client = tagmanager_v2.Schema$Client;
+type Transformation = tagmanager_v2.Schema$Transformation;
+type CustomTemplate = tagmanager_v2.Schema$CustomTemplate;
+type Zone = tagmanager_v2.Schema$Zone;
+type GtagConfig = tagmanager_v2.Schema$GtagConfig;
+type Environment = tagmanager_v2.Schema$Environment;
+type Destination = tagmanager_v2.Schema$Destination;
 
 export interface FakeAccount {
   accountId: string;
@@ -15,11 +22,31 @@ export interface FakeContainer {
   containerId: string;
   publicId: string;
   name: string;
+  /** Defaults to ["web"]. */
+  usageContext?: string[];
 }
 
 export interface FakeSeed {
   accounts?: FakeAccount[];
   containers?: FakeContainer[];
+  /** Container-level environments; give each a path under its container. */
+  environments?: Environment[];
+  /** Linked Google tag destinations; give each a path under its container. */
+  destinations?: Destination[];
+}
+
+/** Workspace-scoped entity collections, as captured by a version. */
+export interface FakeEntities {
+  folder: Folder[];
+  variable: Variable[];
+  trigger: Trigger[];
+  tag: Tag[];
+  client: Client[];
+  transformation: Transformation[];
+  template: CustomTemplate[];
+  zone: Zone[];
+  gtagConfig: GtagConfig[];
+  builtIns: string[];
 }
 
 export interface FakeState {
@@ -30,18 +57,19 @@ export interface FakeState {
   tags: Tag[];
   triggers: Trigger[];
   variables: Variable[];
+  clients: Client[];
+  transformations: Transformation[];
+  templates: CustomTemplate[];
+  zones: Zone[];
+  gtagConfigs: GtagConfig[];
+  environments: Environment[];
+  destinations: Destination[];
   builtIns: { workspacePath: string; type: string }[];
   versions: {
     path: string;
     versionId: string;
     name?: string;
-    snapshot: {
-      folder: Folder[];
-      variable: Variable[];
-      trigger: Trigger[];
-      tag: Tag[];
-      builtIns: string[];
-    };
+    snapshot: FakeEntities;
   }[];
   published: string[];
   calls: string[];
@@ -61,12 +89,17 @@ function removeWorkspace(state: FakeState, wsPath: string): void {
   prune(state.variables, inWs);
   prune(state.triggers, inWs);
   prune(state.tags, inWs);
+  prune(state.clients, inWs);
+  prune(state.transformations, inWs);
+  prune(state.templates, inWs);
+  prune(state.zones, inWs);
+  prune(state.gtagConfigs, inWs);
   prune(state.builtIns, (b) => b.workspacePath === wsPath);
   prune(state.workspaces, (w) => w.path === wsPath);
 }
 
 /** Entities as captured by the most recent version. */
-export function latestSnapshot(state: FakeState): FakeState["versions"][number]["snapshot"] {
+export function latestSnapshot(state: FakeState): FakeEntities {
   const v = state.versions[state.versions.length - 1];
   if (!v) throw new Error("no version has been created");
   return v.snapshot;
@@ -76,6 +109,37 @@ interface Named {
   name?: string | null;
   path?: string | null;
   fingerprint?: string | null;
+}
+
+export function emptyEntities(): FakeEntities {
+  return {
+    folder: [],
+    variable: [],
+    trigger: [],
+    tag: [],
+    client: [],
+    transformation: [],
+    template: [],
+    zone: [],
+    gtagConfig: [],
+    builtIns: [],
+  };
+}
+
+/** The entity fields of a ContainerVersion response, keyed as the API keys them. */
+function versionBody(e: FakeEntities) {
+  return {
+    tag: e.tag,
+    trigger: e.trigger,
+    variable: e.variable,
+    folder: e.folder,
+    client: e.client,
+    transformation: e.transformation,
+    customTemplate: e.template,
+    zone: e.zone,
+    gtagConfig: e.gtagConfig,
+    builtInVariable: e.builtIns.map((t) => ({ type: t })),
+  };
 }
 
 function collection<T extends Named>(state: FakeState, store: T[], idKey: string, kind: string) {
@@ -140,6 +204,13 @@ export function createFakeService(seed: FakeSeed = {}): {
     tags: [],
     triggers: [],
     variables: [],
+    clients: [],
+    transformations: [],
+    templates: [],
+    zones: [],
+    gtagConfigs: [],
+    environments: seed.environments ?? [],
+    destinations: seed.destinations ?? [],
     builtIns: [],
     versions: [],
     published: [],
@@ -165,10 +236,39 @@ export function createFakeService(seed: FakeSeed = {}): {
                 .filter((c) => c.accountId === accountId)
                 .map((c) => ({
                   ...c,
+                  usageContext: c.usageContext ?? ["web"],
                   path: `accounts/${c.accountId}/containers/${c.containerId}`,
                 })),
             },
           };
+        },
+        get: async ({ path }: { path: string }) => {
+          state.calls.push("containers.get");
+          const c = state.containers.find(
+            (x) => `accounts/${x.accountId}/containers/${x.containerId}` === path
+          );
+          if (!c) throw Object.assign(new Error("container not found"), { code: 404 });
+          return { data: { ...c, usageContext: c.usageContext ?? ["web"], path } };
+        },
+        environments: {
+          list: async ({ parent }: { parent: string }) => {
+            state.calls.push("environments.list");
+            return {
+              data: {
+                environment: state.environments.filter((e) => e.path?.startsWith(parent + "/")),
+              },
+            };
+          },
+        },
+        destinations: {
+          list: async ({ parent }: { parent: string }) => {
+            state.calls.push("destinations.list");
+            return {
+              data: {
+                destination: state.destinations.filter((d) => d.path?.startsWith(parent + "/")),
+              },
+            };
+          },
         },
         create: async ({
           parent,
@@ -185,6 +285,7 @@ export function createFakeService(seed: FakeSeed = {}): {
             containerId,
             publicId: `GTM-NEW${containerId}`,
             name: requestBody.name ?? "",
+            usageContext: requestBody.usageContext ?? ["web"],
           };
           state.containers.push(created);
           return {
@@ -192,6 +293,22 @@ export function createFakeService(seed: FakeSeed = {}): {
           };
         },
         version_headers: {
+          list: async ({ parent }: { parent: string }) => {
+            state.calls.push("version_headers.list");
+            return {
+              data: {
+                containerVersionHeader: state.versions
+                  .filter((v) => v.path.startsWith(parent + "/"))
+                  .map((v) => ({
+                    containerVersionId: v.versionId,
+                    path: v.path,
+                    name: v.name,
+                    numTags: String(v.snapshot.tag.length),
+                    numClients: String(v.snapshot.client.length),
+                  })),
+              },
+            };
+          },
           latest: async ({ parent }: { parent: string }) => {
             state.calls.push("version_headers.latest");
             const latest = state.versions[state.versions.length - 1];
@@ -217,11 +334,7 @@ export function createFakeService(seed: FakeSeed = {}): {
                 path: v.path,
                 containerVersionId: v.versionId,
                 name: v.name,
-                tag: v.snapshot.tag,
-                trigger: v.snapshot.trigger,
-                variable: v.snapshot.variable,
-                folder: v.snapshot.folder,
-                builtInVariable: v.snapshot.builtIns.map((t) => ({ type: t })),
+                ...versionBody(v.snapshot),
               },
             };
           },
@@ -232,11 +345,9 @@ export function createFakeService(seed: FakeSeed = {}): {
             return {
               data: {
                 path: v?.path ?? `${parent}/versions/0`,
-                tag: v?.snapshot.tag ?? [],
-                trigger: v?.snapshot.trigger ?? [],
-                variable: v?.snapshot.variable ?? [],
-                folder: v?.snapshot.folder ?? [],
-                builtInVariable: (v?.snapshot.builtIns ?? []).map((t) => ({ type: t })),
+                containerVersionId: v?.versionId ?? "0",
+                name: v?.name,
+                ...versionBody(v?.snapshot ?? emptyEntities()),
               },
             };
           },
@@ -267,6 +378,16 @@ export function createFakeService(seed: FakeSeed = {}): {
               clone(latest.snapshot.variable, "variableId", "variable", state.variables);
               clone(latest.snapshot.trigger, "triggerId", "trigger", state.triggers);
               clone(latest.snapshot.tag, "tagId", "tag", state.tags);
+              clone(latest.snapshot.client, "clientId", "client", state.clients);
+              clone(
+                latest.snapshot.transformation,
+                "transformationId",
+                "transformation",
+                state.transformations
+              );
+              clone(latest.snapshot.template, "templateId", "template", state.templates);
+              clone(latest.snapshot.zone, "zoneId", "zone", state.zones);
+              clone(latest.snapshot.gtagConfig, "gtagConfigId", "gtagConfig", state.gtagConfigs);
               for (const t of latest.snapshot.builtIns)
                 state.builtIns.push({ workspacePath: wsPath, type: t });
             }
@@ -307,6 +428,11 @@ export function createFakeService(seed: FakeSeed = {}): {
                 variable: inWs(state.variables),
                 trigger: inWs(state.triggers),
                 tag: inWs(state.tags),
+                client: inWs(state.clients),
+                transformation: inWs(state.transformations),
+                template: inWs(state.templates),
+                zone: inWs(state.zones),
+                gtagConfig: inWs(state.gtagConfigs),
                 builtIns: state.builtIns.filter((b) => b.workspacePath === path).map((b) => b.type),
               },
             });
@@ -318,6 +444,16 @@ export function createFakeService(seed: FakeSeed = {}): {
           tags: collection(state, state.tags, "tagId", "tag"),
           triggers: collection(state, state.triggers, "triggerId", "trigger"),
           variables: collection(state, state.variables, "variableId", "variable"),
+          clients: collection(state, state.clients, "clientId", "client"),
+          transformations: collection(
+            state,
+            state.transformations,
+            "transformationId",
+            "transformation"
+          ),
+          templates: collection(state, state.templates, "templateId", "template"),
+          zones: collection(state, state.zones, "zoneId", "zone"),
+          gtag_config: collection(state, state.gtagConfigs, "gtagConfigId", "gtagConfig"),
           built_in_variables: {
             list: async ({ parent }: { parent: string }) => {
               state.calls.push("built_in_variables.list");
