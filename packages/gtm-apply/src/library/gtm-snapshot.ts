@@ -123,7 +123,6 @@ const DATA_KEYS = [
   "customTemplate",
   "client",
   "transformation",
-  "zone",
   "manifest",
   "encoding",
   "recipes",
@@ -159,7 +158,6 @@ export class GtmSnapshot<
   customTemplate!: tagmanager_v2.Schema$CustomTemplate[];
   client!: tagmanager_v2.Schema$Client[];
   transformation!: tagmanager_v2.Schema$Transformation[];
-  zone!: tagmanager_v2.Schema$Zone[];
   manifest!: LibraryManifest | null;
   encoding!: { name: string; options?: Record<string, unknown> };
   recipes!: Recipe[];
@@ -287,9 +285,6 @@ export class GtmSnapshot<
   }
   get templates(): ReadonlyMap<string, tagmanager_v2.Schema$CustomTemplate> {
     return byName(this.customTemplate);
-  }
-  get zones(): ReadonlyMap<string, tagmanager_v2.Schema$Zone> {
-    return byName(this.zone);
   }
   get builtIns(): ReadonlySet<string> {
     return new Set(this.spec.builtInVariable ?? []);

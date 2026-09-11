@@ -31,7 +31,6 @@ function entities(
   | "customTemplate"
   | "client"
   | "transformation"
-  | "zone"
 > {
   return {
     folder: cv.folder ?? [],
@@ -43,7 +42,6 @@ function entities(
     customTemplate: cv.customTemplate ?? [],
     client: cv.client ?? [],
     transformation: cv.transformation ?? [],
-    zone: cv.zone ?? [],
   };
 }
 
@@ -89,29 +87,18 @@ export async function pullSnapshot(
     }
     const parent = workspace.path;
     const ws = api.workspaces;
-    const [
-      folder,
-      variable,
-      trigger,
-      tag,
-      builtIn,
-      gtag,
-      template,
-      clientRes,
-      transformation,
-      zone,
-    ] = await Promise.all([
-      client.call(() => ws.folders.list({ parent })),
-      client.call(() => ws.variables.list({ parent })),
-      client.call(() => ws.triggers.list({ parent })),
-      client.call(() => ws.tags.list({ parent })),
-      client.call(() => ws.built_in_variables.list({ parent })),
-      client.call(() => ws.gtag_config.list({ parent })),
-      client.call(() => ws.templates.list({ parent })),
-      client.call(() => ws.clients.list({ parent })),
-      client.call(() => ws.transformations.list({ parent })),
-      client.call(() => ws.zones.list({ parent })),
-    ]);
+    const [folder, variable, trigger, tag, builtIn, gtag, template, clientRes, transformation] =
+      await Promise.all([
+        client.call(() => ws.folders.list({ parent })),
+        client.call(() => ws.variables.list({ parent })),
+        client.call(() => ws.triggers.list({ parent })),
+        client.call(() => ws.tags.list({ parent })),
+        client.call(() => ws.built_in_variables.list({ parent })),
+        client.call(() => ws.gtag_config.list({ parent })),
+        client.call(() => ws.templates.list({ parent })),
+        client.call(() => ws.clients.list({ parent })),
+        client.call(() => ws.transformations.list({ parent })),
+      ]);
     const latest = await client.call(() => api.version_headers.latest({ parent: ref.path }));
     return {
       ...base,
@@ -127,7 +114,6 @@ export async function pullSnapshot(
       customTemplate: template.data.template ?? [],
       client: clientRes.data.client ?? [],
       transformation: transformation.data.transformation ?? [],
-      zone: zone.data.zone ?? [],
     };
   }
 

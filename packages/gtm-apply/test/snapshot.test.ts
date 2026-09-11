@@ -52,7 +52,6 @@ async function seedVersion(client: GtmClient, state: FakeState): Promise<string>
     requestBody: { name: "Drop PII", type: "exclude_parameters" },
   });
   await ws.templates.create({ parent, requestBody: { name: "Tpl", templateData: "___INFO___" } });
-  await ws.zones.create({ parent, requestBody: { name: "Zone" } });
   await ws.gtag_config.create({ parent, requestBody: { type: "googtag" } });
   await ws.built_in_variables.create({ parent, type: ["requestPath"] });
   await ws.create_version({ path: parent, requestBody: { name: "v1" } });
@@ -92,7 +91,6 @@ describe("pullSnapshot", () => {
     expect(snap.client.map((c) => c.name)).toEqual(["GA4 Client"]);
     expect(snap.transformation.map((t) => t.name)).toEqual(["Drop PII"]);
     expect(snap.customTemplate.map((t) => t.name)).toEqual(["Tpl"]);
-    expect(snap.zone.map((z) => z.name)).toEqual(["Zone"]);
     expect(snap.gtagConfig.map((g) => g.type)).toEqual(["googtag"]);
     expect(snap.builtInVariable.map((b) => b.type)).toEqual(["requestPath"]);
     expect(snap.source).toEqual({ container: "GTM-SRV123" });
@@ -119,7 +117,6 @@ describe("pullSnapshot", () => {
       client: s.client.map((e) => e.name),
       transformation: s.transformation.map((e) => e.name),
       customTemplate: s.customTemplate.map((e) => e.name),
-      zone: s.zone.map((e) => e.name),
       gtagConfig: s.gtagConfig.map((e) => e.type),
       builtIns: s.builtInVariable.map((e) => e.type),
     });

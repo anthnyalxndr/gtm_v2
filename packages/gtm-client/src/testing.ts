@@ -8,7 +8,6 @@ type Workspace = tagmanager_v2.Schema$Workspace;
 type Client = tagmanager_v2.Schema$Client;
 type Transformation = tagmanager_v2.Schema$Transformation;
 type CustomTemplate = tagmanager_v2.Schema$CustomTemplate;
-type Zone = tagmanager_v2.Schema$Zone;
 type GtagConfig = tagmanager_v2.Schema$GtagConfig;
 type Environment = tagmanager_v2.Schema$Environment;
 type Destination = tagmanager_v2.Schema$Destination;
@@ -44,7 +43,6 @@ export interface FakeEntities {
   client: Client[];
   transformation: Transformation[];
   template: CustomTemplate[];
-  zone: Zone[];
   gtagConfig: GtagConfig[];
   builtIns: string[];
 }
@@ -60,7 +58,6 @@ export interface FakeState {
   clients: Client[];
   transformations: Transformation[];
   templates: CustomTemplate[];
-  zones: Zone[];
   gtagConfigs: GtagConfig[];
   environments: Environment[];
   destinations: Destination[];
@@ -92,7 +89,6 @@ function removeWorkspace(state: FakeState, wsPath: string): void {
   prune(state.clients, inWs);
   prune(state.transformations, inWs);
   prune(state.templates, inWs);
-  prune(state.zones, inWs);
   prune(state.gtagConfigs, inWs);
   prune(state.builtIns, (b) => b.workspacePath === wsPath);
   prune(state.workspaces, (w) => w.path === wsPath);
@@ -120,7 +116,6 @@ export function emptyEntities(): FakeEntities {
     client: [],
     transformation: [],
     template: [],
-    zone: [],
     gtagConfig: [],
     builtIns: [],
   };
@@ -136,7 +131,6 @@ function versionBody(e: FakeEntities) {
     client: e.client,
     transformation: e.transformation,
     customTemplate: e.template,
-    zone: e.zone,
     gtagConfig: e.gtagConfig,
     builtInVariable: e.builtIns.map((t) => ({ type: t })),
   };
@@ -207,7 +201,6 @@ export function createFakeService(seed: FakeSeed = {}): {
     clients: [],
     transformations: [],
     templates: [],
-    zones: [],
     gtagConfigs: [],
     environments: seed.environments ?? [],
     destinations: seed.destinations ?? [],
@@ -388,7 +381,6 @@ export function createFakeService(seed: FakeSeed = {}): {
                 state.transformations
               );
               clone(latest.snapshot.template, "templateId", "template", state.templates);
-              clone(latest.snapshot.zone, "zoneId", "zone", state.zones);
               clone(latest.snapshot.gtagConfig, "gtagConfigId", "gtagConfig", state.gtagConfigs);
               for (const t of latest.snapshot.builtIns)
                 state.builtIns.push({ workspacePath: wsPath, type: t });
@@ -433,7 +425,6 @@ export function createFakeService(seed: FakeSeed = {}): {
                 client: inWs(state.clients),
                 transformation: inWs(state.transformations),
                 template: inWs(state.templates),
-                zone: inWs(state.zones),
                 gtagConfig: inWs(state.gtagConfigs),
                 builtIns: state.builtIns.filter((b) => b.workspacePath === path).map((b) => b.type),
               },
@@ -454,7 +445,6 @@ export function createFakeService(seed: FakeSeed = {}): {
             "transformation"
           ),
           templates: collection(state, state.templates, "templateId", "template"),
-          zones: collection(state, state.zones, "zoneId", "zone"),
           gtag_config: collection(state, state.gtagConfigs, "gtagConfigId", "gtagConfig"),
           built_in_variables: {
             list: async ({ parent }: { parent: string }) => {

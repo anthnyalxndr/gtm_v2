@@ -28,7 +28,6 @@ export const ROOTS = [
   "ContainerVersionHeader",
   "Client",
   "Transformation",
-  "Zone",
   "CustomTemplate",
   "GtagConfig",
 ];

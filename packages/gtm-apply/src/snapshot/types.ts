@@ -43,5 +43,4 @@ export interface ApiSnapshotData {
   customTemplate: tagmanager_v2.Schema$CustomTemplate[];
   client: tagmanager_v2.Schema$Client[];
   transformation: tagmanager_v2.Schema$Transformation[];
-  zone: tagmanager_v2.Schema$Zone[];
 }

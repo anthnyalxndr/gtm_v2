@@ -75,7 +75,7 @@ Spec spec.json has 2 problem(s):
 
 ### Snapshots
 
-A spec is the apply-able part of a container. A snapshot is everything the API exposes for it, as the API returns it: the container and its type (from `usageContext`), the workspace or version read, the container's environments and the one serving that version, linked Google tag destinations, version headers, and every entity collection including gtag configs, custom templates, clients, transformations and zones. It's the input for a library, an audit, or anything that needs more than tags, triggers and variables.
+A spec is the apply-able part of a container. A snapshot is everything the API exposes for it, as the API returns it: the container and its type (from `usageContext`), the workspace or version read, the container's environments and the one serving that version, linked Google tag destinations, version headers, and every entity collection including gtag configs, custom templates, clients and transformations. It's the input for a library, an audit, or anything that needs more than tags, triggers and variables.
 
 ```bash
 gtm-apply snapshot --container GTM-XXXXXXX                  # latest version
@@ -88,7 +88,7 @@ From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snap
 
 ### Container types
 
-A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates, zones and gtag configs are carried in snapshots but not yet applied.
+A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates and gtag configs are carried in snapshots but not yet applied.
 
 ## Applying a spec
 
