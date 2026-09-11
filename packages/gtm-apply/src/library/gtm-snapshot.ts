@@ -68,6 +68,14 @@ export type RecipeNameOf<S> = S extends {
   ? N & string
   : string;
 
+type ConstantNames<S> = S extends { readonly variable: readonly (infer V)[] }
+  ? V extends { readonly name: infer N extends string; readonly type: "c" }
+    ? N
+    : never
+  : never;
+/** Literal names of the library's constant variables when the data is a const literal; string otherwise. */
+export type ConstantNameOf<S> = [ConstantNames<S>] extends [never] ? string : ConstantNames<S>;
+
 /** Tag types grouped into destination families a plan can enable or disable. */
 export const DEFAULT_DESTINATION_FAMILIES: Readonly<Record<string, string>> = {
   gaawe: "ga4",
@@ -129,7 +137,10 @@ const DATA_KEYS = [
  *   const lib = await new GtmSnapshot(client, { container: "GTM-XXXX" }).init();
  *   const same = GtmSnapshot.fromData(JSON.parse(await readFile("library.json", "utf-8")));
  */
-export class GtmSnapshot<R extends string = string> implements GtmSnapshotData {
+export class GtmSnapshot<
+  R extends string = string,
+  C extends string = string,
+> implements GtmSnapshotData {
   pulledAt!: string;
   source!: SnapshotSource;
   container!: tagmanager_v2.Schema$Container;
@@ -187,8 +198,11 @@ export class GtmSnapshot<R extends string = string> implements GtmSnapshotData {
   static fromData<const S extends GtmSnapshotInput>(
     data: S,
     options: GtmSnapshotOptions = {}
-  ): GtmSnapshot<RecipeNameOf<S>> {
-    return new GtmSnapshot<RecipeNameOf<S>>(data as unknown as GtmSnapshotData, options);
+  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>> {
+    return new GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>>(
+      data as unknown as GtmSnapshotData,
+      options
+    );
   }
 
   /** Pull from Tag Manager. A no-op once loaded. */
@@ -243,6 +257,12 @@ export class GtmSnapshot<R extends string = string> implements GtmSnapshotData {
   }
   get recipeNames(): R[] {
     return [...this.#index.keys()] as R[];
+  }
+  /** Names of the library's constant variables (type "c"), the manifest excluded. */
+  get constantNames(): C[] {
+    return (this.spec.variable ?? [])
+      .filter((v) => v.type === "c" && v.name && v.name !== MANIFEST_VARIABLE_NAME)
+      .map((v) => v.name as C);
   }
   recipe(name: R): Recipe | undefined {
     return this.#index.get(name);

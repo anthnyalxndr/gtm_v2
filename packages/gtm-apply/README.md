@@ -217,31 +217,37 @@ lib.lint();                                        // naming issues included
 lib.externalNameOf("form_submit", dependency);     // "GTM - form_submit"
 ```
 
-## Conversion recipes
+## Tracking plans
 
-For the common onboarding case, recipes compile to spec fragments and go through the same engine:
+A customer's onboarding is a plan: which recipes to install, which destination families to keep, and the values of the constants those recipes need. `defineTrackingPlan(library, plan)` checks recipe and constant names against the library's literal types, so a typo is a compile error. `compilePlan` selects the recipes, fills in the constants, and reports problems before any API call: a constant whose library value is a placeholder (`<AW-XXXXXXXXX>`) with no value in the plan, a value that fails a dependency's pattern, a constant that isn't in the library, and naming violations when the library declares conventions. A supplied value that still looks like a placeholder is a warning. `applyPlan` compiles, optionally writes the spec to a file, and applies it through the same engine.
 
 ```ts
-import { GtmClient, applyConversions, formatPlan } from "@anthnyalxndr/gtm-apply";
+import { applyPlan, defineTrackingPlan } from "@anthnyalxndr/gtm-apply";
+import { library } from "@anthnyalxndr/gtm-web-recipes";
 
-const client = new GtmClient();
-await client.init();
-
-const { plan } = await applyConversions(client, {
-  container: "GTM-XXXXXXX",
-  workspace: "conversions-2026-09",
-  conversions: [
-    { kind: "ga4-event", name: "GA4 - generate_lead", event: "generate_lead",
-      measurementId: "G-XXXXXXX", trigger: { type: "formSubmit", formId: "contact" } },
-    { kind: "google-ads", name: "Ads - Lead", conversionId: "AW-123", label: "xyz",
-      trigger: { type: "pageview", pathEquals: "/thank-you" } },
-  ],
-  dryRun: true,
+const plan = defineTrackingPlan(library, {
+  recipes: ["form_submit", "call_click"],
+  destinations: ["ga4", "googleAds"],
+  constants: {
+    "Const - GA4 Measurement ID": "G-XXXXXXX",
+    "Const - Ads Conversion ID": "AW-123456789",
+    "Const - Ads Label - form_submit": "AbC-dEf",
+  },
 });
-console.log(formatPlan(plan));
+
+const { plan: ops, warnings } = await applyPlan(client, {
+  library, plan, container: "GTM-XXXXXXX", workspace: "onboarding-2026-09", dryRun: true,
+  writeSpecTo: "compiled.json",
+});
 ```
 
-Trigger recipes: `pageview` (with `pathEquals` or `pathContains`), `formSubmit` (by form id), `customEvent`. The Google Ads recipe stores the conversion id in a `Const - Google Ads Conversion ID` variable that the tag references.
+Or from the CLI, with a plan module and a library file or module:
+
+```bash
+gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --plan plan.ts --library library.json --dry-run
+```
+
+A content package holds the library: its pull script reads the template container with `GtmSnapshot`, lints it, and writes the snapshot as a `const` TypeScript module with `libraryModuleSource`, so recipe and constant names are literal types wherever the package is imported. See `packages/gtm-web-recipes`.
 
 ## Ad hoc work: use gtm-cli
 

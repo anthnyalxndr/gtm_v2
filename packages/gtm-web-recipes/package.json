@@ -1,0 +1,44 @@
+{
+  "name": "@anthnyalxndr/gtm-web-recipes",
+  "version": "0.1.0",
+  "description": "Recipe library for Google Tag Manager web containers: a committed snapshot of the Web Template container, typed for gtm-apply tracking plans.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthnyalxndr/gtm_v2.git",
+    "directory": "packages/gtm-web-recipes"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "pull": "tsx scripts/pull.ts",
+    "sample": "tsx scripts/sample.ts"
+  },
+  "dependencies": {
+    "@anthnyalxndr/gtm-apply": "workspace:^"
+  },
+  "peerDependencies": {
+    "@anthnyalxndr/gtm-client": "workspace:^"
+  },
+  "devDependencies": {
+    "@anthnyalxndr/gtm-client": "workspace:^"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

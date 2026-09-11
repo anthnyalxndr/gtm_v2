@@ -28,6 +28,8 @@ export interface LibraryManifest {
   destinations?: Record<string, string>;
   /** Naming rules layered over DEFAULT_CONVENTIONS. Present (even empty) turns naming lint on. */
   conventions?: ConventionOverrides;
+  /** Regular expression for constant values a plan must replace; default "^<[^>]*>$". */
+  placeholderPattern?: string;
 }
 
 export function findManifestVariable(spec: ContainerSpec): VariableSpec | undefined {

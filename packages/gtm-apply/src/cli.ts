@@ -7,6 +7,9 @@ import { formatIssue, validateSpec } from "./spec/validate.js";
 import { executePlan } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
 import { pullSnapshot } from "./snapshot/pull.js";
+import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
+import { applyPlan, compilePlan, type TrackingPlan } from "./plan/tracking-plan.js";
+import { formatIssue as formatSpecIssue } from "./spec/validate.js";
 
 export type CliCommand = "apply" | "normalize" | "export" | "snapshot";
 
@@ -21,11 +24,16 @@ export interface CliArgs {
   live: boolean;
   versionName?: string;
   version?: string;
+  plan?: string;
+  library?: string;
+  writeSpec?: string;
 }
 
 export const USAGE = `Usage:
   gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>]
       (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --plan <plan.ts> --library <library.json|module> [--write-spec <file>] [...]
+      (compile a tracking plan against a library, then apply it)
   gtm-apply normalize <export.json>
   gtm-apply export --container GTM-XXXXXXX [--live | --workspace <name>]
       (default: the latest version, published or not)
@@ -45,6 +53,9 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       live: { type: "boolean", default: false },
       "version-name": { type: "string" },
       version: { type: "string" },
+      plan: { type: "string" },
+      library: { type: "string" },
+      "write-spec": { type: "string" },
     },
   });
   const command = positionals[0];
@@ -62,6 +73,9 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     live: values.live ?? false,
     versionName: values["version-name"],
     version: values.version,
+    plan: values.plan,
+    library: values.library,
+    writeSpec: values["write-spec"],
   };
 }
 
@@ -133,6 +147,7 @@ export async function runCli(
       return 0;
     }
     case "apply": {
+      if (args.plan) return applyFromPlan(args, client, out);
       if (!args.container || !args.workspace || !args.spec) {
         throw new Error(`apply needs --container, --workspace and --spec.\n${USAGE}`);
       }
@@ -168,4 +183,52 @@ export async function runCli(
       return 0;
     }
   }
+}
+
+async function loadLibrary(path: string): Promise<GtmSnapshot> {
+  const loaded = await loadSpecFile(path);
+  if (loaded instanceof GtmSnapshot) return loaded;
+  return GtmSnapshot.fromData(loaded as GtmSnapshotData);
+}
+
+async function applyFromPlan(
+  args: CliArgs,
+  client: GtmClient,
+  out: (line: string) => void
+): Promise<number> {
+  if (!args.container || !args.workspace || !args.plan || !args.library) {
+    throw new Error(`apply with --plan needs --container, --workspace and --library.\n${USAGE}`);
+  }
+  const library = await loadLibrary(args.library);
+  const plan = (await loadSpecFile(args.plan)) as TrackingPlan;
+  const compiled = compilePlan(library, plan);
+  for (const w of compiled.warnings) out(`[?] ${w}`);
+  if (compiled.issues.length > 0) {
+    out(`Plan ${args.plan} has ${compiled.issues.length} problem(s):`);
+    for (const issue of compiled.issues) out(`[!] ${formatSpecIssue(issue)}`);
+    return 1;
+  }
+  await client.init();
+  const outcome = await applyPlan(client, {
+    library,
+    plan,
+    container: args.container,
+    workspace: args.workspace,
+    dryRun: args.dryRun,
+    publish: args.publish,
+    versionName: args.versionName,
+    writeSpecTo: args.writeSpec,
+  });
+  out(formatPlan(outcome.plan));
+  if (outcome.plan.errors.length > 0) return 1;
+  if (args.dryRun) {
+    out("Dry run: no changes made.");
+    return 0;
+  }
+  if (outcome.result?.versionPath) {
+    out(`Version: ${outcome.result.versionPath}${outcome.result.published ? " (published)" : ""}`);
+  } else {
+    out("No changes: no version created.");
+  }
+  return 0;
 }

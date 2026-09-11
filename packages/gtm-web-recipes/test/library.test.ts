@@ -1,0 +1,61 @@
+import { describe, it, expect } from "vitest";
+import { GtmClient } from "@anthnyalxndr/gtm-client";
+import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
+import { applyPlan, compilePlan, defineTrackingPlan, GtmSnapshot } from "@anthnyalxndr/gtm-apply";
+import { data, library } from "../src/index.js";
+import plan from "../plan.example.js";
+
+describe("gtm-web-recipes", () => {
+  it("ships a library with three event recipes and typed constants", () => {
+    expect(library.recipeNames).toEqual(["form_submit", "email_click", "call_click"]);
+    expect(library.constantNames).toEqual([
+      "Const - GA4 Measurement ID",
+      "Const - Ads Conversion ID",
+      "Const - Ads Label - form_submit",
+      "Const - Ads Label - email_click",
+      "Const - Ads Label - call_click",
+    ]);
+    expect(library.recipe("form_submit")?.description).toMatch(/lead form/i);
+    expect(library.encoding.name).toBe("metadata");
+    expect(library.lint()).toEqual([]);
+    expect(GtmSnapshot.fromData(data).recipes).toEqual(library.recipes);
+  });
+
+  it("type-checks plans against the library", () => {
+    defineTrackingPlan(library, { recipes: ["email_click"] });
+    // @ts-expect-error not a recipe of this library
+    defineTrackingPlan(library, { recipes: ["purchase"] });
+    // @ts-expect-error not a constant of this library
+    defineTrackingPlan(library, { recipes: ["email_click"], constants: { "Const - Nope": "x" } });
+    expect(compilePlan(library, plan).issues).toEqual([]);
+  });
+
+  it("applies the example plan to a customer container", async () => {
+    const { service, state } = createFakeService({
+      containers: [
+        { accountId: "1", containerId: "11", publicId: "GTM-CUST", name: "customer.com" },
+      ],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    const outcome = await applyPlan(client, {
+      library,
+      plan,
+      container: "GTM-CUST",
+      workspace: "onboarding",
+    });
+    expect(outcome.plan.errors).toEqual([]);
+    expect(outcome.warnings).toEqual([]);
+    const snap = latestSnapshot(state);
+    expect(snap.tag.map((t) => t.name).sort()).toEqual([
+      "Ads - call_click",
+      "Ads - form_submit",
+      "Conversion Linker",
+      "GA4 - call_click",
+      "GA4 - form_submit",
+    ]);
+    expect(snap.variable.find((v) => v.name === "Const - GA4 Measurement ID")?.parameter).toEqual([
+      { type: "template", key: "value", value: "G-XXXXXXX" },
+    ]);
+    expect(snap.tag.every((t) => !t.monitoringMetadata?.map)).toBe(true);
+  });
+});

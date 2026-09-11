@@ -51,6 +51,16 @@ importers:
         specifier: ^11.0.2
         version: 11.0.2
 
+  packages/gtm-web-recipes:
+    dependencies:
+      '@anthnyalxndr/gtm-apply':
+        specifier: workspace:^
+        version: link:../gtm-apply
+    devDependencies:
+      '@anthnyalxndr/gtm-client':
+        specifier: workspace:^
+        version: link:../gtm-client
+
 packages:
 
   '@esbuild/aix-ppc64@0.28.2':

@@ -35,6 +35,9 @@ describe("parseCliArgs", () => {
       live: false,
       versionName: "v1",
       version: undefined,
+      plan: undefined,
+      library: undefined,
+      writeSpec: undefined,
     });
   });
 

@@ -3,10 +3,11 @@ id: TASK-1
 title: >-
   The content package ships a committed library snapshot and generated types,
   and customers apply recipes from a typed plan
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-09 19:27'
-updated_date: '2026-09-11 06:30'
+updated_date: '2026-09-11 06:52'
 labels:
   - sdk
   - recipes
@@ -33,3 +34,12 @@ Superseded design: applyConversions is the leftover of the first plan, with hand
 - [ ] #5 applyConversions, ga4Event, googleAdsConversion and triggerRecipeToSpec are removed from the source and exports; README and example.ts use the plan
 - [ ] #6 Tests cover selection across recipes, destination filtering, constant checks, and an end-to-end apply against the fake with form_submit, email_click and call_click recipes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. gtm-apply: add src/plan/tracking-plan.ts with TrackingPlan, defineTrackingPlan(library, plan) typed by the library's literal recipe and constant names, compilePlan (select, constant substitution with placeholder detection, dependency pattern checks, naming check when conventions are in effect) and applyPlan (compile, optional write, applySpec). Add libraryModuleSource(data) that emits a const TypeScript module. CLI apply gains --plan and --library.
+2. Remove applyConversions, ga4Event, googleAdsConversion, triggerRecipeToSpec and their types; keep mergeSpecs in src/spec/merge.ts; update index, README, example.ts.
+3. New workspace package packages/gtm-web-recipes: sample library module built from the fake (form_submit, email_click, call_click), src/index.ts exporting the GtmSnapshot instance and RecipeName, scripts/pull.ts against GTM-TPLKC7QP that lints and rewrites src/library.ts, plan.example.ts, tests.
+4. Tests for selection across recipes, destination filtering, constant checks and an end-to-end apply; pnpm verify; commit; PR.
+<!-- SECTION:PLAN:END -->
