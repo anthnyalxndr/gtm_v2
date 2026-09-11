@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import type { GtmSnapshot, GtmSnapshotData } from "../library/gtm-snapshot.js";
+import type { PlaceholderMetadata } from "../library/metadata.js";
 import { checkNames } from "../spec/conventions.js";
 import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
 import type { ContainerSpec, VariableSpec } from "../spec/types.js";
@@ -27,8 +28,7 @@ export function defineTrackingPlan<R extends string, C extends string>(
   return plan;
 }
 
-/** Library values that mean "fill me in": `<AW-XXXXXXXXX>` and the like. Override in the manifest. */
-export const DEFAULT_PLACEHOLDER_PATTERN = "^<[^>]*>$";
+export { DEFAULT_PLACEHOLDER_PATTERN } from "../library/manifest.js";
 
 export interface CompiledPlan {
   spec: ContainerSpec;
@@ -46,6 +46,14 @@ export class TrackingPlanError extends Error {
 const constantValue = (v: VariableSpec): string | undefined =>
   v.parameter?.find((p) => p.key === "value")?.value;
 
+/** ", e.g. /contact" style suffix describing what a placeholder wants, from its metadata entry. */
+const describe = (entry: PlaceholderMetadata | undefined): string => {
+  if (!entry) return "";
+  const what = [entry.kind, entry.description].filter(Boolean).join(": ");
+  const example = entry.example ? `, e.g. ${entry.example}` : "";
+  return what || example ? `; ${what}${example}` : "";
+};
+
 const withValue = (v: VariableSpec, value: string): VariableSpec => ({
   ...v,
   parameter: [
@@ -56,7 +64,8 @@ const withValue = (v: VariableSpec, value: string): VariableSpec => ({
 
 /**
  * Turn a plan into the spec to apply: select the recipes, fill in constants,
- * and check placeholders, dependency patterns and names. Pure; no API calls.
+ * and check placeholders, placeholder and dependency patterns, and names.
+ * Pure; no API calls.
  */
 export function compilePlan<R extends string, C extends string>(
   library: GtmSnapshot<R, C>,
@@ -64,9 +73,7 @@ export function compilePlan<R extends string, C extends string>(
 ): CompiledPlan {
   const issues: SpecIssue[] = [];
   const warnings: string[] = [];
-  const placeholder = new RegExp(
-    library.manifest?.placeholderPattern ?? DEFAULT_PLACEHOLDER_PATTERN
-  );
+  const placeholder = library.placeholderPattern;
   const supplied = (plan.constants ?? {}) as Record<string, string | undefined>;
 
   const spec = library.select(plan.recipes, { destinations: plan.destinations });
@@ -74,11 +81,18 @@ export function compilePlan<R extends string, C extends string>(
   spec.variable = (spec.variable ?? []).map((v) => {
     if (v.type !== "c" || !v.name) return v;
     const value = supplied[v.name];
+    const entry = library.metadataOf({ kind: "variable", name: v.name })?.placeholder;
     if (value !== undefined) {
       if (placeholder.test(value)) {
         warnings.push(
           `constant "${v.name}" still holds the placeholder value ${JSON.stringify(value)}`
         );
+      } else if (entry?.pattern && !new RegExp(entry.pattern).test(value)) {
+        issues.push({
+          entity: `variable "${v.name}"`,
+          path: "value",
+          message: `must match /${entry.pattern}/ (got ${JSON.stringify(value)}${describe(entry)})`,
+        });
       }
       constants.set(v.name, value);
       return withValue(v, value);
@@ -88,7 +102,7 @@ export function compilePlan<R extends string, C extends string>(
       issues.push({
         entity: `variable "${v.name}"`,
         path: "value",
-        message: `needs a value in the plan's constants (library holds ${JSON.stringify(libraryValue)})`,
+        message: `needs a value in the plan's constants (library holds ${JSON.stringify(libraryValue)}${describe(entry)})`,
       });
     }
     constants.set(v.name, libraryValue);

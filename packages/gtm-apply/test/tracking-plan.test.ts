@@ -6,6 +6,7 @@ import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 import { GtmSnapshot } from "../src/library/gtm-snapshot.js";
 import { manifestVariable } from "../src/library/manifest.js";
+import { formatNotes, type PlaceholderMetadata } from "../src/library/metadata.js";
 import {
   applyPlan,
   compilePlan,
@@ -18,21 +19,19 @@ import { defineContainer } from "../src/spec/types.js";
 import { formatIssue } from "../src/spec/validate.js";
 import { parseCliArgs, runCli } from "../src/cli.js";
 
-const meta = (recipes: string) => ({
-  type: "map" as const,
-  map: [{ type: "template" as const, key: "recipes", value: recipes }],
-});
-const constant = (name: string, value: string) => ({
+const meta = (recipes: string, text = "") => formatNotes(text, { recipes: recipes.split(", ") });
+const constant = (name: string, value: string, placeholder?: PlaceholderMetadata) => ({
   name,
   type: "c",
   parameter: [{ type: "template" as const, key: "value", value }],
+  ...(placeholder ? { notes: formatNotes("", { placeholder }) } : {}),
 });
 const conversion = (recipe: string, trigger: string) => [
   {
     name: `GA4 - ${recipe}`,
     type: "gaawe",
     firingTriggerName: [trigger],
-    monitoringMetadata: meta(recipe),
+    notes: meta(recipe),
     parameter: [
       { type: "template" as const, key: "eventName", value: recipe },
       {
@@ -46,7 +45,7 @@ const conversion = (recipe: string, trigger: string) => [
     name: `Ads - ${recipe}`,
     type: "awct",
     firingTriggerName: [trigger],
-    monitoringMetadata: meta(recipe),
+    notes: meta(recipe),
     setupTag: [{ tagName: "Conversion Linker" }],
     parameter: [
       { type: "template" as const, key: "conversionId", value: "{{Const - Ads Conversion ID}}" },
@@ -62,7 +61,6 @@ const conversion = (recipe: string, trigger: string) => [
 export const template = defineContainer({
   variable: [
     manifestVariable({
-      encoding: { name: "metadata" },
       conventions: {},
       recipes: {
         form_submit: {
@@ -80,11 +78,19 @@ export const template = defineContainer({
         call_click: { description: "Phone link clicked" },
       },
     }),
-    constant("Const - GA4 Measurement ID", "<G-XXXXXXX>"),
-    constant("Const - Ads Conversion ID", "<AW-XXXXXXXXX>"),
-    constant("Const - Ads Label - form_submit", "<label>"),
-    constant("Const - Ads Label - email_click", "<label>"),
-    constant("Const - Ads Label - call_click", "<label>"),
+    constant("Const - GA4 Measurement ID", "<G-XXXXXXX>", {
+      kind: "ga4MeasurementId",
+      description: "Measurement ID of the GA4 data stream",
+      example: "G-ABC123",
+      pattern: "^G-[A-Z0-9]+$",
+    }),
+    constant("Const - Ads Conversion ID", "<AW-XXXXXXXXX>", {
+      kind: "adsConversionId",
+      example: "AW-123456789",
+    }),
+    constant("Const - Ads Label - form_submit", "<label>", { kind: "adsConversionLabel" }),
+    constant("Const - Ads Label - email_click", "<label>", { kind: "adsConversionLabel" }),
+    constant("Const - Ads Label - call_click", "<label>", { kind: "adsConversionLabel" }),
     constant("Const - Currency", "USD"),
   ],
   trigger: [
@@ -135,7 +141,7 @@ export const template = defineContainer({
     {
       name: "Conversion Linker",
       type: "gclidw",
-      monitoringMetadata: meta("form_submit, email_click, call_click"),
+      notes: meta("form_submit, email_click, call_click"),
     },
   ],
 });
@@ -213,13 +219,25 @@ describe("compilePlan", () => {
       } as Record<string, string>,
     });
     expect(issues.map(formatIssue)).toEqual([
-      'variable "Const - GA4 Measurement ID": value needs a value in the plan\'s constants (library holds "<G-XXXXXXX>")',
+      'variable "Const - GA4 Measurement ID": value needs a value in the plan\'s constants (library holds "<G-XXXXXXX>"; ga4MeasurementId: Measurement ID of the GA4 data stream, e.g. G-ABC123)',
       "plan: constants.Const - Nope is not a constant in the library",
       'recipe "form_submit": dependencies[0] googleAds conversionAction in "Const - Ads Label - form_submit" must match /^[A-Za-z0-9_-]{5,}$/ (got "no")',
     ]);
     expect(warnings).toEqual([
       'constant "Const - Ads Conversion ID" still holds the placeholder value "<AW-XXXXXXXXX>"',
       'constant "Const - Ads Label - call_click" is not used by the selected recipes',
+    ]);
+  });
+
+  it("rejects a supplied value that fails the placeholder's pattern", async () => {
+    const { library } = await fake();
+    const { issues } = compilePlan(library, {
+      recipes: ["email_click"],
+      destinations: ["ga4"],
+      constants: { "Const - GA4 Measurement ID": "UA-1" },
+    });
+    expect(issues.map(formatIssue)).toEqual([
+      'variable "Const - GA4 Measurement ID": value must match /^G-[A-Z0-9]+$/ (got "UA-1"; ga4MeasurementId: Measurement ID of the GA4 data stream, e.g. G-ABC123)',
     ]);
   });
 
@@ -256,7 +274,8 @@ describe("applyPlan", () => {
     expect(first.result?.versionPath).toBeDefined();
     const snap = latestSnapshot(state);
     expect(snap.tag).toHaveLength(7);
-    expect(snap.tag.every((t) => !t.monitoringMetadata?.map)).toBe(true);
+    expect(snap.tag.every((t) => !t.notes?.includes("---"))).toBe(true);
+    expect(snap.variable.every((v) => !v.notes?.includes("---"))).toBe(true);
     expect(snap.variable.map((v) => v.name)).not.toContain("Library - Manifest");
     const written = JSON.parse(await readFile(join(dir, "compiled.json"), "utf-8"));
     expect(written.tag).toHaveLength(7);

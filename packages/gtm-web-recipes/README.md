@@ -34,7 +34,15 @@ Form submissions come from a dataLayer event the site emits on success, never fr
 
 ## How recipes are declared
 
-In the template container, each tag that belongs to a recipe carries a `recipes` key in its Additional Tag Metadata. Everything a recipe needs beyond its tags, triggers, variables and built-ins, is found by following references. Customer-specific values are `Const - …` variables whose library value is a placeholder such as `<G-XXXXXXXXXX>`; a plan must supply them. A `Library - Manifest` constant in the container names the encoding, describes recipes, and lists each recipe's Google Ads conversion action, conversion tracking id and GA4 key event dependencies.
+In the template container, library metadata lives in entity notes. The text above a line that is exactly `---` is the note the customer receives; the JSON object below it is the library's, and never reaches a customer container. A tag that belongs to a recipe declares it there:
+
+```
+Sends the call_click event to GA4.
+---
+{"recipes": ["call_click"]}
+```
+
+Everything a recipe needs beyond its tags, triggers, variables and built-ins, is found by following references. Customer-specific values are `Const - …` variables whose library value is a placeholder such as `<G-XXXXXXXXXX>` and whose notes carry a `placeholder` entry (`kind`, `example`, `pattern`); a plan must supply them, and compilePlan checks a supplied value against the entry's pattern. This is where the bare Google Ads conversion id is documented (`kind: adsConversionId`, no `AW-` prefix, `pattern: ^[0-9]+$`), rather than repeated in the manifest. A `Library - Manifest` constant in the container describes recipes and lists each recipe's Google Ads conversion action dependency. The pulled `src/library.ts` carries every parsed trailer in its `metadata` field, keyed by `kind:name`.
 
 ## Changing the library
 
