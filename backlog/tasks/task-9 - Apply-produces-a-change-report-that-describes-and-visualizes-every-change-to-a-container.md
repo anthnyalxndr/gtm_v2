@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-11 08:48'
+updated_date: '2026-09-11 15:27'
 labels:
   - sdk
   - report
@@ -29,4 +30,5 @@ Owners and customers need to see what an apply will do or did, per entity, befor
 - [ ] #4 Renderers produce Markdown and a self-contained HTML page with summary counts, grouping by recipe and kind, and highlighted before/after values; the HTML renders with no external resources
 - [ ] #5 gtm-apply apply accepts --report <file.md|file.html> for both --spec and --plan runs, and applyPlan accepts reportTo; dry runs produce the same report as real runs
 - [ ] #6 Tests cover the diff model, recipe attribution, the snapshot staged-versus-pull case, and a snapshot test of both renderers
+- [ ] #7 gtm.push(snapshot, { workspace, container? }, options) applies a snapshot's staged state without passing the client twice, and the report can be produced for that push
 <!-- AC:END -->
