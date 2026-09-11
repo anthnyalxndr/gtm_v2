@@ -309,6 +309,26 @@ describe("GtmSnapshot", () => {
     ]);
   });
 
+  it("lints names only when the manifest or the options declare conventions", async () => {
+    const { client } = await libraryFake();
+    const quiet = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
+    expect(quiet.conventions).toBeNull();
+    expect(quiet.lint()).toEqual([]);
+    const strict = await new GtmSnapshot(
+      client,
+      { container: "GTM-TPL" },
+      {
+        conventions: { tagPrefixes: { html: "HTML - " } },
+      }
+    ).init();
+    expect(strict.conventions?.tagPrefixes.html).toBe("HTML - ");
+    expect(strict.lint().map(formatIssue)).toEqual([
+      'tag "Unrelated": name must start with "HTML - " (html tags)',
+    ]);
+    const form = strict.recipe("form_submit")!;
+    expect(strict.externalNameOf("form_submit", form.dependencies[0])).toBe("GTM - form_submit");
+  });
+
   it("falls back to the notes encoding without a manifest", async () => {
     const { service } = createFakeService({
       containers: [{ accountId: "1", containerId: "10", publicId: "GTM-NM", name: "nm" }],

@@ -13,6 +13,13 @@ import type {
   VariableSpec,
 } from "../spec/types.js";
 import type { SpecIssue } from "../spec/validate.js";
+import {
+  checkNames,
+  externalName,
+  mergeConventions,
+  type ConventionOverrides,
+  type NamingConventions,
+} from "../spec/conventions.js";
 import { closure, refKey, type EntityRef } from "./closure.js";
 import {
   notesEncoding,
@@ -78,6 +85,8 @@ export const DEFAULT_DESTINATION_FAMILIES: Readonly<Record<string, string>> = {
 export interface GtmSnapshotOptions {
   /** Override the encoding named by the manifest. */
   encoding?: RecipeEncoding;
+  /** Naming rules layered over the manifest's; turns naming lint on. */
+  conventions?: ConventionOverrides;
 }
 
 export interface SelectOptions {
@@ -266,6 +275,25 @@ export class GtmSnapshot<R extends string = string> implements GtmSnapshotData {
     return new Set(this.spec.builtInVariable ?? []);
   }
 
+  /** Naming rules in effect: defaults, then the manifest's, then the constructor's. Null when neither declares any. */
+  get conventions(): NamingConventions | null {
+    const fromManifest = this.manifest?.conventions;
+    const fromOptions = this.#options.conventions;
+    if (!fromManifest && !fromOptions) return null;
+    return mergeConventions(fromManifest, fromOptions);
+  }
+
+  /** The name a recipe's external dependency is expected to have on its platform. */
+  externalNameOf(recipeName: R, dependency: ExternalDependency): string | undefined {
+    return externalName(
+      this.conventions ?? mergeConventions(),
+      dependency.platform,
+      dependency.resource,
+      recipeName,
+      dependency.nameTemplate
+    );
+  }
+
   /** Destination family of a tag type, from the manifest's overrides then the defaults. */
   familyOf(tagType: string | null | undefined): string | undefined {
     if (!tagType) return undefined;
@@ -319,10 +347,12 @@ export class GtmSnapshot<R extends string = string> implements GtmSnapshotData {
     return out;
   }
 
-  /** Problems in how the library declares its recipes. */
+  /** Problems in how the library declares its recipes, plus naming when conventions are in effect. */
   lint(): SpecIssue[] {
     const { spec, encoding } = this.#ready();
     const issues: SpecIssue[] = [];
+    const conventions = this.conventions;
+    if (conventions) issues.push(...checkNames(spec, conventions));
     const declared = this.manifest?.recipes ? new Set(Object.keys(this.manifest.recipes)) : null;
     for (const kind of ROOT_KINDS) {
       for (const entity of spec[kind] ?? []) {

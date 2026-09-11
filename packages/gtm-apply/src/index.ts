@@ -16,6 +16,13 @@ export type { EnsureResult, EnsureAction } from "./resources/entities.js";
 export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
 export { defineContainer } from "./spec/types.js";
 export { SECTIONS_BY_CONTAINER_TYPE, ALL_SECTIONS, sectionsFor } from "./spec/kinds.js";
+export {
+  DEFAULT_CONVENTIONS,
+  mergeConventions,
+  checkNames,
+  externalName,
+} from "./spec/conventions.js";
+export type { NamingConventions, ConventionOverrides } from "./spec/conventions.js";
 export type { SpecSection } from "./spec/kinds.js";
 export type {
   ContainerSpec,

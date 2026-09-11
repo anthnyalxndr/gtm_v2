@@ -203,6 +203,20 @@ A Constant variable named `Library - Manifest` whose value is JSON. It is never 
 
 Dependencies name the constant that carries an identifier from another platform and how the resource is expected to be named there. Nothing verifies them against Google Ads or GA4 yet; `lint` only checks that the constant is in the recipe.
 
+## Naming conventions
+
+Recipes, `select`, and audits all lean on names, so the rules live in one place: `DEFAULT_CONVENTIONS` in gtm-apply. Prefixes are keyed by entity type (`gaawe` tags start with `GA4 - `, `awct` with `Ads - `, `c` variables with `Const - `, `v` with `DLV - `, `customEvent` triggers with `Custom Event - `, and so on), `patterns` add a regular expression per entity kind, `forbidden` bans characters Tag Manager rejects, and `externalNames` says what a recipe's resources are called on other platforms (`googleAds.conversionAction` is `GTM - ${recipe}`).
+
+`checkNames(spec, conventions)` reports every violating entity with the rule it breaks. Overrides layer over the defaults with `mergeConventions`, and a library carries its own under `conventions` in the manifest; a consumer such as gtm_audit passes its per-container overrides the same way. `GtmSnapshot.lint()` includes naming issues whenever the manifest or the constructor options declare conventions, and stays quiet otherwise.
+
+```ts
+const lib = await new GtmSnapshot(client, { container }, {
+  conventions: { tagPrefixes: { gaawe: "GA4 Event - " }, patterns: { folder: "^[A-Z]" } },
+}).init();
+lib.lint();                                        // naming issues included
+lib.externalNameOf("form_submit", dependency);     // "GTM - form_submit"
+```
+
 ## Conversion recipes
 
 For the common onboarding case, recipes compile to spec fragments and go through the same engine:

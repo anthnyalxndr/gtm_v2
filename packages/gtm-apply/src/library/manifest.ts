@@ -1,3 +1,4 @@
+import type { ConventionOverrides } from "../spec/conventions.js";
 import type { ContainerSpec, VariableSpec } from "../spec/types.js";
 
 /** The Constant variable that carries a library's manifest. Never referenced by a tag, so never selected. */
@@ -25,6 +26,8 @@ export interface LibraryManifest {
   recipes?: Record<string, RecipeManifestEntry>;
   /** Tag type to destination family, overriding or extending the defaults. */
   destinations?: Record<string, string>;
+  /** Naming rules layered over DEFAULT_CONVENTIONS. Present (even empty) turns naming lint on. */
+  conventions?: ConventionOverrides;
 }
 
 export function findManifestVariable(spec: ContainerSpec): VariableSpec | undefined {
