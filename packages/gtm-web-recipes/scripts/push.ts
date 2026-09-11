@@ -14,6 +14,9 @@ const container = process.env.GTM_LIBRARY ?? "GTM-TPLKC7QP";
 const workspace =
   process.env.GTM_LIBRARY_WORKSPACE ?? `recipes-${new Date().toISOString().slice(0, 10)}`;
 const dryRun = process.argv.includes("--dry-run");
+// Tag Manager allows 30 write requests per user per minute; one every 2.5s
+// keeps a full push (roughly twenty entities) safely inside the window.
+const minIntervalMs = Number(process.env.GTM_MIN_INTERVAL_MS ?? 2500);
 
 const library = await templateSnapshot();
 const issues = library.lint();
@@ -23,7 +26,7 @@ if (issues.length > 0) {
   process.exit(1);
 }
 
-const client = new GtmClient();
+const client = new GtmClient({ minIntervalMs });
 await client.init();
 const outcome = await library.push(
   client,

@@ -37,11 +37,9 @@ describe("gtm-web-recipes", () => {
       expect(recipe.entities.filter((r) => r.kind === "trigger")).toHaveLength(1);
       expect(recipe.dependencies.map((d) => `${d.platform}.${d.resource}`)).toEqual([
         "googleAds.conversionAction",
-        "googleAds.conversionTrackingId",
-        "ga4.keyEvent",
       ]);
+      expect(recipe.dependencies[0].constant).toBe(`Const - Google Ads - ${name} Conversion Label`);
       expect(library.externalNameOf(name, recipe.dependencies[0])).toBe(`GTM - ${name}`);
-      expect(library.externalNameOf(name, recipe.dependencies[2])).toBe(name);
     }
     expect(library.tags.get("Ads - call_click")?.parameter).toContainEqual({
       type: "boolean",
@@ -63,25 +61,16 @@ describe("gtm-web-recipes", () => {
     ]);
   });
 
-  it("type-checks plans against the library and rejects a prefixed conversion id", () => {
+  it("type-checks plans against the library by recipe and constant name", () => {
     defineTrackingPlan(library, { recipes: ["email_click"] });
     // @ts-expect-error not a recipe of this library
     defineTrackingPlan(library, { recipes: ["purchase"] });
     // @ts-expect-error not a constant of this library
     defineTrackingPlan(library, { recipes: ["email_click"], constants: { "Const - Nope": "x" } });
     expect(compilePlan(library, plan).issues).toEqual([]);
-    const prefixed = compilePlan(
-      library,
-      defineTrackingPlan(library, {
-        recipes: ["call_click"],
-        constants: {
-          "Const - GA4 Measurement ID": "G-ABC1234567",
-          "Const - Google Ads Conversion ID": "AW-123456789",
-          "Const - Google Ads - call_click Conversion Label": "KlMnOpQrSt",
-        },
-      })
-    );
-    expect(prefixed.issues.map((i) => i.message).join("\n")).toMatch(/Conversion ID/);
+    const unfilled = compilePlan(library, defineTrackingPlan(library, { recipes: ["call_click"] }));
+    // A constant left at its placeholder is reported before any API call.
+    expect(unfilled.issues.length).toBeGreaterThan(0);
   });
 
   it("applies the example plan to a customer container", async () => {
@@ -111,7 +100,7 @@ describe("gtm-web-recipes", () => {
       "Click - call",
       "Custom Event - contact_form_submit",
     ]);
-    expect(snap.tag.find((t) => t.name === "Google Tag")?.firingTriggerId).toEqual(["2857720"]);
+    expect(snap.tag.find((t) => t.name === "Google Tag")?.firingTriggerId).toEqual(["2147479573"]);
     expect([...snap.builtIns].sort()).toEqual(["clickText", "clickUrl", "pageUrl"]);
     expect(snap.variable.find((v) => v.name === "Const - GA4 Measurement ID")?.parameter).toEqual([
       { type: "template", key: "value", value: "G-ABC1234567" },

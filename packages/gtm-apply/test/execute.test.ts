@@ -154,7 +154,7 @@ describe("built-in triggers", () => {
     expect(result?.published).toBe(false);
     const snap = latestSnapshot(state);
     expect(snap.trigger).toEqual([]);
-    expect(snap.tag[0].firingTriggerId).toEqual(["2857720"]);
+    expect(snap.tag[0].firingTriggerId).toEqual(["2147479573"]);
     expect(snap.tag[0].blockingTriggerId).toEqual(["2147479553"]);
     // Round trip: the pulled version names the built-in again.
     const again = await planContainerSpec(client, base, spec);

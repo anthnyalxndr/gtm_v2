@@ -85,8 +85,8 @@ describe("normalizeExport", () => {
 describe("built-in triggers", () => {
   it("names the built-in trigger ids Tag Manager never lists as trigger resources", () => {
     const data = fixture();
-    data.containerVersion.tag[0].firingTriggerId = ["2857720", "12"];
-    data.containerVersion.tag[0].blockingTriggerId = ["2147479553", "2857719"];
+    data.containerVersion.tag[0].firingTriggerId = ["2147479573", "12"];
+    data.containerVersion.tag[0].blockingTriggerId = ["2147479553", "2147479572"];
     const spec = normalizeExport(data);
     expect(spec.tag?.[0]?.firingTriggerName).toEqual([
       "Initialization - All Pages",

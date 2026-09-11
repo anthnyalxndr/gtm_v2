@@ -20,11 +20,6 @@ import {
  * site emits the dataLayer events; this container only listens.
  */
 
-const CONVERSION_LABEL_PATTERN = "^[A-Za-z0-9_-]{5,}$";
-/** GTM stores the Google Ads conversion id bare; "AW-" is a label the UI adds. */
-const CONVERSION_TRACKING_ID_PATTERN = "^[0-9]{9,11}$";
-const MEASUREMENT_ID_PATTERN = "^G-[A-Z0-9]{8,12}$";
-
 const tpl = (key: string, value: string) => ({ type: "template" as const, key, value });
 const bool = (key: string, value: boolean) => ({
   type: "boolean" as const,
@@ -111,24 +106,19 @@ const conversion = (
   },
 ];
 
+/**
+ * The recipe's Google Ads conversion action, carried by its label constant.
+ * The one external resource that is genuinely per recipe: each recipe hits a
+ * distinct conversion action. The conversion id and measurement id are
+ * account-wide config, documented on their own constants, not repeated here;
+ * a GTM constant value is capped at 1024 characters, so the manifest stays
+ * lean. The action is named "GTM - <recipe>" on Google Ads (externalNames).
+ */
 const dependencies = (recipe: string) => [
   {
     constant: labelConstant(recipe),
     platform: "googleAds",
     resource: "conversionAction",
-    pattern: CONVERSION_LABEL_PATTERN,
-  },
-  {
-    constant: "Const - Google Ads Conversion ID",
-    platform: "googleAds",
-    resource: "conversionTrackingId",
-    pattern: CONVERSION_TRACKING_ID_PATTERN,
-  },
-  {
-    constant: "Const - GA4 Measurement ID",
-    platform: "ga4",
-    resource: "keyEvent",
-    pattern: MEASUREMENT_ID_PATTERN,
   },
 ];
 
@@ -145,33 +135,22 @@ export const template = defineContainer({
       conventions: {},
       recipes: {
         google_tag: {
-          description:
-            "The Google tag on Initialization - All Pages, loading GA4 and any Google Ads destination configured on it. Every other recipe assumes it. Replaces a Conversion Linker tag.",
-          dependencies: [
-            {
-              constant: "Const - GA4 Measurement ID",
-              platform: "ga4",
-              resource: "dataStream",
-              pattern: MEASUREMENT_ID_PATTERN,
-            },
-          ],
+          description: "Google tag on Initialization; base for every recipe.",
         },
         contact_form_submit: {
-          description:
-            "The contact form was submitted successfully: the site pushes dataLayer event contact_form_submit with form_id, form_name, form_destination and form_submit_text. Never GTM's Form Submission trigger, which misses AJAX forms and fires on failed validation.",
+          description: "Contact form submitted (dataLayer event).",
           dependencies: dependencies("contact_form_submit"),
         },
         call_click: {
-          description:
-            "A tel: link was clicked (Click URL contains tel:, so a swapped forwarding number still matches).",
+          description: "tel: link clicked.",
           dependencies: dependencies("call_click"),
         },
         email_click: {
-          description: "A mailto: link was clicked.",
+          description: "mailto: link clicked.",
           dependencies: dependencies("email_click"),
         },
         maps_click: {
-          description: "A Google Maps link was clicked (directions).",
+          description: "Google Maps link clicked.",
           dependencies: dependencies("maps_click"),
         },
       },

@@ -69,11 +69,13 @@ export function builtInTypeForName(name: string): BuiltInVariableType | undefine
  * GTM built-in triggers: the display name to the fixed trigger id. They exist
  * in every web container but are never listed as trigger resources, so a
  * spec names them like any trigger and the engine maps the name to the id.
+ * The ids are the fixed values Tag Manager assigns; verified against real
+ * container exports.
  */
 export const BUILT_IN_TRIGGERS: Readonly<Record<string, string>> = {
   "All Pages": "2147479553",
-  "Initialization - All Pages": "2857720",
-  "Consent Initialization - All Pages": "2857719",
+  "Consent Initialization - All Pages": "2147479572",
+  "Initialization - All Pages": "2147479573",
 };
 
 export function builtInTriggerIdForName(name: string): string | undefined {
