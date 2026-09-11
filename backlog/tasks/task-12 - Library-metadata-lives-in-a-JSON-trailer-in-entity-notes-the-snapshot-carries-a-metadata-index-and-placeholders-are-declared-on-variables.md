@@ -3,10 +3,10 @@ id: TASK-12
 title: >-
   Library metadata lives in a JSON trailer in entity notes, the snapshot carries
   a metadata index, and placeholders are declared on variables
-status: In Progress
+status: Review
 assignee: []
 created_date: '2026-09-11 16:06'
-updated_date: '2026-09-11 16:16'
+updated_date: '2026-09-11 16:17'
 labels:
   - sdk
   - library
@@ -36,10 +36,14 @@ Decision-9 split library metadata across two media: recipe membership in a tag's
 - [x] #8 Both READMEs describe the trailer format, the metadata index and placeholders; pnpm verify passes.
 <!-- AC:END -->
 
-
-
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
 See docs/superpowers/plans/2026-09-11-notes-metadata.md: metadata.ts (parseNotes/formatNotes/readMetadata) → encoding.ts (MetadataEncoding, notes only) → GtmSnapshot metadata index, select forCustomer, lint rules → compilePlan placeholder messages and patterns → exports/CLI → test fixtures → gtm-web-recipes sample + regenerate → READMEs → pnpm verify → draft PR.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented on branch feat/task-12-notes-metadata (commits 55a2d6f, d77bee3). pnpm verify green: 152 tests. Draft PR opened for the owner to merge. Follow-ups deliberately left out: typed-required plan constants, heuristic literal lint, GTM note-length cap.
+<!-- SECTION:NOTES:END -->

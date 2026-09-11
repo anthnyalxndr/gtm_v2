@@ -79,13 +79,24 @@ export type {
   GtmSnapshotInput,
   RecipeNameOf,
   ConstantNameOf,
+  PlaceholderConstantNameOf,
+  RequiredConstantNameOf,
   GtmSnapshotOptions,
   SelectOptions,
 } from "./library/gtm-snapshot.js";
 export { notesEncoding, registerEncoding, resolveEncoding } from "./library/encoding.js";
 export type { EncodingFactory } from "./library/encoding.js";
+export { classifyLiteral, findLiterals, describeLiteral } from "./library/literals.js";
+export type {
+  LiteralKind,
+  LiteralRules,
+  LiteralHit,
+  LiteralFinding,
+  LiteralBearer,
+} from "./library/literals.js";
 export {
   NOTES_DELIMITER,
+  NOTES_MAX_LENGTH,
   NOTED_KINDS,
   parseNotes,
   formatNotes,
@@ -159,6 +170,7 @@ export {
 } from "./plan/tracking-plan.js";
 export type {
   TrackingPlan,
+  TrackingPlanFor,
   CompiledPlan,
   ApplyPlanOptions,
   ApplyPlanOutcome,

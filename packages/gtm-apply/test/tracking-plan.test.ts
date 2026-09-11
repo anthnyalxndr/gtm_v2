@@ -332,6 +332,69 @@ describe("applyPlan", () => {
     defineTrackingPlan(typed, { recipes: ["form_submit"], constants: { "Const - Nope": "x" } });
     void dir;
   });
+
+  it("requires the placeholder constants of the selected recipes unless destinations are filtered", async () => {
+    const { library } = await fake();
+    const literal = GtmSnapshot.fromData({
+      ...library.toJSON(),
+      metadata: {
+        "variable:Const - GA4 Measurement ID": { placeholder: { kind: "ga4MeasurementId" } },
+        "variable:Const - Ads Label - call_click": { placeholder: { kind: "adsConversionLabel" } },
+      },
+      recipes: [
+        {
+          name: "form_submit",
+          roots: [],
+          entities: [
+            { kind: "variable", name: "Const - GA4 Measurement ID" },
+            { kind: "variable", name: "Const - Currency" },
+          ],
+          dependencies: [],
+        },
+        {
+          name: "call_click",
+          roots: [],
+          entities: [{ kind: "variable", name: "Const - Ads Label - call_click" }],
+          dependencies: [],
+        },
+      ],
+      data: {
+        ...library.toJSON().data,
+        variable: [
+          { name: "Const - GA4 Measurement ID", type: "c" },
+          { name: "Const - Ads Label - call_click", type: "c" },
+          { name: "Const - Currency", type: "c" },
+        ],
+      },
+    } as const);
+    const ok = defineTrackingPlan(literal, {
+      recipes: ["form_submit"],
+      constants: { "Const - GA4 Measurement ID": "G-1" },
+    });
+    expect(ok.recipes).toEqual(["form_submit"]);
+    defineTrackingPlan(literal, {
+      recipes: ["form_submit", "call_click"],
+      constants: {
+        "Const - GA4 Measurement ID": "G-1",
+        "Const - Ads Label - call_click": "AbCdEf",
+        "Const - Currency": "EUR",
+      },
+    });
+    defineTrackingPlan(literal, { recipes: ["form_submit"], destinations: ["ga4"] });
+    defineTrackingPlan(library, { recipes: ["form_submit"] });
+    // @ts-expect-error form_submit reaches a placeholder constant that must be supplied
+    defineTrackingPlan(literal, { recipes: ["form_submit"] });
+    // @ts-expect-error the GA4 measurement id is still missing
+    defineTrackingPlan(literal, {
+      recipes: ["form_submit"],
+      constants: { "Const - Currency": "EUR" },
+    });
+    // @ts-expect-error call_click's label is required too
+    defineTrackingPlan(literal, {
+      recipes: ["form_submit", "call_click"],
+      constants: { "Const - GA4 Measurement ID": "G-1" },
+    });
+  });
 });
 
 describe("gtm-apply apply --plan", () => {
