@@ -63,7 +63,37 @@ export {
 export type { SpecIssue } from "./spec/validate.js";
 export { loadSpecFile } from "./spec/load.js";
 export { pullSnapshot, snapshotToSpec, containerTypeOf } from "./snapshot/pull.js";
-export type { ContainerSnapshot, ContainerType, SnapshotSource } from "./snapshot/types.js";
+export { GtmSnapshot, indexRecipes, DEFAULT_DESTINATION_FAMILIES } from "./library/gtm-snapshot.js";
+export type {
+  Recipe,
+  GtmSnapshotData,
+  GtmSnapshotInput,
+  RecipeNameOf,
+  GtmSnapshotOptions,
+  SelectOptions,
+} from "./library/gtm-snapshot.js";
+export {
+  notesEncoding,
+  metadataEncoding,
+  registerEncoding,
+  resolveEncoding,
+  parseRecipeList,
+} from "./library/encoding.js";
+export type { RecipeEncoding, RecipeRoot, EncodingFactory } from "./library/encoding.js";
+export {
+  MANIFEST_VARIABLE_NAME,
+  readManifest,
+  manifestVariable,
+  findManifestVariable,
+} from "./library/manifest.js";
+export type {
+  LibraryManifest,
+  RecipeManifestEntry,
+  ExternalDependency,
+} from "./library/manifest.js";
+export { closure, referencesOf, refKey } from "./library/closure.js";
+export type { EntityRef, RefKind } from "./library/closure.js";
+export type { ApiSnapshotData, ContainerType, SnapshotSource } from "./snapshot/types.js";
 export {
   BUILT_IN_VARIABLES,
   builtInTypeForName,

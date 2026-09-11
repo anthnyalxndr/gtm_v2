@@ -81,7 +81,7 @@ describe("pullSnapshot", () => {
     expect(snap.containerType).toBe("server");
     expect(snap.container.publicId).toBe("GTM-SRV123");
     expect(snap.workspace).toBeNull();
-    expect(snap.versionHeader?.containerVersionId).toBe(versionId);
+    expect(snap.containerVersionHeader?.containerVersionId).toBe(versionId);
     expect(snap.environments.map((e) => e.name)).toEqual(["Live", "Latest"]);
     expect(snap.environment?.name).toBe("Live");
     expect(snap.destinations.map((d) => d.destinationId)).toEqual(["AW-1"]);
@@ -91,7 +91,7 @@ describe("pullSnapshot", () => {
     expect(snap.tag.map((t) => t.name)).toEqual(["GA4"]);
     expect(snap.client.map((c) => c.name)).toEqual(["GA4 Client"]);
     expect(snap.transformation.map((t) => t.name)).toEqual(["Drop PII"]);
-    expect(snap.template.map((t) => t.name)).toEqual(["Tpl"]);
+    expect(snap.customTemplate.map((t) => t.name)).toEqual(["Tpl"]);
     expect(snap.zone.map((z) => z.name)).toEqual(["Zone"]);
     expect(snap.gtagConfig.map((g) => g.type)).toEqual(["googtag"]);
     expect(snap.builtInVariable.map((b) => b.type)).toEqual(["requestPath"]);
@@ -110,7 +110,7 @@ describe("pullSnapshot", () => {
     const fromWorkspace = await pullSnapshot(client, { container: "GTM-SRV123", workspace: "wip" });
     expect(fromWorkspace.workspace?.name).toBe("wip");
     expect(fromWorkspace.environment).toBeNull();
-    expect(fromWorkspace.versionHeader).toEqual(fromVersion.versionHeader);
+    expect(fromWorkspace.containerVersionHeader).toEqual(fromVersion.containerVersionHeader);
     const names = (s: typeof fromVersion) => ({
       folder: s.folder.map((e) => e.name),
       variable: s.variable.map((e) => e.name),
@@ -118,7 +118,7 @@ describe("pullSnapshot", () => {
       tag: s.tag.map((e) => e.name),
       client: s.client.map((e) => e.name),
       transformation: s.transformation.map((e) => e.name),
-      template: s.template.map((e) => e.name),
+      customTemplate: s.customTemplate.map((e) => e.name),
       zone: s.zone.map((e) => e.name),
       gtagConfig: s.gtagConfig.map((e) => e.type),
       builtIns: s.builtInVariable.map((e) => e.type),
@@ -133,7 +133,7 @@ describe("pullSnapshot", () => {
       path: `${containerPath}/versions/${v1}`,
     });
     const live = await pullSnapshot(client, { container: "GTM-SRV123", version: "live" });
-    expect(live.versionHeader?.containerVersionId).toBe(v1);
+    expect(live.containerVersionHeader?.containerVersionId).toBe(v1);
     const byId = await pullSnapshot(client, { container: "GTM-SRV123", version: v1 });
     expect(byId.tag.map((t) => t.name)).toEqual(["GA4"]);
   });

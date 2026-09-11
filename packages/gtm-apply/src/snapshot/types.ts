@@ -18,7 +18,7 @@ export interface SnapshotSource {
  * API (server fields and ids included). Entity collections are keyed the way a
  * ContainerVersion keys them. Use snapshotToSpec() to get a ContainerSpec.
  */
-export interface ContainerSnapshot {
+export interface ApiSnapshotData {
   /** ISO timestamp of the pull. */
   pulledAt: string;
   source: SnapshotSource;
@@ -27,7 +27,7 @@ export interface ContainerSnapshot {
   /** The workspace read, when the source names one. */
   workspace: tagmanager_v2.Schema$Workspace | null;
   /** Header of the version read; for a workspace source, the version it branched from. */
-  versionHeader: tagmanager_v2.Schema$ContainerVersionHeader | null;
+  containerVersionHeader: tagmanager_v2.Schema$ContainerVersionHeader | null;
   /** Every environment of the container. */
   environments: tagmanager_v2.Schema$Environment[];
   /** The environment that serves the version read (matched by containerVersionId); null for a workspace source. */
@@ -40,7 +40,7 @@ export interface ContainerSnapshot {
   tag: tagmanager_v2.Schema$Tag[];
   builtInVariable: tagmanager_v2.Schema$BuiltInVariable[];
   gtagConfig: tagmanager_v2.Schema$GtagConfig[];
-  template: tagmanager_v2.Schema$CustomTemplate[];
+  customTemplate: tagmanager_v2.Schema$CustomTemplate[];
   client: tagmanager_v2.Schema$Client[];
   transformation: tagmanager_v2.Schema$Transformation[];
   zone: tagmanager_v2.Schema$Zone[];

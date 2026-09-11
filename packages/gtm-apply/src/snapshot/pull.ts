@@ -3,7 +3,7 @@ import { resolveContainer } from "@anthnyalxndr/gtm-client";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { normalizeExport } from "../spec/normalize.js";
 import type { ContainerSpec } from "../spec/types.js";
-import type { ContainerSnapshot, ContainerType, SnapshotSource } from "./types.js";
+import type { ApiSnapshotData, ContainerType, SnapshotSource } from "./types.js";
 
 /** Map the API's usageContext values onto one container type. */
 export function containerTypeOf(usageContext: readonly string[] | null | undefined): ContainerType {
@@ -21,14 +21,14 @@ type Version = tagmanager_v2.Schema$ContainerVersion;
 function entities(
   cv: Version
 ): Pick<
-  ContainerSnapshot,
+  ApiSnapshotData,
   | "folder"
   | "variable"
   | "trigger"
   | "tag"
   | "builtInVariable"
   | "gtagConfig"
-  | "template"
+  | "customTemplate"
   | "client"
   | "transformation"
   | "zone"
@@ -40,7 +40,7 @@ function entities(
     tag: cv.tag ?? [],
     builtInVariable: cv.builtInVariable ?? [],
     gtagConfig: cv.gtagConfig ?? [],
-    template: cv.customTemplate ?? [],
+    customTemplate: cv.customTemplate ?? [],
     client: cv.client ?? [],
     transformation: cv.transformation ?? [],
     zone: cv.zone ?? [],
@@ -55,7 +55,7 @@ function entities(
 export async function pullSnapshot(
   client: GtmClient,
   source: SnapshotSource
-): Promise<ContainerSnapshot> {
+): Promise<ApiSnapshotData> {
   if (source.workspace && source.version) {
     throw new Error("A snapshot source names a workspace or a version, not both");
   }
@@ -116,7 +116,7 @@ export async function pullSnapshot(
     return {
       ...base,
       workspace,
-      versionHeader: headerFor(latest.data.containerVersionId),
+      containerVersionHeader: headerFor(latest.data.containerVersionId),
       environment: null,
       folder: folder.data.folder ?? [],
       variable: variable.data.variable ?? [],
@@ -124,7 +124,7 @@ export async function pullSnapshot(
       tag: tag.data.tag ?? [],
       builtInVariable: builtIn.data.builtInVariable ?? [],
       gtagConfig: gtag.data.gtagConfig ?? [],
-      template: template.data.template ?? [],
+      customTemplate: template.data.template ?? [],
       client: clientRes.data.client ?? [],
       transformation: transformation.data.transformation ?? [],
       zone: zone.data.zone ?? [],
@@ -148,14 +148,14 @@ export async function pullSnapshot(
   return {
     ...base,
     workspace: null,
-    versionHeader: headerFor(versionId),
+    containerVersionHeader: headerFor(versionId),
     environment: environments.find((e) => e.containerVersionId === versionId) ?? null,
     ...entities(version),
   };
 }
 
 /** The apply-able part of a snapshot, normalized like an export, tagged with its container type. */
-export function snapshotToSpec(snapshot: ContainerSnapshot): ContainerSpec {
+export function snapshotToSpec(snapshot: ApiSnapshotData): ContainerSpec {
   return normalizeExport({
     containerType: snapshot.containerType,
     folder: snapshot.folder,

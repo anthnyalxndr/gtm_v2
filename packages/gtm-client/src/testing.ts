@@ -311,7 +311,8 @@ export function createFakeService(seed: FakeSeed = {}): {
           },
           latest: async ({ parent }: { parent: string }) => {
             state.calls.push("version_headers.latest");
-            const latest = state.versions[state.versions.length - 1];
+            const mine = state.versions.filter((v) => v.path.startsWith(parent + "/"));
+            const latest = mine[mine.length - 1];
             return {
               data: latest
                 ? { containerVersionId: latest.versionId, path: latest.path, name: latest.name }
@@ -340,7 +341,7 @@ export function createFakeService(seed: FakeSeed = {}): {
           },
           live: async ({ parent }: { parent: string }) => {
             state.calls.push("versions.live");
-            const livePath = state.published[state.published.length - 1];
+            const livePath = [...state.published].reverse().find((p) => p.startsWith(parent + "/"));
             const v = state.versions.find((x) => x.path === livePath);
             return {
               data: {
@@ -361,7 +362,8 @@ export function createFakeService(seed: FakeSeed = {}): {
             const wsPath = `${parent}/workspace/${id}`;
             const ws = { ...requestBody, workspaceId: id, path: wsPath, fingerprint: "1" };
             state.workspaces.push(ws);
-            const latest = state.versions[state.versions.length - 1];
+            const mine = state.versions.filter((v) => v.path.startsWith(parent + "/"));
+            const latest = mine[mine.length - 1];
             if (latest) {
               const clone = <T extends Named>(
                 items: T[],

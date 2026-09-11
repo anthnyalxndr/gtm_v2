@@ -84,7 +84,7 @@ gtm-apply snapshot --container GTM-XXXXXXX --version 42
 gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
 ```
 
-From code, `pullSnapshot(client, source)` returns a `ContainerSnapshot` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`.
+From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `GtmSnapshot` (below) adds the recipe index on top of it.
 
 ### Container types
 
@@ -152,6 +152,56 @@ The default workspace is never written to.
 - Validation covers field names, primitive types, and enum values, not which parameter keys a tag template accepts or which fields a trigger type uses. Those errors still come back from the API during apply.
 - The planner compares only the fields the spec provides. Fields stripped from an export, such as `monitoringMetadata`, are not corrected if someone changes them in the UI.
 - The Tag Manager API has tight per-minute quotas. Every call is throttled and retried with backoff; large specs take a while.
+
+## Libraries and recipes
+
+A library is a GTM container you build in the UI and pull into a committed snapshot. Recipes are declared on the entities that fire, tags (and clients and transformations in a server container), through an encoding the library chooses; everything else a recipe needs, triggers, variables, setup tags, folders and built-ins, is discovered by following references. `GtmSnapshot` holds the pulled data as its own members (`tag`, `trigger`, `destinations`, `environment`, `containerType`, …) plus name-keyed maps per entity kind (`tags`, `triggers`, `clients`, …), a `recipes` index and a `recipe(name)` lookup.
+
+```ts
+import { GtmSnapshot } from "@anthnyalxndr/gtm-apply";
+
+const lib = await new GtmSnapshot(client, { container: "GTM-TPLXXXX" }).init();
+lib.recipe("form_submit");                      // roots, entities, description, dependencies
+lib.tags.get("Ads - lead");
+const spec = lib.select(["form_submit"], { destinations: ["ga4", "googleAds"] });
+await applySpec(client, { container: "GTM-CUST", workspace: "onboarding", spec });
+
+await writeFile("library.json", JSON.stringify(lib, null, 2));            // commit this
+const same = GtmSnapshot.fromData(JSON.parse(await readFile("library.json", "utf-8")));
+```
+
+`select` returns the union of the recipes' closures in library order, strips recipe declarations from tags, leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the whole library, declarations intact, back to its own container. `lint()` reports tags naming recipes the manifest doesn't declare, recipes that reach no trigger, and dependencies naming constants outside the recipe.
+
+### Encodings
+
+An encoding is an object with a name, `recipesOf(entity)` returning the recipe names an entity declares, and an optional `strip(entity)` for declarations that must not reach a customer container. Two ship:
+
+- `notes`: a `recipes: a, b` line anywhere in the entity's notes. Notes never ship in a container, so nothing to strip. The default when a library has no manifest.
+- `metadata`: a key (default `recipes`) in a tag's Additional Tag Metadata. Metadata ships in the container and reaches tag monitors, so `select` strips it. Only tags carry metadata.
+
+Register your own with `registerEncoding(name, factory)`; a manifest refers to encodings by name, so the code stays in your package and never in the container.
+
+### The manifest
+
+A Constant variable named `Library - Manifest` whose value is JSON. It is never referenced by a tag, so it is never selected. A snapshot literal typed `as const` (or passed to `fromData`, which infers `const`) gives literal recipe names, so `select(["form_submti"])` is a compile error.
+
+```json
+{
+  "encoding": { "name": "metadata", "options": { "key": "recipes" } },
+  "recipes": {
+    "form_submit": {
+      "description": "Lead form submitted",
+      "dependencies": [
+        { "constant": "Const - Ads Label - lead", "platform": "googleAds",
+          "resource": "conversionAction", "nameTemplate": "GTM - ${recipe}" }
+      ]
+    }
+  },
+  "destinations": { "cvt_123_45": "googleAds" }
+}
+```
+
+Dependencies name the constant that carries an identifier from another platform and how the resource is expected to be named there. Nothing verifies them against Google Ads or GA4 yet; `lint` only checks that the constant is in the recipe.
 
 ## Conversion recipes
 

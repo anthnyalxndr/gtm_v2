@@ -203,7 +203,7 @@ describe("runCli", () => {
     const snap = JSON.parse(lines.join("\n"));
     expect(snap.containerType).toBe("web");
     expect(snap.tag.map((t: { name: string }) => t.name)).toEqual(["T"]);
-    expect(snap.versionHeader.containerVersionId).toBe(state.versions[0].versionId);
+    expect(snap.containerVersionHeader.containerVersionId).toBe(state.versions[0].versionId);
     expect(snap.destinations).toEqual([]);
   });
 
