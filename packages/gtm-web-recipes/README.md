@@ -17,7 +17,15 @@ See [`plan.example.ts`](plan.example.ts) for a complete plan.
 
 ## How recipes are declared
 
-In the template container, each tag that belongs to a recipe carries a `recipes` key in its Additional Tag Metadata (`form_submit, call_click`). Everything a recipe needs beyond its tags, triggers, variables, setup tags and folders, is found by following references. Customer-specific values are `Const - …` variables whose library value is a placeholder such as `<G-XXXXXXX>`; a plan must supply them. A `Library - Manifest` constant in the container names the encoding, describes recipes, and lists each recipe's Google Ads or GA4 dependencies.
+In the template container, library metadata lives in entity notes. The text above a line that is exactly `---` is the note the customer receives; the JSON object below it is the library's, and never reaches a customer container. A tag that belongs to a recipe declares it there:
+
+```
+Sends the form_submit event to GA4.
+---
+{"recipes": ["form_submit"]}
+```
+
+Everything a recipe needs beyond its tags, triggers, variables, setup tags and folders, is found by following references. Customer-specific values are `Const - …` variables whose library value is a placeholder such as `<G-XXXXXXX>` and whose notes carry a `placeholder` entry (`kind`, `example`, `pattern`); a plan must supply them, and the pull refuses a constant whose entry and value disagree. A `Library - Manifest` constant in the container describes recipes and lists each recipe's Google Ads or GA4 dependencies. The pulled `src/library.ts` carries every parsed trailer in its `metadata` field, keyed by `kind:name`.
 
 ## Refreshing the library
 

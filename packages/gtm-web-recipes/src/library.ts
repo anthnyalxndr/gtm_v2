@@ -35,7 +35,7 @@ export const data = {
             type: "template",
             key: "value",
             value:
-              '{"encoding":{"name":"metadata"},"conventions":{},"recipes":{"form_submit":{"description":"A lead form was submitted (dataLayer event form_submit)","dependencies":[{"constant":"Const - Ads Label - form_submit","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]},"email_click":{"description":"A mailto: link was clicked","dependencies":[{"constant":"Const - Ads Label - email_click","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]},"call_click":{"description":"A tel: link was clicked","dependencies":[{"constant":"Const - Ads Label - call_click","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]}}}',
+              '{"conventions":{},"recipes":{"form_submit":{"description":"A lead form was submitted (dataLayer event form_submit)","dependencies":[{"constant":"Const - Ads Label - form_submit","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]},"email_click":{"description":"A mailto: link was clicked","dependencies":[{"constant":"Const - Ads Label - email_click","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]},"call_click":{"description":"A tel: link was clicked","dependencies":[{"constant":"Const - Ads Label - call_click","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]}}}',
           },
         ],
         variableId: "2",
@@ -45,6 +45,8 @@ export const data = {
       {
         name: "Const - GA4 Measurement ID",
         type: "c",
+        notes:
+          'Measurement ID of the site\'s GA4 web data stream (Admin > Data streams).\n---\n{"placeholder":{"kind":"ga4MeasurementId","example":"G-ABC123DEF4","pattern":"^G-[A-Z0-9]+$"}}',
         parameter: [
           {
             type: "template",
@@ -59,6 +61,8 @@ export const data = {
       {
         name: "Const - Ads Conversion ID",
         type: "c",
+        notes:
+          'Conversion ID shared by every conversion action of the Google Ads account.\n---\n{"placeholder":{"kind":"adsConversionId","example":"AW-123456789","pattern":"^AW-\\\\d+$"}}',
         parameter: [
           {
             type: "template",
@@ -73,6 +77,8 @@ export const data = {
       {
         name: "Const - Ads Label - form_submit",
         type: "c",
+        notes:
+          'Conversion label of the Google Ads conversion action for form_submit.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp"}}',
         parameter: [
           {
             type: "template",
@@ -87,6 +93,8 @@ export const data = {
       {
         name: "Const - Ads Label - email_click",
         type: "c",
+        notes:
+          'Conversion label of the Google Ads conversion action for email_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp"}}',
         parameter: [
           {
             type: "template",
@@ -101,6 +109,8 @@ export const data = {
       {
         name: "Const - Ads Label - call_click",
         type: "c",
+        notes:
+          'Conversion label of the Google Ads conversion action for call_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp"}}',
         parameter: [
           {
             type: "template",
@@ -117,6 +127,7 @@ export const data = {
       {
         name: "Custom Event - form_submit",
         type: "customEvent",
+        notes: "Fires on the dataLayer event form_submit that the site's form handler pushes.",
         customEventFilter: [
           {
             type: "equals",
@@ -191,16 +202,7 @@ export const data = {
       {
         name: "GA4 - form_submit",
         type: "gaawe",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "form_submit",
-            },
-          ],
-        },
+        notes: 'Sends the form_submit event to GA4.\n---\n{"recipes":["form_submit"]}',
         parameter: [
           {
             type: "template",
@@ -221,16 +223,8 @@ export const data = {
       {
         name: "Ads - form_submit",
         type: "awct",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "form_submit",
-            },
-          ],
-        },
+        notes:
+          'Records the form_submit conversion in Google Ads.\n---\n{"recipes":["form_submit"]}',
         setupTag: [
           {
             tagName: "Conversion Linker",
@@ -256,16 +250,7 @@ export const data = {
       {
         name: "GA4 - email_click",
         type: "gaawe",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "email_click",
-            },
-          ],
-        },
+        notes: 'Sends the email_click event to GA4.\n---\n{"recipes":["email_click"]}',
         parameter: [
           {
             type: "template",
@@ -286,16 +271,8 @@ export const data = {
       {
         name: "Ads - email_click",
         type: "awct",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "email_click",
-            },
-          ],
-        },
+        notes:
+          'Records the email_click conversion in Google Ads.\n---\n{"recipes":["email_click"]}',
         setupTag: [
           {
             tagName: "Conversion Linker",
@@ -321,16 +298,7 @@ export const data = {
       {
         name: "GA4 - call_click",
         type: "gaawe",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "call_click",
-            },
-          ],
-        },
+        notes: 'Sends the call_click event to GA4.\n---\n{"recipes":["call_click"]}',
         parameter: [
           {
             type: "template",
@@ -351,16 +319,7 @@ export const data = {
       {
         name: "Ads - call_click",
         type: "awct",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "call_click",
-            },
-          ],
-        },
+        notes: 'Records the call_click conversion in Google Ads.\n---\n{"recipes":["call_click"]}',
         setupTag: [
           {
             tagName: "Conversion Linker",
@@ -386,16 +345,8 @@ export const data = {
       {
         name: "Conversion Linker",
         type: "gclidw",
-        monitoringMetadata: {
-          type: "map",
-          map: [
-            {
-              type: "template",
-              key: "recipes",
-              value: "form_submit, email_click, call_click",
-            },
-          ],
-        },
+        notes:
+          'Stores Google Ads click information so conversion tags can attribute.\n---\n{"recipes":["form_submit","email_click","call_click"]}',
         tagId: "17",
         path: "accounts/1/containers/10/workspace/1/tag/17",
         fingerprint: "1",
@@ -412,9 +363,6 @@ export const data = {
     transformation: [],
   },
   manifest: {
-    encoding: {
-      name: "metadata",
-    },
     conventions: {},
     recipes: {
       form_submit: {
@@ -453,7 +401,62 @@ export const data = {
     },
   },
   encoding: {
-    name: "metadata",
+    name: "notes",
+  },
+  metadata: {
+    "variable:Const - GA4 Measurement ID": {
+      placeholder: {
+        kind: "ga4MeasurementId",
+        example: "G-ABC123DEF4",
+        pattern: "^G-[A-Z0-9]+$",
+      },
+    },
+    "variable:Const - Ads Conversion ID": {
+      placeholder: {
+        kind: "adsConversionId",
+        example: "AW-123456789",
+        pattern: "^AW-\\d+$",
+      },
+    },
+    "variable:Const - Ads Label - form_submit": {
+      placeholder: {
+        kind: "adsConversionLabel",
+        example: "AbCdEfGhIjKlMnOp",
+      },
+    },
+    "variable:Const - Ads Label - email_click": {
+      placeholder: {
+        kind: "adsConversionLabel",
+        example: "AbCdEfGhIjKlMnOp",
+      },
+    },
+    "variable:Const - Ads Label - call_click": {
+      placeholder: {
+        kind: "adsConversionLabel",
+        example: "AbCdEfGhIjKlMnOp",
+      },
+    },
+    "tag:GA4 - form_submit": {
+      recipes: ["form_submit"],
+    },
+    "tag:Ads - form_submit": {
+      recipes: ["form_submit"],
+    },
+    "tag:GA4 - email_click": {
+      recipes: ["email_click"],
+    },
+    "tag:Ads - email_click": {
+      recipes: ["email_click"],
+    },
+    "tag:GA4 - call_click": {
+      recipes: ["call_click"],
+    },
+    "tag:Ads - call_click": {
+      recipes: ["call_click"],
+    },
+    "tag:Conversion Linker": {
+      recipes: ["form_submit", "email_click", "call_click"],
+    },
   },
   recipes: [
     {

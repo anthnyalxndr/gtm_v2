@@ -1,20 +1,27 @@
-import { defineContainer, manifestVariable } from "@anthnyalxndr/gtm-apply";
+import {
+  defineContainer,
+  formatNotes,
+  manifestVariable,
+  type PlaceholderMetadata,
+} from "@anthnyalxndr/gtm-apply";
 
-const meta = (recipes: string) => ({
-  type: "map" as const,
-  map: [{ type: "template" as const, key: "recipes", value: recipes }],
-});
-const constant = (name: string, value: string) => ({
+/** Notes for a recipe root: customer text, then the library's `recipes` trailer. */
+const declares = (text: string, ...recipes: string[]) => formatNotes(text, { recipes });
+
+/** A customer input: a constant holding a placeholder, documented in its notes. */
+const input = (name: string, value: string, text: string, placeholder: PlaceholderMetadata) => ({
   name,
   type: "c",
+  notes: formatNotes(text, { placeholder }),
   parameter: [{ type: "template" as const, key: "value", value }],
 });
+
 const conversion = (recipe: string, trigger: string) => [
   {
     name: `GA4 - ${recipe}`,
     type: "gaawe",
     firingTriggerName: [trigger],
-    monitoringMetadata: meta(recipe),
+    notes: declares(`Sends the ${recipe} event to GA4.`, recipe),
     parameter: [
       { type: "template" as const, key: "eventName", value: recipe },
       {
@@ -28,7 +35,7 @@ const conversion = (recipe: string, trigger: string) => [
     name: `Ads - ${recipe}`,
     type: "awct",
     firingTriggerName: [trigger],
-    monitoringMetadata: meta(recipe),
+    notes: declares(`Records the ${recipe} conversion in Google Ads.`, recipe),
     setupTag: [{ tagName: "Conversion Linker" }],
     parameter: [
       { type: "template" as const, key: "conversionId", value: "{{Const - Ads Conversion ID}}" },
@@ -40,6 +47,13 @@ const conversion = (recipe: string, trigger: string) => [
     ],
   },
 ];
+const label = (recipe: string) =>
+  input(
+    `Const - Ads Label - ${recipe}`,
+    "<label>",
+    `Conversion label of the Google Ads conversion action for ${recipe}.`,
+    { kind: "adsConversionLabel", example: "AbCdEfGhIjKlMnOp" }
+  );
 const linkClick = (name: string, prefix: string) => ({
   name,
   type: "linkClick" as const,
@@ -57,13 +71,13 @@ const linkClick = (name: string, prefix: string) => ({
 /**
  * A stand-in for the Web Template container until the first real pull: three
  * event recipes with GA4 and Google Ads destinations sharing a Conversion
- * Linker and customer constants.
+ * Linker and customer constants. Recipes and placeholders are declared in
+ * notes trailers; the text above each trailer reaches the customer.
  */
 export const sampleTemplate = defineContainer({
   containerType: "web",
   variable: [
     manifestVariable({
-      encoding: { name: "metadata" },
       conventions: {},
       recipes: {
         form_submit: {
@@ -101,16 +115,27 @@ export const sampleTemplate = defineContainer({
         },
       },
     }),
-    constant("Const - GA4 Measurement ID", "<G-XXXXXXX>"),
-    constant("Const - Ads Conversion ID", "<AW-XXXXXXXXX>"),
-    constant("Const - Ads Label - form_submit", "<label>"),
-    constant("Const - Ads Label - email_click", "<label>"),
-    constant("Const - Ads Label - call_click", "<label>"),
+    input(
+      "Const - GA4 Measurement ID",
+      "<G-XXXXXXX>",
+      "Measurement ID of the site's GA4 web data stream (Admin > Data streams).",
+      { kind: "ga4MeasurementId", example: "G-ABC123DEF4", pattern: "^G-[A-Z0-9]+$" }
+    ),
+    input(
+      "Const - Ads Conversion ID",
+      "<AW-XXXXXXXXX>",
+      "Conversion ID shared by every conversion action of the Google Ads account.",
+      { kind: "adsConversionId", example: "AW-123456789", pattern: "^AW-\\d+$" }
+    ),
+    label("form_submit"),
+    label("email_click"),
+    label("call_click"),
   ],
   trigger: [
     {
       name: "Custom Event - form_submit",
       type: "customEvent",
+      notes: "Fires on the dataLayer event form_submit that the site's form handler pushes.",
       customEventFilter: [
         {
           type: "equals",
@@ -131,7 +156,12 @@ export const sampleTemplate = defineContainer({
     {
       name: "Conversion Linker",
       type: "gclidw",
-      monitoringMetadata: meta("form_submit, email_click, call_click"),
+      notes: declares(
+        "Stores Google Ads click information so conversion tags can attribute.",
+        "form_submit",
+        "email_click",
+        "call_click"
+      ),
     },
   ],
 });

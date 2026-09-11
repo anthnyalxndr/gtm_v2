@@ -191,7 +191,7 @@ async function loadLibrary(path: string): Promise<GtmSnapshot> {
   const data = loaded as GtmSnapshotData;
   if (!("data" in data) || !("recipes" in data)) {
     throw new Error(
-      `${path} is not a library snapshot (expected { data, manifest, encoding, recipes })`
+      `${path} is not a library snapshot (expected { data, manifest, encoding, metadata, recipes })`
     );
   }
   return GtmSnapshot.fromData(data);

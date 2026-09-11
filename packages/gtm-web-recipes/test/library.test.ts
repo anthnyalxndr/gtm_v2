@@ -16,7 +16,15 @@ describe("gtm-web-recipes", () => {
       "Const - Ads Label - call_click",
     ]);
     expect(library.recipe("form_submit")?.description).toMatch(/lead form/i);
-    expect(library.encoding.name).toBe("metadata");
+    expect(library.encoding.name).toBe("notes");
+    expect(
+      library.metadataOf({ kind: "variable", name: "Const - GA4 Measurement ID" })?.placeholder
+    ).toEqual({ kind: "ga4MeasurementId", example: "G-ABC123DEF4", pattern: "^G-[A-Z0-9]+$" });
+    expect(library.metadataOf({ kind: "tag", name: "Conversion Linker" })?.recipes).toEqual([
+      "form_submit",
+      "email_click",
+      "call_click",
+    ]);
     expect(library.lint()).toEqual([]);
     expect(GtmSnapshot.fromData(data).recipes).toEqual(library.recipes);
   });
@@ -56,6 +64,14 @@ describe("gtm-web-recipes", () => {
     expect(snap.variable.find((v) => v.name === "Const - GA4 Measurement ID")?.parameter).toEqual([
       { type: "template", key: "value", value: "G-XXXXXXX" },
     ]);
-    expect(snap.tag.every((t) => !t.monitoringMetadata?.map)).toBe(true);
+    expect(snap.tag.find((t) => t.name === "GA4 - form_submit")?.notes).toBe(
+      "Sends the form_submit event to GA4."
+    );
+    expect(snap.variable.find((v) => v.name === "Const - GA4 Measurement ID")?.notes).toMatch(
+      /^Measurement ID of the site's GA4 web data stream/
+    );
+    expect(
+      [...snap.tag, ...snap.trigger, ...snap.variable].every((e) => !e.notes?.includes("---"))
+    ).toBe(true);
   });
 });

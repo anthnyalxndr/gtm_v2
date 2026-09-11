@@ -21,13 +21,18 @@ import {
   type NamingConventions,
 } from "../spec/conventions.js";
 import { closure, refKey, type EntityRef } from "./closure.js";
+import { notesEncoding, resolveEncoding } from "./encoding.js";
 import {
-  notesEncoding,
-  resolveEncoding,
-  type RecipeEncoding,
-  type RecipeRoot,
-} from "./encoding.js";
+  NOTED_KINDS,
+  readMetadata,
+  type EntityMetadata,
+  type MetadataEncoding,
+  type MetadataError,
+  type MetadataIndex,
+  type NotedEntity,
+} from "./metadata.js";
 import {
+  DEFAULT_PLACEHOLDER_PATTERN,
   MANIFEST_VARIABLE_NAME,
   readManifest,
   type ExternalDependency,
@@ -52,6 +57,8 @@ export interface GtmSnapshotData {
   manifest: LibraryManifest | null;
   /** The encoding in effect, by registered name. */
   encoding: { name: string; options?: Record<string, unknown> };
+  /** Every entity's library metadata read from its notes at pull time, keyed by `kind:name`. */
+  metadata: MetadataIndex;
   /** The recipe index computed at pull time. */
   recipes: Recipe[];
 }
@@ -96,7 +103,7 @@ export const DEFAULT_DESTINATION_FAMILIES: Readonly<Record<string, string>> = {
 
 export interface GtmSnapshotOptions {
   /** Override the encoding named by the manifest. */
-  encoding?: RecipeEncoding;
+  encoding?: MetadataEncoding;
   /** Naming rules layered over the manifest's; turns naming lint on. */
   conventions?: ConventionOverrides;
 }
@@ -127,9 +134,11 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   readonly #options: GtmSnapshotOptions;
   #data: ApiSnapshotData | null = null;
   #manifest: LibraryManifest | null = null;
-  #encoding: RecipeEncoding | null = null;
+  #encoding: MetadataEncoding | null = null;
   #encodingOptions: Record<string, unknown> | undefined;
   #spec: ContainerSpec | null = null;
+  #metadata: MetadataIndex = {};
+  #metadataErrors: MetadataError[] = [];
   #recipes: Recipe[] = [];
   #index = new Map<string, Recipe>();
 
@@ -178,6 +187,7 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
       data,
       manifest,
       encoding: { name: encoding.name, options: manifest?.encoding?.options },
+      metadata: {},
       recipes: [],
     });
     return this;
@@ -197,11 +207,14 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   }
 
   #reindex(): void {
-    this.#recipes = indexRecipes(this.#spec!, this.#encoding!, this.#manifest);
+    const read = readMetadata(this.#spec!, this.#encoding!);
+    this.#metadata = read.index;
+    this.#metadataErrors = read.errors;
+    this.#recipes = indexRecipes(this.#spec!, this.#metadata, this.#manifest);
     this.#index = new Map(this.#recipes.map((r) => [r.name, r]));
   }
 
-  #ready(): { spec: ContainerSpec; encoding: RecipeEncoding; data: ApiSnapshotData } {
+  #ready(): { spec: ContainerSpec; encoding: MetadataEncoding; data: ApiSnapshotData } {
     if (!this.#data || !this.#spec || !this.#encoding) {
       throw new Error("GtmSnapshot is not initialized; call init() first");
     }
@@ -217,8 +230,21 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     return this.#manifest;
   }
   /** The encoding in effect (the manifest's, or the override given at construction). */
-  get encoding(): RecipeEncoding {
+  get encoding(): MetadataEncoding {
     return this.#ready().encoding;
+  }
+  /** Every entity's library metadata over the staged state, keyed by `kind:name`. */
+  get metadata(): Readonly<MetadataIndex> {
+    this.#ready();
+    return this.#metadata;
+  }
+  metadataOf(ref: EntityRef): EntityMetadata | undefined {
+    this.#ready();
+    return this.#metadata[refKey(ref)];
+  }
+  /** Matches library values a plan must replace: the manifest's placeholderPattern or the default. */
+  get placeholderPattern(): RegExp {
+    return new RegExp(this.manifest?.placeholderPattern ?? DEFAULT_PLACEHOLDER_PATTERN);
   }
   get containerType(): ContainerType {
     return this.data.containerType;
@@ -347,8 +373,9 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
 
   /**
    * The spec that implements the named recipes: the union of their closures,
-   * in library order, with recipe declarations stripped and the manifest left
-   * out. Unknown recipe names throw.
+   * in library order, every entity as the customer should receive it (library
+   * metadata removed from its notes) and the manifest left out. Unknown
+   * recipe names throw.
    */
   select(names: readonly R[], options: SelectOptions = {}): ContainerSpec {
     const { spec, encoding } = this.#ready();
@@ -368,17 +395,17 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     const wanted = new Set(closure(spec, roots).map(refKey));
     const pick = <T extends Named>(kind: EntityRef["kind"], items?: T[]) =>
       (items ?? []).filter((e) => e.name && wanted.has(refKey({ kind, name: e.name })));
-    const strip = <T extends RecipeRoot>(e: T): T => (encoding.strip?.(e) as T | undefined) ?? e;
+    const customer = <T extends NotedEntity>(e: T): T => encoding.forCustomer(e);
     const out: ContainerSpec = {};
     if (spec.containerType) out.containerType = spec.containerType;
     const folder = pick("folder", spec.folder);
-    const variable = pick("variable", spec.variable).filter(
-      (v) => v.name !== MANIFEST_VARIABLE_NAME
-    );
-    const trigger = pick("trigger", spec.trigger);
-    const tag = pick("tag", spec.tag).map(strip);
-    const client = pick("client", spec.client).map(strip);
-    const transformation = pick("transformation", spec.transformation).map(strip);
+    const variable = pick("variable", spec.variable)
+      .filter((v) => v.name !== MANIFEST_VARIABLE_NAME)
+      .map(customer);
+    const trigger = pick("trigger", spec.trigger).map(customer);
+    const tag = pick("tag", spec.tag).map(customer);
+    const client = pick("client", spec.client).map(customer);
+    const transformation = pick("transformation", spec.transformation).map(customer);
     const builtInVariable = (spec.builtInVariable ?? []).filter((b) =>
       wanted.has(refKey({ kind: "builtInVariable", name: b }))
     );
@@ -392,19 +419,41 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     return out;
   }
 
-  /** Problems in how the library declares its recipes, plus naming when conventions are in effect. */
+  /**
+   * Problems in how the library declares itself: unreadable metadata
+   * trailers, recipes declared where they cannot be, recipes the manifest
+   * does not know, recipes that never fire, dependencies outside their
+   * recipe, placeholders that disagree with their value, and naming when
+   * conventions are in effect.
+   */
   lint(): SpecIssue[] {
-    const { spec, encoding } = this.#ready();
+    const { spec } = this.#ready();
     const issues: SpecIssue[] = [];
     const conventions = this.conventions;
     if (conventions) issues.push(...checkNames(spec, conventions));
+    for (const { ref, message } of this.#metadataErrors) {
+      issues.push({ entity: `${ref.kind} "${ref.name}"`, path: "notes", message });
+    }
     const declared = this.manifest?.recipes ? new Set(Object.keys(this.manifest.recipes)) : null;
-    for (const kind of ROOT_KINDS) {
+    const roots = new Set<string>(ROOT_KINDS);
+    for (const kind of NOTED_KINDS) {
       for (const entity of spec[kind] ?? []) {
-        for (const name of encoding.recipesOf(entity as RecipeRoot)) {
+        if (!entity.name) continue;
+        const recipes = this.#metadata[refKey({ kind, name: entity.name })]?.recipes ?? [];
+        if (recipes.length === 0) continue;
+        const label = `${kind} "${entity.name}"`;
+        if (!roots.has(kind)) {
+          issues.push({
+            entity: label,
+            path: "notes",
+            message: "declares recipes, but only tags, clients and transformations can",
+          });
+          continue;
+        }
+        for (const name of recipes) {
           if (declared && !declared.has(name)) {
             issues.push({
-              entity: `${kind} "${entity.name}"`,
+              entity: label,
               path: "",
               message: `declares recipe "${name}", which is not in the manifest`,
             });
@@ -433,6 +482,37 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
         }
       });
     }
+    const placeholder = this.placeholderPattern;
+    for (const v of spec.variable ?? []) {
+      if (!v.name || v.name === MANIFEST_VARIABLE_NAME) continue;
+      const entry = this.#metadata[refKey({ kind: "variable", name: v.name })]?.placeholder;
+      const label = `variable "${v.name}"`;
+      if (v.type !== "c") {
+        if (entry) {
+          issues.push({
+            entity: label,
+            path: "notes",
+            message: "declares a placeholder, but only constants hold customer values",
+          });
+        }
+        continue;
+      }
+      const value = v.parameter?.find((p) => p.key === "value")?.value ?? "";
+      const isPlaceholder = placeholder.test(value);
+      if (entry && !isPlaceholder) {
+        issues.push({
+          entity: label,
+          path: "value",
+          message: `declares a placeholder but holds ${JSON.stringify(value)}, which would reach customers as is`,
+        });
+      } else if (!entry && isPlaceholder) {
+        issues.push({
+          entity: label,
+          path: "notes",
+          message: `holds the placeholder value ${JSON.stringify(value)} but declares no placeholder entry`,
+        });
+      }
+    }
     return issues;
   }
 
@@ -452,9 +532,11 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     });
   }
 
-  /** The pristine pull with its manifest, encoding and recipe index; what a content package commits. */
+  /** The pristine pull with its manifest, encoding, metadata and recipe index; what a content package commits. */
   toJSON(): GtmSnapshotData {
     const { data, encoding } = this.#ready();
+    const spec = snapshotToSpec(data);
+    const { index } = readMetadata(spec, encoding);
     return {
       data,
       manifest: this.#manifest,
@@ -462,7 +544,8 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
         name: encoding.name,
         ...(this.#encodingOptions ? { options: this.#encodingOptions } : {}),
       },
-      recipes: indexRecipes(snapshotToSpec(data), encoding, this.#manifest),
+      metadata: index,
+      recipes: indexRecipes(spec, index, this.#manifest),
     };
   }
 }
@@ -471,16 +554,16 @@ function byName<T extends Named>(items: readonly T[] | undefined): ReadonlyMap<s
   return new Map((items ?? []).filter((e) => e.name).map((e) => [e.name as string, e]));
 }
 
-function encodingFrom(manifest: LibraryManifest | null): RecipeEncoding {
+function encodingFrom(manifest: LibraryManifest | null): MetadataEncoding {
   return manifest?.encoding
     ? resolveEncoding(manifest.encoding.name, manifest.encoding.options)
     : notesEncoding();
 }
 
-/** Discover recipes: roots by declaration, entities by closure. */
+/** Discover recipes: roots by the `recipes` key of their metadata, entities by closure. */
 export function indexRecipes(
   spec: ContainerSpec,
-  encoding: RecipeEncoding,
+  metadata: MetadataIndex,
   manifest: LibraryManifest | null
 ): Recipe[] {
   const roots = new Map<string, EntityRef[]>();
@@ -488,7 +571,7 @@ export function indexRecipes(
   for (const kind of ROOT_KINDS) {
     for (const entity of spec[kind] ?? []) {
       if (!entity.name) continue;
-      for (const name of encoding.recipesOf(entity as RecipeRoot)) {
+      for (const name of metadata[refKey({ kind, name: entity.name })]?.recipes ?? []) {
         const list = roots.get(name) ?? [];
         list.push({ kind, name: entity.name });
         roots.set(name, list);
