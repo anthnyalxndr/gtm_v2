@@ -24,6 +24,7 @@ import { closure, refKey, type EntityRef } from "./closure.js";
 import { notesEncoding, resolveEncoding } from "./encoding.js";
 import {
   NOTED_KINDS,
+  NOTES_MAX_LENGTH,
   readMetadata,
   type EntityMetadata,
   type MetadataEncoding,
@@ -282,6 +283,10 @@ export class GtmSnapshot<
   get placeholderPattern(): RegExp {
     return new RegExp(this.manifest?.placeholderPattern ?? DEFAULT_PLACEHOLDER_PATTERN);
   }
+  /** Longest notes value lint accepts: the manifest's notesMaxLength or NOTES_MAX_LENGTH. */
+  get notesMaxLength(): number {
+    return this.manifest?.notesMaxLength ?? NOTES_MAX_LENGTH;
+  }
   get containerType(): ContainerType {
     return this.data.containerType;
   }
@@ -460,7 +465,8 @@ export class GtmSnapshot<
    * trailers, recipes declared where they cannot be, recipes the manifest
    * does not know, recipes that never fire, dependencies outside their
    * recipe, placeholders that disagree with their value, literals that look
-   * site-specific, and naming when conventions are in effect.
+   * site-specific, notes too long to save, and naming when conventions are
+   * in effect.
    */
   lint(): SpecIssue[] {
     const { spec } = this.#ready();
@@ -469,6 +475,18 @@ export class GtmSnapshot<
     if (conventions) issues.push(...checkNames(spec, conventions));
     for (const { ref, message } of this.#metadataErrors) {
       issues.push({ entity: `${ref.kind} "${ref.name}"`, path: "notes", message });
+    }
+    const maxNotes = this.notesMaxLength;
+    for (const kind of NOTED_KINDS) {
+      for (const entity of spec[kind] ?? []) {
+        const length = entity.notes?.length ?? 0;
+        if (!entity.name || length <= maxNotes) continue;
+        issues.push({
+          entity: `${kind} "${entity.name}"`,
+          path: "notes",
+          message: `is ${length} characters, over the ${maxNotes} Tag Manager saves`,
+        });
+      }
     }
     const declared = this.manifest?.recipes ? new Set(Object.keys(this.manifest.recipes)) : null;
     const roots = new Set<string>(ROOT_KINDS);

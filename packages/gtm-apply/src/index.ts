@@ -96,6 +96,7 @@ export type {
 } from "./library/literals.js";
 export {
   NOTES_DELIMITER,
+  NOTES_MAX_LENGTH,
   NOTED_KINDS,
   parseNotes,
   formatNotes,

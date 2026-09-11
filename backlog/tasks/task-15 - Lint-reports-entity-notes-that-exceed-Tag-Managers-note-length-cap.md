@@ -1,9 +1,10 @@
 ---
 id: TASK-15
 title: Lint reports entity notes that exceed Tag Manager's note length cap
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-11 21:45'
+updated_date: '2026-09-11 21:55'
 labels:
   - sdk
   - library
@@ -21,7 +22,7 @@ A notes trailer plus customer text can grow past the length Tag Manager accepts,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 NOTES_MAX_LENGTH is exported with a comment recording how the value was verified
-- [ ] #2 lint() reports every entity whose notes exceed the cap, with the length and the cap in the message, and formatNotes documents the cap
-- [ ] #3 Tests cover a note at the cap and one past it; pnpm verify passes
+- [x] #1 NOTES_MAX_LENGTH is exported with a comment recording how the value was verified
+- [x] #2 lint() reports every entity whose notes exceed the cap, with the length and the cap in the message, and formatNotes documents the cap
+- [x] #3 Tests cover a note at the cap and one past it; pnpm verify passes
 <!-- AC:END -->

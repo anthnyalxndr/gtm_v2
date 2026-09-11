@@ -33,7 +33,8 @@
     "test": "vitest run",
     "dev": "tsx example.ts",
     "prepublishOnly": "pnpm build",
-    "gen:discovery": "tsx scripts/generate-discovery.ts"
+    "gen:discovery": "tsx scripts/generate-discovery.ts",
+    "probe:notes-cap": "tsx scripts/probe-notes-cap.ts"
   },
   "keywords": [
     "google-tag-manager",
