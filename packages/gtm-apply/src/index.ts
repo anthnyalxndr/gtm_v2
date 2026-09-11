@@ -86,6 +86,14 @@ export type {
 } from "./library/gtm-snapshot.js";
 export { notesEncoding, registerEncoding, resolveEncoding } from "./library/encoding.js";
 export type { EncodingFactory } from "./library/encoding.js";
+export { classifyLiteral, findLiterals, describeLiteral } from "./library/literals.js";
+export type {
+  LiteralKind,
+  LiteralRules,
+  LiteralHit,
+  LiteralFinding,
+  LiteralBearer,
+} from "./library/literals.js";
 export {
   NOTES_DELIMITER,
   NOTED_KINDS,

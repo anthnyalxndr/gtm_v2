@@ -3,10 +3,10 @@ id: TASK-13
 title: >-
   Plans require the placeholder constants of their selected recipes at the type
   level
-status: In Progress
+status: Review
 assignee: []
 created_date: '2026-09-11 21:45'
-updated_date: '2026-09-11 21:48'
+updated_date: '2026-09-11 21:49'
 labels:
   - sdk
   - library
@@ -28,3 +28,9 @@ compilePlan reports a missing placeholder value at runtime only. The committed l
 - [x] #2 defineTrackingPlan rejects, at compile time, a plan without destinations that omits a required constant of its selected recipes, and accepts one that supplies them; a plan with destinations, or a plan against a non-literal library, keeps optional constants (covered by @ts-expect-error tests in gtm-apply and gtm-web-recipes)
 - [x] #3 The gtm-web-recipes example plan and README show the required constants; pnpm verify passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Branch feat/task-13-typed-required-constants, stacked on task-12. pnpm verify green (154 tests). Draft PR opened; owner merges.
+<!-- SECTION:NOTES:END -->

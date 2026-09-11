@@ -186,7 +186,7 @@ const same = gtm.snapshotFrom(JSON.parse(await readFile("library.json", "utf-8")
 
 The views are a working copy. Assign one to stage an edit: `lib.tags = tags` (a Map or an array) replaces the tags, re-indexes recipes, and changes what `spec`, `select` and `push` produce, while `data` and `toJSON()` still describe the pull. `isDirty` says whether anything is staged and `reset()` discards it. This is the seam a change report hangs off: the pull is the before, the staged state is the after.
 
-`select` returns the union of the recipes' closures in library order, hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, and placeholder entries that disagree with their value.
+`select` returns the union of the recipes' closures in library order, hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, placeholder entries that disagree with their value, and inline literals that look site-specific (below).
 
 ### Metadata in notes
 
@@ -203,6 +203,8 @@ Known keys, both optional; unknown keys round-trip untouched:
 - `recipes`: the recipe names a tag, client or transformation declares (an array, or a comma separated string).
 - `placeholder`: on a constant whose library value is a placeholder (`<G-XXXXXXX>`, per the manifest's `placeholderPattern`), what a plan must supply: `kind`, `description`, `example`, and a `pattern` the supplied value must match. Lint reconciles the entry with the value both ways, so a constant an author forgot to blank never ships to a customer, and `compilePlan` puts the description and example in its error message.
 
+The placeholder rules are structural and catch values routed through constants. As a heuristic backstop, lint also walks every parameter and condition of every variable, trigger, tag, client and transformation and reports literals that look site-specific: a URL, an email address, a hostname, a leading-slash path, a CSS selector, a `G-`/`AW-`/`GTM-` id, or anything containing one of the template site's own hostnames. The fix is to hoist the value into a `Const - …` with a placeholder entry and reference it from the condition. Variable references inside a value are ignored, placeholder values and constants that already declare a placeholder entry are skipped, and the manifest's `literals` entry tunes the rest: `allow` lists literals that are generic despite their looks (compared exactly), `hosts` lists the template site's hostnames.
+
 `GtmSnapshot` parses every trailer once into `metadata`, a record keyed by `kind:name` that the committed snapshot carries beside `recipes`; `metadataOf({ kind, name })` reads one entry. `parseNotes` and `formatNotes` are the reader and writer, for scripts that stage edits. An encoding is the object that reads a trailer and returns an entity as the customer should get it (`read`, `forCustomer`); `notes` is the built-in and the default. Register another with `registerEncoding(name, factory)`; a manifest refers to encodings by name, so the code stays in your package and never in the container.
 
 ### The manifest
@@ -211,6 +213,7 @@ A Constant variable named `Library - Manifest` whose value is JSON. It is never 
 
 ```json
 {
+  "literals": { "allow": ["/"], "hosts": ["template.example.com"] },
   "recipes": {
     "form_submit": {
       "description": "Lead form submitted",
