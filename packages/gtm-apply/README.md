@@ -103,7 +103,7 @@ From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snap
 
 ### Container types
 
-A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates and gtag configs are carried in snapshots but not yet applied.
+A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates are first-class: a spec carries a `customTemplate` section (name, `templateData`, optional `galleryReference`), a tag or variable built on one has a portable `cvt:<template name>` type, and the engine creates or updates templates before the entities that use them, rewriting the type to the target container's `cvt_…` id (gallery-backed templates install through `import_from_gallery`). gtag configs are carried in snapshots but not yet applied.
 
 ## Applying a spec
 
@@ -162,7 +162,6 @@ The default workspace is never written to.
 
 ### Limits
 
-- Tags built on custom or community templates (`cvt_*` types) are rejected by the normalizer. Import the template into the target container first; direct support is a backlog item.
 - Trigger groups (`triggerReference` parameters) are rejected.
 - Validation covers field names, primitive types, and enum values, not which parameter keys a tag template accepts or which fields a trigger type uses. Those errors still come back from the API during apply.
 - The planner compares only the fields the spec provides. Fields stripped from an export, such as `monitoringMetadata`, are not corrected if someone changes them in the UI.
@@ -186,7 +185,7 @@ const same = gtm.snapshotFrom(JSON.parse(await readFile("library.json", "utf-8")
 
 The views are a working copy. Assign one to stage an edit: `lib.tags = tags` (a Map or an array) replaces the tags, re-indexes recipes, and changes what `spec`, `select` and `push` produce, while `data` and `toJSON()` still describe the pull. `isDirty` says whether anything is staged and `reset()` discards it. This is the seam a change report hangs off: the pull is the before, the staged state is the after.
 
-`select` returns the union of the recipes' closures in library order, hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, and placeholder entries that disagree with their value.
+`select` returns the union of the recipes' closures in library order (a tag or variable built on a custom template brings that template along), hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, placeholder entries that disagree with their value, inline literals that look site-specific (below), and notes longer than Tag Manager saves (`NOTES_MAX_LENGTH`, 512,000 characters as measured by `scripts/probe-notes-cap.ts`; the manifest's `notesMaxLength` tightens it).
 
 ### Metadata in notes
 
@@ -203,6 +202,8 @@ Known keys, both optional; unknown keys round-trip untouched:
 - `recipes`: the recipe names a tag, client or transformation declares (an array, or a comma separated string).
 - `placeholder`: on a constant whose library value is a placeholder (`<G-XXXXXXX>`, per the manifest's `placeholderPattern`), what a plan must supply: `kind`, `description`, `example`, and a `pattern` the supplied value must match. Lint reconciles the entry with the value both ways, so a constant an author forgot to blank never ships to a customer, and `compilePlan` puts the description and example in its error message.
 
+The placeholder rules are structural and catch values routed through constants. As a heuristic backstop, lint also walks every parameter and condition of every variable, trigger, tag, client and transformation and reports literals that look site-specific: a URL, an email address, a hostname, a leading-slash path, a CSS selector, a `G-`/`AW-`/`GTM-` id, or anything containing one of the template site's own hostnames. The fix is to hoist the value into a `Const - …` with a placeholder entry and reference it from the condition. Variable references inside a value are ignored, placeholder values and constants that already declare a placeholder entry are skipped, and the manifest's `literals` entry tunes the rest: `allow` lists literals that are generic despite their looks (compared exactly), `hosts` lists the template site's hostnames.
+
 `GtmSnapshot` parses every trailer once into `metadata`, a record keyed by `kind:name` that the committed snapshot carries beside `recipes`; `metadataOf({ kind, name })` reads one entry. `parseNotes` and `formatNotes` are the reader and writer, for scripts that stage edits. An encoding is the object that reads a trailer and returns an entity as the customer should get it (`read`, `forCustomer`); `notes` is the built-in and the default. Register another with `registerEncoding(name, factory)`; a manifest refers to encodings by name, so the code stays in your package and never in the container.
 
 ### The manifest
@@ -211,6 +212,7 @@ A Constant variable named `Library - Manifest` whose value is JSON. It is never 
 
 ```json
 {
+  "literals": { "allow": ["/"], "hosts": ["template.example.com"] },
   "recipes": {
     "form_submit": {
       "description": "Lead form submitted",
@@ -242,7 +244,7 @@ lib.externalNameOf("form_submit", dependency);     // "GTM - form_submit"
 
 ## Tracking plans
 
-A customer's onboarding is a plan: which recipes to install, which destination families to keep, and the values of the constants those recipes need. `defineTrackingPlan(library, plan)` checks recipe and constant names against the library's literal types, so a typo is a compile error. `compilePlan` selects the recipes, fills in the constants, and reports problems before any API call: a constant whose library value is a placeholder (`<AW-XXXXXXXXX>`) with no value in the plan, a value that fails a dependency's pattern, a constant that isn't in the library, and naming violations when the library declares conventions. A supplied value that still looks like a placeholder is a warning. `applyPlan` compiles, optionally writes the spec to a file, and applies it through the same engine.
+A customer's onboarding is a plan: which recipes to install, which destination families to keep, and the values of the constants those recipes need. `defineTrackingPlan(library, plan)` checks recipe and constant names against the library's literal types, so a typo is a compile error, and makes the placeholder constants the selected recipes reach required keys of `constants` (computed from the snapshot's `metadata` and `recipes`), so a missing value is a compile error too and the editor lists what to fill in. A plan with a `destinations` filter keeps `constants` optional, because dropped tags may take constants with them; `compilePlan` reports what is missing at run time. `RequiredConstantNameOf<typeof data, ["form_submit"]>` names the set. `compilePlan` selects the recipes, fills in the constants, and reports problems before any API call: a constant whose library value is a placeholder (`<AW-XXXXXXXXX>`) with no value in the plan, a value that fails a dependency's pattern, a constant that isn't in the library, and naming violations when the library declares conventions. A supplied value that still looks like a placeholder is a warning. `applyPlan` compiles, optionally writes the spec to a file, and applies it through the same engine.
 
 ```ts
 import { applyPlan, defineTrackingPlan } from "@anthnyalxndr/gtm-apply";

@@ -1,6 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
-import type { GtmSnapshot, GtmSnapshotData } from "../library/gtm-snapshot.js";
+import type {
+  GtmSnapshot,
+  GtmSnapshotData,
+  GtmSnapshotInput,
+  RequiredConstantNameOf,
+} from "../library/gtm-snapshot.js";
 import type { PlaceholderMetadata } from "../library/metadata.js";
 import { checkNames } from "../spec/conventions.js";
 import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
@@ -19,13 +24,38 @@ export interface TrackingPlan<R extends string = string, C extends string = stri
   constants?: Partial<Record<C, string>>;
 }
 
-/** Identity helper: recipe and constant names are checked against the library's literal types. */
-export function defineTrackingPlan<R extends string, C extends string>(
-  library: GtmSnapshot<R, C>,
-  plan: TrackingPlan<NoInfer<R>, NoInfer<C>>
-): TrackingPlan<R, C> {
+type ConstantsFor<C extends string, Req extends string> = [Req] extends [never]
+  ? { constants?: Partial<Record<C, string>> }
+  : { constants: Record<Req, string> & Partial<Record<Exclude<C, Req>, string>> };
+
+/**
+ * The plan shape defineTrackingPlan checks. Without a destinations filter
+ * every selected recipe's placeholder constants are required keys; with one,
+ * tags and their constants may be dropped at compile time, so constants stay
+ * optional and compilePlan reports what is missing.
+ */
+export type TrackingPlanFor<
+  R extends string,
+  C extends string,
+  S extends GtmSnapshotInput,
+  RS extends readonly R[],
+> =
+  | ({ recipes: RS; destinations?: undefined } & ConstantsFor<C, RequiredConstantNameOf<S, RS>>)
+  | { recipes: RS; destinations: readonly string[]; constants?: Partial<Record<C, string>> };
+
+/**
+ * Identity helper: recipe and constant names are checked against the
+ * library's literal types, and a plan that selects every destination must
+ * supply the placeholder constants its recipes reach.
+ */
+export function defineTrackingPlan<
+  R extends string,
+  C extends string,
+  S extends GtmSnapshotInput,
+  const RS extends readonly R[],
+>(library: GtmSnapshot<R, C, S>, plan: TrackingPlanFor<R, C, S, RS>): TrackingPlan<R, C> {
   void library;
-  return plan;
+  return plan as TrackingPlan<R, C>;
 }
 
 export { DEFAULT_PLACEHOLDER_PATTERN } from "../library/manifest.js";

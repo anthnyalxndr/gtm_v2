@@ -175,3 +175,59 @@ export function ensureTag(
     body
   );
 }
+
+/**
+ * Create or reuse a custom template by name. A gallery-backed template is
+ * installed with import_from_gallery, then reconciled to the desired
+ * templateData and gallery reference; a local template is created directly.
+ * Later runs compare by galleryReference and templateData.
+ */
+export async function ensureTemplate(
+  client: GtmClient,
+  workspacePath: string,
+  body: tagmanager_v2.Schema$CustomTemplate
+): Promise<EnsureResult<tagmanager_v2.Schema$CustomTemplate>> {
+  if (!body.name)
+    throw new Error("template body must have a name; name is the identity of an entity.");
+  const templates = client.service.accounts.containers.workspaces.templates;
+  const listRes = await client.call(() => templates.list({ parent: workspacePath }));
+  const existing = (listRes.data.template ?? []).find((t) => t.name === body.name);
+  if (existing) {
+    if (matches(existing, body)) return { entity: existing, action: "unchanged" };
+    if (!existing.path) throw new Error(`Existing template "${body.name}" has no path`);
+    const updated = await client.call(() =>
+      templates.update({
+        path: existing.path!,
+        fingerprint: existing.fingerprint ?? undefined,
+        requestBody: body,
+      })
+    );
+    return { entity: updated.data, action: "updated" };
+  }
+  const gallery = body.galleryReference;
+  if (gallery?.owner && gallery.repository) {
+    const installed = await client.call(() =>
+      templates.import_from_gallery({
+        parent: workspacePath,
+        galleryOwner: gallery.owner ?? undefined,
+        galleryRepository: gallery.repository ?? undefined,
+        gallerySha: gallery.version ?? undefined,
+        acknowledgePermissions: true,
+      })
+    );
+    const path = installed.data.path;
+    if (!path) throw new Error(`import_from_gallery returned no path for "${body.name}"`);
+    const reconciled = await client.call(() =>
+      templates.update({
+        path,
+        fingerprint: installed.data.fingerprint ?? undefined,
+        requestBody: body,
+      })
+    );
+    return { entity: reconciled.data, action: "created" };
+  }
+  const created = await client.call(() =>
+    templates.create({ parent: workspacePath, requestBody: body })
+  );
+  return { entity: created.data, action: "created" };
+}

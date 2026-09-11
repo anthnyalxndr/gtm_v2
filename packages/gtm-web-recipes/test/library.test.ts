@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
-import { applyPlan, compilePlan, defineTrackingPlan, GtmSnapshot } from "@anthnyalxndr/gtm-apply";
+import {
+  applyPlan,
+  compilePlan,
+  defineTrackingPlan,
+  GtmSnapshot,
+  type RequiredConstantNameOf,
+} from "@anthnyalxndr/gtm-apply";
 import { data, library } from "../src/index.js";
 import plan from "../plan.example.js";
 
@@ -29,12 +35,41 @@ describe("gtm-web-recipes", () => {
     expect(GtmSnapshot.fromData(data).recipes).toEqual(library.recipes);
   });
 
-  it("type-checks plans against the library", () => {
+  it("type-checks plans against the library, placeholder constants included", () => {
+    defineTrackingPlan(library, { recipes: ["email_click"], destinations: ["ga4"] });
+    defineTrackingPlan(library, {
+      recipes: ["email_click"],
+      constants: {
+        "Const - GA4 Measurement ID": "G-1",
+        "Const - Ads Conversion ID": "AW-1",
+        "Const - Ads Label - email_click": "AbCdEf",
+      },
+    });
+    // @ts-expect-error email_click reaches three placeholder constants that must be supplied
     defineTrackingPlan(library, { recipes: ["email_click"] });
+    // @ts-expect-error the Ads label for email_click is missing
+    defineTrackingPlan(library, {
+      recipes: ["email_click"],
+      constants: { "Const - GA4 Measurement ID": "G-1", "Const - Ads Conversion ID": "AW-1" },
+    });
     // @ts-expect-error not a recipe of this library
     defineTrackingPlan(library, { recipes: ["purchase"] });
-    // @ts-expect-error not a constant of this library
-    defineTrackingPlan(library, { recipes: ["email_click"], constants: { "Const - Nope": "x" } });
+    defineTrackingPlan(library, {
+      recipes: ["email_click"],
+      destinations: ["ga4"],
+      // @ts-expect-error not a constant of this library
+      constants: { "Const - Nope": "x" },
+    });
+    const required: RequiredConstantNameOf<typeof data, ["call_click"]>[] = [
+      "Const - GA4 Measurement ID",
+      "Const - Ads Conversion ID",
+      "Const - Ads Label - call_click",
+    ];
+    expect(required).toHaveLength(3);
+    // @ts-expect-error form_submit's label is not reached by call_click
+    const notRequired: RequiredConstantNameOf<typeof data, ["call_click"]> =
+      "Const - Ads Label - form_submit";
+    void notRequired;
     expect(compilePlan(library, plan).issues).toEqual([]);
   });
 

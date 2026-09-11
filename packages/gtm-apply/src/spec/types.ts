@@ -1,6 +1,7 @@
 import type {
   BuiltInVariableType,
   Client,
+  CustomTemplate,
   Folder,
   Tag,
   Transformation,
@@ -40,6 +41,8 @@ export interface FolderSpec extends Pick<Folder, "name"> {
   name: string;
 }
 export type VariableSpec = WithFolder<Variable>;
+/** A custom template, carried by name; server ids are dropped, gallery reference kept. */
+export type CustomTemplateSpec = Omit<CustomTemplate, ServerField>;
 export type TriggerSpec = WithFolder<Trigger>;
 /** Server containers only. */
 export type ClientSpec = WithFolder<Client>;
@@ -65,9 +68,12 @@ export interface ContainerSpec {
   client?: ClientSpec[];
   /** Server containers only. */
   transformation?: TransformationSpec[];
+  /** Custom (including community-gallery) templates, referenced by tags and variables through a cvt:<name> type. */
+  customTemplate?: CustomTemplateSpec[];
 }
 
-export type EntityKind = "folder" | "variable" | "trigger" | "tag" | "client" | "transformation";
+export type EntityKind =
+  "folder" | "variable" | "trigger" | "tag" | "client" | "transformation" | "customTemplate";
 
 /** Identity helper so a spec written in a .ts file is inferred and checked without an annotation. */
 export function defineContainer(spec: ContainerSpec): ContainerSpec {
