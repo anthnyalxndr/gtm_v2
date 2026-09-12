@@ -54,6 +54,8 @@ A spec is a GTM container export with three changes: server fields (`accountId`,
 }
 ```
 
+GTM's built-in triggers (`All Pages`, `Initialization - All Pages`, `Consent Initialization - All Pages`) exist in every web container but are never listed as trigger resources. A tag names them in `firingTriggerName` like any trigger; the engine maps the name to Tag Manager's fixed id on apply and back to the name on export.
+
 The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-apply normalize export.json`. Or capture a container with `gtm-apply export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
 
 ### Writing a spec in TypeScript

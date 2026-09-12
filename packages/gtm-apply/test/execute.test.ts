@@ -134,3 +134,31 @@ describe("applySpec", () => {
     expect(state.versions).toHaveLength(0);
   });
 });
+
+describe("built-in triggers", () => {
+  it("fires a tag on Initialization - All Pages without a trigger in the spec or the container", async () => {
+    const { client, state } = fresh();
+    const spec: ContainerSpec = {
+      tag: [
+        {
+          name: "Google Tag",
+          type: "googtag",
+          firingTriggerName: ["Initialization - All Pages"],
+          blockingTriggerName: ["All Pages"],
+          parameter: [{ type: "template", key: "tagId", value: "G-1" }],
+        },
+      ],
+    };
+    const { plan, result } = await applySpec(client, { ...base, spec });
+    expect(plan.errors).toEqual([]);
+    expect(result?.published).toBe(false);
+    const snap = latestSnapshot(state);
+    expect(snap.trigger).toEqual([]);
+    expect(snap.tag[0].firingTriggerId).toEqual(["2147479573"]);
+    expect(snap.tag[0].blockingTriggerId).toEqual(["2147479553"]);
+    // Round trip: the pulled version names the built-in again.
+    const again = await planContainerSpec(client, base, spec);
+    expect(again.errors).toEqual([]);
+    expect(again.ops.find((o) => o.kind === "tag")?.action).toBe("unchanged");
+  });
+});

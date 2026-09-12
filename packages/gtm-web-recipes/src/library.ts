@@ -18,10 +18,10 @@ export const data = {
     destinations: [],
     workspace: null,
     containerVersionHeader: {
-      containerVersionId: "18",
-      path: "accounts/1/containers/10/versions/18",
+      containerVersionId: "26",
+      path: "accounts/1/containers/10/versions/26",
       name: "sample",
-      numTags: "7",
+      numTags: "9",
       numClients: "0",
     },
     environment: null,
@@ -35,7 +35,7 @@ export const data = {
             type: "template",
             key: "value",
             value:
-              '{"conventions":{},"recipes":{"form_submit":{"description":"A lead form was submitted (dataLayer event form_submit)","dependencies":[{"constant":"Const - Ads Label - form_submit","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]},"email_click":{"description":"A mailto: link was clicked","dependencies":[{"constant":"Const - Ads Label - email_click","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]},"call_click":{"description":"A tel: link was clicked","dependencies":[{"constant":"Const - Ads Label - call_click","platform":"googleAds","resource":"conversionAction","pattern":"^[A-Za-z0-9_-]{5,}$"}]}}}',
+              '{"conventions":{},"recipes":{"google_tag":{"description":"Google tag on Initialization; base for every recipe."},"contact_form_submit":{"description":"Contact form submitted (dataLayer event).","dependencies":[{"constant":"Const - Google Ads - contact_form_submit Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"call_click":{"description":"tel: link clicked.","dependencies":[{"constant":"Const - Google Ads - call_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"email_click":{"description":"mailto: link clicked.","dependencies":[{"constant":"Const - Google Ads - email_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"maps_click":{"description":"Google Maps link clicked.","dependencies":[{"constant":"Const - Google Ads - maps_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]}}}',
           },
         ],
         variableId: "2",
@@ -51,7 +51,7 @@ export const data = {
           {
             type: "template",
             key: "value",
-            value: "<G-XXXXXXX>",
+            value: "<G-XXXXXXXXXX>",
           },
         ],
         variableId: "3",
@@ -59,15 +59,15 @@ export const data = {
         fingerprint: "1",
       },
       {
-        name: "Const - Ads Conversion ID",
+        name: "Const - Google Ads Conversion ID",
         type: "c",
         notes:
-          'Conversion ID shared by every conversion action of the Google Ads account.\n---\n{"placeholder":{"kind":"adsConversionId","example":"AW-123456789","pattern":"^AW-\\\\d+$"}}',
+          'The bare numeric conversion id (the digits after AW- in Google Ads). GTM stores it without the prefix; the conversion tag builds AW-<id>/<label> itself.\n---\n{"placeholder":{"kind":"adsConversionId","example":"123456789","pattern":"^[0-9]+$"}}',
         parameter: [
           {
             type: "template",
             key: "value",
-            value: "<AW-XXXXXXXXX>",
+            value: "<XXXXXXXXX>",
           },
         ],
         variableId: "4",
@@ -75,10 +75,10 @@ export const data = {
         fingerprint: "1",
       },
       {
-        name: "Const - Ads Label - form_submit",
+        name: "Const - Google Ads - contact_form_submit Conversion Label",
         type: "c",
         notes:
-          'Conversion label of the Google Ads conversion action for form_submit.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp"}}',
+          'Conversion label of the Google Ads conversion action for contact_form_submit.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp","pattern":"^[A-Za-z0-9_-]{5,}$"}}',
         parameter: [
           {
             type: "template",
@@ -91,10 +91,10 @@ export const data = {
         fingerprint: "1",
       },
       {
-        name: "Const - Ads Label - email_click",
+        name: "Const - Google Ads - call_click Conversion Label",
         type: "c",
         notes:
-          'Conversion label of the Google Ads conversion action for email_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp"}}',
+          'Conversion label of the Google Ads conversion action for call_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp","pattern":"^[A-Za-z0-9_-]{5,}$"}}',
         parameter: [
           {
             type: "template",
@@ -107,10 +107,10 @@ export const data = {
         fingerprint: "1",
       },
       {
-        name: "Const - Ads Label - call_click",
+        name: "Const - Google Ads - email_click Conversion Label",
         type: "c",
         notes:
-          'Conversion label of the Google Ads conversion action for call_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp"}}',
+          'Conversion label of the Google Ads conversion action for email_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp","pattern":"^[A-Za-z0-9_-]{5,}$"}}',
         parameter: [
           {
             type: "template",
@@ -122,12 +122,89 @@ export const data = {
         path: "accounts/1/containers/10/workspace/1/variable/7",
         fingerprint: "1",
       },
+      {
+        name: "Const - Google Ads - maps_click Conversion Label",
+        type: "c",
+        notes:
+          'Conversion label of the Google Ads conversion action for maps_click.\n---\n{"placeholder":{"kind":"adsConversionLabel","example":"AbCdEfGhIjKlMnOp","pattern":"^[A-Za-z0-9_-]{5,}$"}}',
+        parameter: [
+          {
+            type: "template",
+            key: "value",
+            value: "<label>",
+          },
+        ],
+        variableId: "8",
+        path: "accounts/1/containers/10/workspace/1/variable/8",
+        fingerprint: "1",
+      },
+      {
+        name: "DLV - form_id",
+        type: "v",
+        notes: "The submitted form's id, read from the dataLayer.",
+        parameter: [
+          {
+            type: "template",
+            key: "name",
+            value: "form_id",
+          },
+        ],
+        variableId: "9",
+        path: "accounts/1/containers/10/workspace/1/variable/9",
+        fingerprint: "1",
+      },
+      {
+        name: "DLV - form_name",
+        type: "v",
+        notes: "The submitted form's name, read from the dataLayer.",
+        parameter: [
+          {
+            type: "template",
+            key: "name",
+            value: "form_name",
+          },
+        ],
+        variableId: "10",
+        path: "accounts/1/containers/10/workspace/1/variable/10",
+        fingerprint: "1",
+      },
+      {
+        name: "DLV - form_destination",
+        type: "v",
+        notes: "The submitted form's destination URL, read from the dataLayer.",
+        parameter: [
+          {
+            type: "template",
+            key: "name",
+            value: "form_destination",
+          },
+        ],
+        variableId: "11",
+        path: "accounts/1/containers/10/workspace/1/variable/11",
+        fingerprint: "1",
+      },
+      {
+        name: "DLV - form_submit_text",
+        type: "v",
+        notes: "The submit button's text, read from the dataLayer.",
+        parameter: [
+          {
+            type: "template",
+            key: "name",
+            value: "form_submit_text",
+          },
+        ],
+        variableId: "12",
+        path: "accounts/1/containers/10/workspace/1/variable/12",
+        fingerprint: "1",
+      },
     ],
     trigger: [
       {
-        name: "Custom Event - form_submit",
+        name: "Custom Event - contact_form_submit",
         type: "customEvent",
-        notes: "Fires on the dataLayer event form_submit that the site's form handler pushes.",
+        notes:
+          "Fires on the dataLayer event contact_form_submit that the site's form handler pushes on a successful submit.",
         customEventFilter: [
           {
             type: "equals",
@@ -140,45 +217,23 @@ export const data = {
               {
                 type: "template",
                 key: "arg1",
-                value: "form_submit",
+                value: "contact_form_submit",
               },
             ],
           },
         ],
-        triggerId: "8",
-        path: "accounts/1/containers/10/workspace/1/trigger/8",
-        fingerprint: "1",
-      },
-      {
-        name: "Click - email",
-        type: "linkClick",
-        filter: [
-          {
-            type: "startsWith",
-            parameter: [
-              {
-                type: "template",
-                key: "arg0",
-                value: "{{Click URL}}",
-              },
-              {
-                type: "template",
-                key: "arg1",
-                value: "mailto:",
-              },
-            ],
-          },
-        ],
-        triggerId: "9",
-        path: "accounts/1/containers/10/workspace/1/trigger/9",
+        triggerId: "13",
+        path: "accounts/1/containers/10/workspace/1/trigger/13",
         fingerprint: "1",
       },
       {
         name: "Click - call",
         type: "linkClick",
+        notes:
+          "Fires on a click of a tel: link. Contains, not starts-with, so a swapped forwarding number still matches.",
         filter: [
           {
-            type: "startsWith",
+            type: "contains",
             parameter: [
               {
                 type: "template",
@@ -193,112 +248,297 @@ export const data = {
             ],
           },
         ],
-        triggerId: "10",
-        path: "accounts/1/containers/10/workspace/1/trigger/10",
+        waitForTags: {
+          type: "boolean",
+          value: "true",
+        },
+        waitForTagsTimeout: {
+          type: "template",
+          value: "2000",
+        },
+        checkValidation: {
+          type: "boolean",
+          value: "false",
+        },
+        autoEventFilter: [
+          {
+            type: "matchRegex",
+            parameter: [
+              {
+                type: "template",
+                key: "arg0",
+                value: "{{Page URL}}",
+              },
+              {
+                type: "template",
+                key: "arg1",
+                value: ".*",
+              },
+            ],
+          },
+        ],
+        triggerId: "14",
+        path: "accounts/1/containers/10/workspace/1/trigger/14",
+        fingerprint: "1",
+      },
+      {
+        name: "Click - email",
+        type: "linkClick",
+        notes: "Fires on a click of a mailto: link.",
+        filter: [
+          {
+            type: "contains",
+            parameter: [
+              {
+                type: "template",
+                key: "arg0",
+                value: "{{Click URL}}",
+              },
+              {
+                type: "template",
+                key: "arg1",
+                value: "mailto:",
+              },
+            ],
+          },
+        ],
+        waitForTags: {
+          type: "boolean",
+          value: "true",
+        },
+        waitForTagsTimeout: {
+          type: "template",
+          value: "2000",
+        },
+        checkValidation: {
+          type: "boolean",
+          value: "false",
+        },
+        autoEventFilter: [
+          {
+            type: "matchRegex",
+            parameter: [
+              {
+                type: "template",
+                key: "arg0",
+                value: "{{Page URL}}",
+              },
+              {
+                type: "template",
+                key: "arg1",
+                value: ".*",
+              },
+            ],
+          },
+        ],
+        triggerId: "15",
+        path: "accounts/1/containers/10/workspace/1/trigger/15",
+        fingerprint: "1",
+      },
+      {
+        name: "Click - maps",
+        type: "linkClick",
+        notes: "Fires on a click of a Google Maps link (a directions request).",
+        filter: [
+          {
+            type: "matchRegex",
+            parameter: [
+              {
+                type: "template",
+                key: "arg0",
+                value: "{{Click URL}}",
+              },
+              {
+                type: "template",
+                key: "arg1",
+                value: "maps\\.google\\.|google\\.[a-z.]+/maps|maps\\.app\\.goo\\.gl",
+              },
+            ],
+          },
+        ],
+        waitForTags: {
+          type: "boolean",
+          value: "true",
+        },
+        waitForTagsTimeout: {
+          type: "template",
+          value: "2000",
+        },
+        checkValidation: {
+          type: "boolean",
+          value: "false",
+        },
+        autoEventFilter: [
+          {
+            type: "matchRegex",
+            parameter: [
+              {
+                type: "template",
+                key: "arg0",
+                value: "{{Page URL}}",
+              },
+              {
+                type: "template",
+                key: "arg1",
+                value: ".*",
+              },
+            ],
+          },
+        ],
+        triggerId: "16",
+        path: "accounts/1/containers/10/workspace/1/trigger/16",
         fingerprint: "1",
       },
     ],
     tag: [
       {
-        name: "GA4 - form_submit",
+        name: "Google Tag",
+        type: "googtag",
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
+        parameter: [
+          {
+            type: "template",
+            key: "tagId",
+            value: "{{Const - GA4 Measurement ID}}",
+          },
+        ],
+        notes:
+          'Loads the Google tag on every page. No Conversion Linker tag: a Google tag on every page sets the same first-party click cookies. Google\'s Conversion linker help says "If a container loads a Google tag on every page, it does not also need a conversion linker tag." https://support.google.com/tagmanager/answer/7549390. Add the Google Ads account as a destination of this Google tag in Google Ads or GA4 admin.\n---\n{"recipes":["google_tag"]}',
+        firingTriggerId: ["2147479573"],
+        tagId: "17",
+        path: "accounts/1/containers/10/workspace/1/tag/17",
+        fingerprint: "1",
+      },
+      {
+        name: "GA4 - contact_form_submit",
         type: "gaawe",
-        notes: 'Sends the form_submit event to GA4.\n---\n{"recipes":["form_submit"]}',
+        notes:
+          'Sends the contact_form_submit event to GA4.\n---\n{"recipes":["contact_form_submit"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
         parameter: [
           {
             type: "template",
             key: "eventName",
-            value: "form_submit",
+            value: "contact_form_submit",
           },
           {
             type: "template",
             key: "measurementIdOverride",
             value: "{{Const - GA4 Measurement ID}}",
           },
+          {
+            type: "list",
+            key: "eventSettingsTable",
+            list: [
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "form_id",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{DLV - form_id}}",
+                  },
+                ],
+              },
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "form_name",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{DLV - form_name}}",
+                  },
+                ],
+              },
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "form_destination",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{DLV - form_destination}}",
+                  },
+                ],
+              },
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "form_submit_text",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{DLV - form_submit_text}}",
+                  },
+                ],
+              },
+            ],
+          },
         ],
-        firingTriggerId: ["8"],
-        tagId: "11",
-        path: "accounts/1/containers/10/workspace/1/tag/11",
+        firingTriggerId: ["13"],
+        tagId: "18",
+        path: "accounts/1/containers/10/workspace/1/tag/18",
         fingerprint: "1",
       },
       {
-        name: "Ads - form_submit",
+        name: "Ads - contact_form_submit",
         type: "awct",
         notes:
-          'Records the form_submit conversion in Google Ads.\n---\n{"recipes":["form_submit"]}',
-        setupTag: [
-          {
-            tagName: "Conversion Linker",
-          },
-        ],
+          'Records the contact_form_submit conversion in Google Ads.\n---\n{"recipes":["contact_form_submit"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
         parameter: [
           {
             type: "template",
             key: "conversionId",
-            value: "{{Const - Ads Conversion ID}}",
+            value: "{{Const - Google Ads Conversion ID}}",
           },
           {
             type: "template",
             key: "conversionLabel",
-            value: "{{Const - Ads Label - form_submit}}",
+            value: "{{Const - Google Ads - contact_form_submit Conversion Label}}",
+          },
+          {
+            type: "boolean",
+            key: "enableConversionLinker",
+            value: "true",
           },
         ],
-        firingTriggerId: ["8"],
-        tagId: "12",
-        path: "accounts/1/containers/10/workspace/1/tag/12",
-        fingerprint: "1",
-      },
-      {
-        name: "GA4 - email_click",
-        type: "gaawe",
-        notes: 'Sends the email_click event to GA4.\n---\n{"recipes":["email_click"]}',
-        parameter: [
-          {
-            type: "template",
-            key: "eventName",
-            value: "email_click",
-          },
-          {
-            type: "template",
-            key: "measurementIdOverride",
-            value: "{{Const - GA4 Measurement ID}}",
-          },
-        ],
-        firingTriggerId: ["9"],
-        tagId: "13",
-        path: "accounts/1/containers/10/workspace/1/tag/13",
-        fingerprint: "1",
-      },
-      {
-        name: "Ads - email_click",
-        type: "awct",
-        notes:
-          'Records the email_click conversion in Google Ads.\n---\n{"recipes":["email_click"]}',
-        setupTag: [
-          {
-            tagName: "Conversion Linker",
-          },
-        ],
-        parameter: [
-          {
-            type: "template",
-            key: "conversionId",
-            value: "{{Const - Ads Conversion ID}}",
-          },
-          {
-            type: "template",
-            key: "conversionLabel",
-            value: "{{Const - Ads Label - email_click}}",
-          },
-        ],
-        firingTriggerId: ["9"],
-        tagId: "14",
-        path: "accounts/1/containers/10/workspace/1/tag/14",
+        firingTriggerId: ["13"],
+        tagId: "19",
+        path: "accounts/1/containers/10/workspace/1/tag/19",
         fingerprint: "1",
       },
       {
         name: "GA4 - call_click",
         type: "gaawe",
         notes: 'Sends the call_click event to GA4.\n---\n{"recipes":["call_click"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
         parameter: [
           {
             type: "template",
@@ -310,51 +550,266 @@ export const data = {
             key: "measurementIdOverride",
             value: "{{Const - GA4 Measurement ID}}",
           },
+          {
+            type: "list",
+            key: "eventSettingsTable",
+            list: [
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "link_url",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{Click URL}}",
+                  },
+                ],
+              },
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "link_text",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{Click Text}}",
+                  },
+                ],
+              },
+            ],
+          },
         ],
-        firingTriggerId: ["10"],
-        tagId: "15",
-        path: "accounts/1/containers/10/workspace/1/tag/15",
+        firingTriggerId: ["14"],
+        tagId: "20",
+        path: "accounts/1/containers/10/workspace/1/tag/20",
         fingerprint: "1",
       },
       {
         name: "Ads - call_click",
         type: "awct",
         notes: 'Records the call_click conversion in Google Ads.\n---\n{"recipes":["call_click"]}',
-        setupTag: [
-          {
-            tagName: "Conversion Linker",
-          },
-        ],
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
         parameter: [
           {
             type: "template",
             key: "conversionId",
-            value: "{{Const - Ads Conversion ID}}",
+            value: "{{Const - Google Ads Conversion ID}}",
           },
           {
             type: "template",
             key: "conversionLabel",
-            value: "{{Const - Ads Label - call_click}}",
+            value: "{{Const - Google Ads - call_click Conversion Label}}",
+          },
+          {
+            type: "boolean",
+            key: "enableConversionLinker",
+            value: "true",
           },
         ],
-        firingTriggerId: ["10"],
-        tagId: "16",
-        path: "accounts/1/containers/10/workspace/1/tag/16",
+        firingTriggerId: ["14"],
+        tagId: "21",
+        path: "accounts/1/containers/10/workspace/1/tag/21",
         fingerprint: "1",
       },
       {
-        name: "Conversion Linker",
-        type: "gclidw",
+        name: "GA4 - email_click",
+        type: "gaawe",
+        notes: 'Sends the email_click event to GA4.\n---\n{"recipes":["email_click"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
+        parameter: [
+          {
+            type: "template",
+            key: "eventName",
+            value: "email_click",
+          },
+          {
+            type: "template",
+            key: "measurementIdOverride",
+            value: "{{Const - GA4 Measurement ID}}",
+          },
+          {
+            type: "list",
+            key: "eventSettingsTable",
+            list: [
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "link_url",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{Click URL}}",
+                  },
+                ],
+              },
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "link_text",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{Click Text}}",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        firingTriggerId: ["15"],
+        tagId: "22",
+        path: "accounts/1/containers/10/workspace/1/tag/22",
+        fingerprint: "1",
+      },
+      {
+        name: "Ads - email_click",
+        type: "awct",
         notes:
-          'Stores Google Ads click information so conversion tags can attribute.\n---\n{"recipes":["form_submit","email_click","call_click"]}',
-        tagId: "17",
-        path: "accounts/1/containers/10/workspace/1/tag/17",
+          'Records the email_click conversion in Google Ads.\n---\n{"recipes":["email_click"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
+        parameter: [
+          {
+            type: "template",
+            key: "conversionId",
+            value: "{{Const - Google Ads Conversion ID}}",
+          },
+          {
+            type: "template",
+            key: "conversionLabel",
+            value: "{{Const - Google Ads - email_click Conversion Label}}",
+          },
+          {
+            type: "boolean",
+            key: "enableConversionLinker",
+            value: "true",
+          },
+        ],
+        firingTriggerId: ["15"],
+        tagId: "23",
+        path: "accounts/1/containers/10/workspace/1/tag/23",
+        fingerprint: "1",
+      },
+      {
+        name: "GA4 - maps_click",
+        type: "gaawe",
+        notes: 'Sends the maps_click event to GA4.\n---\n{"recipes":["maps_click"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
+        parameter: [
+          {
+            type: "template",
+            key: "eventName",
+            value: "maps_click",
+          },
+          {
+            type: "template",
+            key: "measurementIdOverride",
+            value: "{{Const - GA4 Measurement ID}}",
+          },
+          {
+            type: "list",
+            key: "eventSettingsTable",
+            list: [
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "link_url",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{Click URL}}",
+                  },
+                ],
+              },
+              {
+                type: "map",
+                map: [
+                  {
+                    type: "template",
+                    key: "parameter",
+                    value: "link_text",
+                  },
+                  {
+                    type: "template",
+                    key: "parameterValue",
+                    value: "{{Click Text}}",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        firingTriggerId: ["16"],
+        tagId: "24",
+        path: "accounts/1/containers/10/workspace/1/tag/24",
+        fingerprint: "1",
+      },
+      {
+        name: "Ads - maps_click",
+        type: "awct",
+        notes: 'Records the maps_click conversion in Google Ads.\n---\n{"recipes":["maps_click"]}',
+        consentSettings: {
+          consentStatus: "notNeeded",
+        },
+        parameter: [
+          {
+            type: "template",
+            key: "conversionId",
+            value: "{{Const - Google Ads Conversion ID}}",
+          },
+          {
+            type: "template",
+            key: "conversionLabel",
+            value: "{{Const - Google Ads - maps_click Conversion Label}}",
+          },
+          {
+            type: "boolean",
+            key: "enableConversionLinker",
+            value: "true",
+          },
+        ],
+        firingTriggerId: ["16"],
+        tagId: "25",
+        path: "accounts/1/containers/10/workspace/1/tag/25",
         fingerprint: "1",
       },
     ],
     builtInVariable: [
       {
         type: "clickUrl",
+      },
+      {
+        type: "pageUrl",
+      },
+      {
+        type: "clickText",
       },
     ],
     gtagConfig: [],
@@ -365,36 +820,46 @@ export const data = {
   manifest: {
     conventions: {},
     recipes: {
-      form_submit: {
-        description: "A lead form was submitted (dataLayer event form_submit)",
-        dependencies: [
-          {
-            constant: "Const - Ads Label - form_submit",
-            platform: "googleAds",
-            resource: "conversionAction",
-            pattern: "^[A-Za-z0-9_-]{5,}$",
-          },
-        ],
+      google_tag: {
+        description: "Google tag on Initialization; base for every recipe.",
       },
-      email_click: {
-        description: "A mailto: link was clicked",
+      contact_form_submit: {
+        description: "Contact form submitted (dataLayer event).",
         dependencies: [
           {
-            constant: "Const - Ads Label - email_click",
+            constant: "Const - Google Ads - contact_form_submit Conversion Label",
             platform: "googleAds",
             resource: "conversionAction",
-            pattern: "^[A-Za-z0-9_-]{5,}$",
           },
         ],
       },
       call_click: {
-        description: "A tel: link was clicked",
+        description: "tel: link clicked.",
         dependencies: [
           {
-            constant: "Const - Ads Label - call_click",
+            constant: "Const - Google Ads - call_click Conversion Label",
             platform: "googleAds",
             resource: "conversionAction",
-            pattern: "^[A-Za-z0-9_-]{5,}$",
+          },
+        ],
+      },
+      email_click: {
+        description: "mailto: link clicked.",
+        dependencies: [
+          {
+            constant: "Const - Google Ads - email_click Conversion Label",
+            platform: "googleAds",
+            resource: "conversionAction",
+          },
+        ],
+      },
+      maps_click: {
+        description: "Google Maps link clicked.",
+        dependencies: [
+          {
+            constant: "Const - Google Ads - maps_click Conversion Label",
+            platform: "googleAds",
+            resource: "conversionAction",
           },
         ],
       },
@@ -411,42 +876,49 @@ export const data = {
         pattern: "^G-[A-Z0-9]+$",
       },
     },
-    "variable:Const - Ads Conversion ID": {
+    "variable:Const - Google Ads Conversion ID": {
       placeholder: {
         kind: "adsConversionId",
-        example: "AW-123456789",
-        pattern: "^AW-\\d+$",
+        example: "123456789",
+        pattern: "^[0-9]+$",
       },
     },
-    "variable:Const - Ads Label - form_submit": {
+    "variable:Const - Google Ads - contact_form_submit Conversion Label": {
       placeholder: {
         kind: "adsConversionLabel",
         example: "AbCdEfGhIjKlMnOp",
+        pattern: "^[A-Za-z0-9_-]{5,}$",
       },
     },
-    "variable:Const - Ads Label - email_click": {
+    "variable:Const - Google Ads - call_click Conversion Label": {
       placeholder: {
         kind: "adsConversionLabel",
         example: "AbCdEfGhIjKlMnOp",
+        pattern: "^[A-Za-z0-9_-]{5,}$",
       },
     },
-    "variable:Const - Ads Label - call_click": {
+    "variable:Const - Google Ads - email_click Conversion Label": {
       placeholder: {
         kind: "adsConversionLabel",
         example: "AbCdEfGhIjKlMnOp",
+        pattern: "^[A-Za-z0-9_-]{5,}$",
       },
     },
-    "tag:GA4 - form_submit": {
-      recipes: ["form_submit"],
+    "variable:Const - Google Ads - maps_click Conversion Label": {
+      placeholder: {
+        kind: "adsConversionLabel",
+        example: "AbCdEfGhIjKlMnOp",
+        pattern: "^[A-Za-z0-9_-]{5,}$",
+      },
     },
-    "tag:Ads - form_submit": {
-      recipes: ["form_submit"],
+    "tag:Google Tag": {
+      recipes: ["google_tag"],
     },
-    "tag:GA4 - email_click": {
-      recipes: ["email_click"],
+    "tag:GA4 - contact_form_submit": {
+      recipes: ["contact_form_submit"],
     },
-    "tag:Ads - email_click": {
-      recipes: ["email_click"],
+    "tag:Ads - contact_form_submit": {
+      recipes: ["contact_form_submit"],
     },
     "tag:GA4 - call_click": {
       recipes: ["call_click"],
@@ -454,100 +926,70 @@ export const data = {
     "tag:Ads - call_click": {
       recipes: ["call_click"],
     },
-    "tag:Conversion Linker": {
-      recipes: ["form_submit", "email_click", "call_click"],
+    "tag:GA4 - email_click": {
+      recipes: ["email_click"],
+    },
+    "tag:Ads - email_click": {
+      recipes: ["email_click"],
+    },
+    "tag:GA4 - maps_click": {
+      recipes: ["maps_click"],
+    },
+    "tag:Ads - maps_click": {
+      recipes: ["maps_click"],
     },
   },
   recipes: [
     {
-      name: "form_submit",
-      description: "A lead form was submitted (dataLayer event form_submit)",
+      name: "google_tag",
+      description: "Google tag on Initialization; base for every recipe.",
       roots: [
         {
           kind: "tag",
-          name: "GA4 - form_submit",
-        },
-        {
-          kind: "tag",
-          name: "Ads - form_submit",
-        },
-        {
-          kind: "tag",
-          name: "Conversion Linker",
+          name: "Google Tag",
         },
       ],
       entities: [
         {
           kind: "tag",
-          name: "GA4 - form_submit",
-        },
-        {
-          kind: "tag",
-          name: "Ads - form_submit",
-        },
-        {
-          kind: "tag",
-          name: "Conversion Linker",
+          name: "Google Tag",
         },
         {
           kind: "trigger",
-          name: "Custom Event - form_submit",
+          name: "Initialization - All Pages",
         },
         {
           kind: "variable",
           name: "Const - GA4 Measurement ID",
         },
-        {
-          kind: "variable",
-          name: "Const - Ads Conversion ID",
-        },
-        {
-          kind: "variable",
-          name: "Const - Ads Label - form_submit",
-        },
       ],
-      dependencies: [
-        {
-          constant: "Const - Ads Label - form_submit",
-          platform: "googleAds",
-          resource: "conversionAction",
-          pattern: "^[A-Za-z0-9_-]{5,}$",
-        },
-      ],
+      dependencies: [],
     },
     {
-      name: "email_click",
-      description: "A mailto: link was clicked",
+      name: "contact_form_submit",
+      description: "Contact form submitted (dataLayer event).",
       roots: [
         {
           kind: "tag",
-          name: "GA4 - email_click",
+          name: "GA4 - contact_form_submit",
         },
         {
           kind: "tag",
-          name: "Ads - email_click",
-        },
-        {
-          kind: "tag",
-          name: "Conversion Linker",
+          name: "Ads - contact_form_submit",
         },
       ],
       entities: [
         {
           kind: "tag",
-          name: "GA4 - email_click",
+          name: "GA4 - contact_form_submit",
         },
         {
           kind: "tag",
-          name: "Ads - email_click",
-        },
-        {
-          kind: "tag",
-          name: "Conversion Linker",
+          name: "Ads - contact_form_submit",
         },
         {
           kind: "trigger",
-          name: "Click - email",
+          name: "Custom Event - contact_form_submit",
         },
         {
           kind: "variable",
@@ -555,29 +997,40 @@ export const data = {
         },
         {
           kind: "variable",
-          name: "Const - Ads Conversion ID",
+          name: "DLV - form_id",
         },
         {
           kind: "variable",
-          name: "Const - Ads Label - email_click",
+          name: "DLV - form_name",
         },
         {
-          kind: "builtInVariable",
-          name: "clickUrl",
+          kind: "variable",
+          name: "DLV - form_destination",
+        },
+        {
+          kind: "variable",
+          name: "DLV - form_submit_text",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads Conversion ID",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads - contact_form_submit Conversion Label",
         },
       ],
       dependencies: [
         {
-          constant: "Const - Ads Label - email_click",
+          constant: "Const - Google Ads - contact_form_submit Conversion Label",
           platform: "googleAds",
           resource: "conversionAction",
-          pattern: "^[A-Za-z0-9_-]{5,}$",
         },
       ],
     },
     {
       name: "call_click",
-      description: "A tel: link was clicked",
+      description: "tel: link clicked.",
       roots: [
         {
           kind: "tag",
@@ -586,10 +1039,6 @@ export const data = {
         {
           kind: "tag",
           name: "Ads - call_click",
-        },
-        {
-          kind: "tag",
-          name: "Conversion Linker",
         },
       ],
       entities: [
@@ -600,10 +1049,6 @@ export const data = {
         {
           kind: "tag",
           name: "Ads - call_click",
-        },
-        {
-          kind: "tag",
-          name: "Conversion Linker",
         },
         {
           kind: "trigger",
@@ -614,24 +1059,149 @@ export const data = {
           name: "Const - GA4 Measurement ID",
         },
         {
-          kind: "variable",
-          name: "Const - Ads Conversion ID",
+          kind: "builtInVariable",
+          name: "clickUrl",
+        },
+        {
+          kind: "builtInVariable",
+          name: "clickText",
         },
         {
           kind: "variable",
-          name: "Const - Ads Label - call_click",
+          name: "Const - Google Ads Conversion ID",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads - call_click Conversion Label",
+        },
+        {
+          kind: "builtInVariable",
+          name: "pageUrl",
+        },
+      ],
+      dependencies: [
+        {
+          constant: "Const - Google Ads - call_click Conversion Label",
+          platform: "googleAds",
+          resource: "conversionAction",
+        },
+      ],
+    },
+    {
+      name: "email_click",
+      description: "mailto: link clicked.",
+      roots: [
+        {
+          kind: "tag",
+          name: "GA4 - email_click",
+        },
+        {
+          kind: "tag",
+          name: "Ads - email_click",
+        },
+      ],
+      entities: [
+        {
+          kind: "tag",
+          name: "GA4 - email_click",
+        },
+        {
+          kind: "tag",
+          name: "Ads - email_click",
+        },
+        {
+          kind: "trigger",
+          name: "Click - email",
+        },
+        {
+          kind: "variable",
+          name: "Const - GA4 Measurement ID",
         },
         {
           kind: "builtInVariable",
           name: "clickUrl",
         },
+        {
+          kind: "builtInVariable",
+          name: "clickText",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads Conversion ID",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads - email_click Conversion Label",
+        },
+        {
+          kind: "builtInVariable",
+          name: "pageUrl",
+        },
       ],
       dependencies: [
         {
-          constant: "Const - Ads Label - call_click",
+          constant: "Const - Google Ads - email_click Conversion Label",
           platform: "googleAds",
           resource: "conversionAction",
-          pattern: "^[A-Za-z0-9_-]{5,}$",
+        },
+      ],
+    },
+    {
+      name: "maps_click",
+      description: "Google Maps link clicked.",
+      roots: [
+        {
+          kind: "tag",
+          name: "GA4 - maps_click",
+        },
+        {
+          kind: "tag",
+          name: "Ads - maps_click",
+        },
+      ],
+      entities: [
+        {
+          kind: "tag",
+          name: "GA4 - maps_click",
+        },
+        {
+          kind: "tag",
+          name: "Ads - maps_click",
+        },
+        {
+          kind: "trigger",
+          name: "Click - maps",
+        },
+        {
+          kind: "variable",
+          name: "Const - GA4 Measurement ID",
+        },
+        {
+          kind: "builtInVariable",
+          name: "clickUrl",
+        },
+        {
+          kind: "builtInVariable",
+          name: "clickText",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads Conversion ID",
+        },
+        {
+          kind: "variable",
+          name: "Const - Google Ads - maps_click Conversion Label",
+        },
+        {
+          kind: "builtInVariable",
+          name: "pageUrl",
+        },
+      ],
+      dependencies: [
+        {
+          constant: "Const - Google Ads - maps_click Conversion Label",
+          platform: "googleAds",
+          resource: "conversionAction",
         },
       ],
     },
