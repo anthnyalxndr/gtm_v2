@@ -40,6 +40,24 @@ function summarise(report: SessionReport): string {
         (blocked.length ? `  blocked: ${blocked.join(', ')}` : ''),
     )
   }
+  for (const e of report.events) {
+    for (const m of e.mismatches) {
+      lines.push(
+        m.kind === 'tag_without_hit'
+          ? `  mismatch #${e.eventId} ${e.eventName}: tag "${m.tag}" (${m.tagType}) executed but no hit left the browser`
+          : `  mismatch #${e.eventId} ${e.eventName}: ${m.vendor} hit${m.eventName ? ` "${m.eventName}"` : ''} to ${m.host} with no tag to explain it`,
+      )
+    }
+  }
+  for (const h of report.unattributedHits) {
+    lines.push(
+      `  mismatch before any event: ${h.vendor} hit${h.eventName ? ` "${h.eventName}"` : ''} to ${h.host}`,
+    )
+  }
+  if (report.summary.mismatches)
+    lines.push(
+      `${report.summary.mismatches} mismatch${report.summary.mismatches === 1 ? '' : 'es'}`,
+    )
   for (const err of report.errors) lines.push(`  warning: ${err}`)
   return lines.join('\n')
 }
@@ -134,7 +152,9 @@ async function run(command: RunCommand): Promise<number> {
     await writeJson(command.tagAssistant, doc)
     console.log(`Tag Assistant import file written to ${command.tagAssistant}`)
   }
-  return report.container.debugBuildLoaded ? 0 : 1
+  if (!report.container.debugBuildLoaded) return 1
+  if (command.failOnMismatch && report.summary.mismatches > 0) return 3
+  return 0
 }
 
 async function exportCommand(

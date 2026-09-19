@@ -44,6 +44,19 @@ export const TagResultSchema = z.object({
   params: z.record(z.unknown()),
 })
 
+export const MismatchSchema = z.discriminatedUnion('kind', [
+  /** GTM reports the tag executed, but no hit left (or tried to leave) the browser for this event. */
+  z.object({ kind: z.literal('tag_without_hit'), tag: z.string(), tagType: z.string().optional() }),
+  /** A vendor hit was attributed to this event, but no executed tag could have sent it. */
+  z.object({
+    kind: z.literal('hit_without_tag'),
+    vendor: z.string(),
+    host: z.string(),
+    eventName: z.string().optional(),
+  }),
+])
+export type Mismatch = z.infer<typeof MismatchSchema>
+
 export const EventReportSchema = z.object({
   eventId: z.number(),
   eventName: z.string(),
@@ -55,6 +68,7 @@ export const EventReportSchema = z.object({
   /** Consent type to granted flag, as GTM saw it at this event. */
   consent: z.record(z.boolean()),
   hits: z.array(HitSchema),
+  mismatches: z.array(MismatchSchema),
 })
 export type EventReport = z.infer<typeof EventReportSchema>
 
@@ -83,6 +97,8 @@ export const SessionReportSchema = z.object({
   events: z.array(EventReportSchema),
   /** Every vendor hit attempted during the session, in order. */
   hits: z.array(HitSchema),
+  /** Hits that left before GTM reported any event, so no tag can explain them. */
+  unattributedHits: z.array(HitSchema),
   dataLayerPushes: z.array(z.object({ at: z.number(), pageUrl: z.string(), value: z.unknown() })),
   errors: z.array(z.string()),
   summary: z.object({
@@ -92,6 +108,7 @@ export const SessionReportSchema = z.object({
     tagsFailed: z.number(),
     hitsAttempted: z.number(),
     hitsSent: z.number(),
+    mismatches: z.number(),
   }),
 })
 export type SessionReport = z.infer<typeof SessionReportSchema>

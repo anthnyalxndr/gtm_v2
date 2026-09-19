@@ -111,7 +111,18 @@ describe('buildReport on a captured session', () => {
       tagsFailed: 0,
       hitsAttempted: 5,
       hitsSent: 0,
+      mismatches: 3,
     })
+  })
+
+  it("lists the fixture page's fake vendor hits, which fire before any GTM event, as unattributed", () => {
+    expect(report.unattributedHits.map((h) => h.vendor)).toEqual([
+      'ga4',
+      'google_ads',
+      'floodlight',
+    ])
+    expect(report.events.flatMap((e) => e.mismatches)).toEqual([])
+    expect(report.events.find((e) => e.eventName === 'form_submit')!.mismatches).toEqual([])
   })
 
   it('marks the debug build as missing when no per-event records exist', () => {

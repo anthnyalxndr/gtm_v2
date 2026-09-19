@@ -1,10 +1,10 @@
 ---
 id: TASK-11
 title: Flag mismatches between GTM's tag verdicts and observed hits
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 17:01'
+updated_date: '2026-09-19 20:01'
 labels:
   - predict
 dependencies:
@@ -24,8 +24,15 @@ The finding a user cares about is a tag GTM says succeeded with no hit leaving t
 
 <!-- AC:BEGIN -->
 
-- [ ] #1 Each report event gains a mismatches list naming executed tags with no attributable hit and hits with no executed tag, considering only tag types that send hits
-- [ ] #2 The summary counts mismatches and the CLI prints them
-- [ ] #3 The run command exits non-zero when --fail-on-mismatch is set and mismatches exist
+- [x] #1 Each report event gains a mismatches list naming executed tags with no attributable hit and hits with no executed tag, considering only tag types that send hits
+- [x] #2 The summary counts mismatches and the CLI prints them
+- [x] #3 The run command exits non-zero when --fail-on-mismatch is set and mismatches exist
 
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+
+src/report/mismatches.ts is a pure comparison per event: hit-sending tag types (gaawe, awct, sp, flc, fls, ua, img) that executed with no hit, and hits with no executed explaining tag (those types plus googtag and html). Hits that leave before GTM's first event go in report.unattributedHits and count as mismatches, which is how the fixture site's fake vendor requests surface. The CLI prints each mismatch under the event list and --fail-on-mismatch exits 3. Verified on the fixture site: three unattributed hits, exit 3.
+<!-- SECTION:FINAL_SUMMARY:END -->

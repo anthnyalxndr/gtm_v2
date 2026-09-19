@@ -1,5 +1,6 @@
 import type { RawDataLayerPush, RawRecord } from '../session/debug-queue'
 import type { HitPolicy } from '../scenario/schema'
+import { findMismatches } from './mismatches'
 import type { EventReport, Hit, SessionReport } from './types'
 
 export interface RawSession {
@@ -151,6 +152,7 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
       tags: [...tagResults.values()],
       consent: consentOf(started),
       hits: [],
+      mismatches: [],
     })
   }
 
@@ -168,6 +170,7 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
     if (ev) ev.hits.push(h)
   }
 
+  for (const e of events) e.mismatches = findMismatches(e)
   const allTags = events.flatMap((e) => e.tags)
   return {
     version: 1,
@@ -184,6 +187,7 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
     triggers,
     events,
     hits,
+    unattributedHits: hits.filter((h) => h.eventId === undefined),
     dataLayerPushes: raw.dataLayer.map((p) => ({
       at: p.capturedAt,
       pageUrl: p.pageUrl,
@@ -200,6 +204,9 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
       ).length,
       hitsAttempted: hits.length,
       hitsSent: hits.filter((h) => h.outcome !== 'aborted').length,
+      mismatches:
+        events.reduce((n, e) => n + e.mismatches.length, 0) +
+        hits.filter((h) => h.eventId === undefined).length,
     },
   }
 }

@@ -101,8 +101,12 @@ code is left out of the file unless `--include-auth` is passed on `run`.
   every debug record and dataLayer push, so nothing is lost on navigation. The in-page arrays
   exist only for `waitForFunction` polling within one page.
 - **One `SessionReport` shape.** Ordered events, each with GTM's tag verdicts, observed hits,
-  page URL, and timestamp. JSON is the primary output. Any HTML or terminal view, and any
-  export to another tool's format, is a renderer over that JSON.
+  page URL, timestamp, and mismatches. JSON is the primary output. Any HTML or terminal view,
+  and any export to another tool's format, is a renderer over that JSON.
+- **Mismatches are the finding.** `src/report/mismatches.ts` compares verdicts with hits per
+  event: a hit-sending tag (GA4 event, Ads, Floodlight, image) that executed with no hit for
+  that event, or a hit with no executed tag that could explain it. Hits that leave before
+  GTM's first event are listed as unattributed. `--fail-on-mismatch` makes `run` exit 3.
 - **Environment codes come from the API or the operator, never from scenario files.**
   Scenarios name an environment; the resolver fetches and caches its code. `authCodeEnv` is
   the escape hatch for a code handed over without API access.

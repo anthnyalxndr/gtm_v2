@@ -12,6 +12,7 @@ const base: SessionReport = {
   triggers: [],
   events: [],
   hits: [],
+  unattributedHits: [],
   dataLayerPushes: [],
   errors: [],
   summary: {
@@ -21,6 +22,7 @@ const base: SessionReport = {
     tagsFailed: 0,
     hitsAttempted: 0,
     hitsSent: 0,
+    mismatches: 0,
   },
 }
 
@@ -35,6 +37,7 @@ describe('serialiseReport', () => {
         tagsFailed: 0,
         hitsAttempted: 0,
         tagsExecuted: 0,
+        mismatches: 0,
       },
     }
     expect(serialiseReport(shuffled)).toBe(serialiseReport(base))

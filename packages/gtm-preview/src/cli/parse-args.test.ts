@@ -23,6 +23,7 @@ describe('parseArgs', () => {
       includeAuth: false,
       refresh: false,
       versionFromWorkspace: undefined,
+      failOnMismatch: false,
     })
   })
 
@@ -38,6 +39,13 @@ describe('parseArgs', () => {
       includeAuth: false,
       refresh: false,
       versionFromWorkspace: undefined,
+      failOnMismatch: false,
+    })
+  })
+
+  it('parses --fail-on-mismatch', () => {
+    expect(parseArgs(['run', 's.json', '--fail-on-mismatch'])).toMatchObject({
+      failOnMismatch: true,
     })
   })
 

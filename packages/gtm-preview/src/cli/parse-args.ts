@@ -13,6 +13,8 @@ export interface RunCommand {
   refresh: boolean
   /** Create a version from this workspace (no publish) before running against Latest. */
   versionFromWorkspace?: string
+  /** Exit non-zero when the report has mismatches. */
+  failOnMismatch: boolean
 }
 
 export type Command =
@@ -36,6 +38,7 @@ Options for run and record:
   --tag-assistant <path>  Also write a Tag Assistant import file
   --include-auth          Put the environment authorization code in the Tag Assistant file
   --refresh               Fetch environment codes from the API even if cached
+  --fail-on-mismatch      Exit 3 when GTM's verdicts and the observed hits disagree
   --version-from-workspace <name>
                           Create a version from that workspace (no publish) first, so
                           environment Latest points at unpublished work
@@ -66,6 +69,7 @@ export function parseArgs(argv: readonly string[]): Command {
     let tagAssistant: string | undefined
     let includeAuth = false
     let refresh = false
+    let failOnMismatch = false
     let versionFromWorkspace: string | undefined
     for (let i = 0; i < flags.length; i += 1) {
       const flag = flags[i]
@@ -86,6 +90,8 @@ export function parseArgs(argv: readonly string[]): Command {
         includeAuth = true
       } else if (flag === '--refresh') {
         refresh = true
+      } else if (flag === '--fail-on-mismatch') {
+        failOnMismatch = true
       } else if (flag === '--hits') {
         const v = flags[i + 1]
         if (v !== 'dry' && v !== 'debug' && v !== 'live')
@@ -109,6 +115,7 @@ export function parseArgs(argv: readonly string[]): Command {
       includeAuth,
       refresh,
       versionFromWorkspace,
+      failOnMismatch,
     }
   }
   if (command === 'export') {
