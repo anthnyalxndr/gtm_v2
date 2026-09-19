@@ -3,10 +3,10 @@ id: TASK-9
 title: >-
   Resolve environment authorization codes through @anthnyalxndr/gtm-client with
   a local cache
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 18:55'
+updated_date: '2026-09-19 19:59'
 labels:
   - predict
 dependencies:
@@ -26,11 +26,18 @@ Loading a container's debug build needs the environment authorization code. Use 
 
 <!-- AC:BEGIN -->
 
-- [ ] #1 A scenario may give container.environment as a name (Live, Latest, or a custom environment name) and omit authCodeEnv; the CLI resolves the code through gtm-client before launching the browser
-- [ ] #2 The client is constructed with the tagmanager.readonly scope only; the docs state that the token file is shared with gtm-apply
-- [ ] #3 Codes are cached in the user config directory with 0600 permissions, keyed by container public id and environment id, with the environment fingerprint and fetch time; the repo never contains them and they never appear in logs or reports
-- [ ] #4 A 403 on the container request with a cached code triggers one refetch and retry, then a clear failure naming the environment; --refresh forces a refetch
-- [ ] #5 --version-from-workspace <name> creates a version from that workspace (no publish) and uses Latest; it is never done implicitly
-- [ ] #6 Unit tests use createFakeService from @anthnyalxndr/gtm-client/testing; no test needs credentials
+- [x] #1 A scenario may give container.environment as a name (Live, Latest, or a custom environment name) and omit authCodeEnv; the CLI resolves the code through gtm-client before launching the browser
+- [x] #2 The client is constructed with the tagmanager.readonly scope only; the docs state that the token file is shared with gtm-apply
+- [x] #3 Codes are cached in the user config directory with 0600 permissions, keyed by container public id and environment id, with the environment fingerprint and fetch time; the repo never contains them and they never appear in logs or reports
+- [x] #4 A 403 on the container request with a cached code triggers one refetch and retry, then a clear failure naming the environment; --refresh forces a refetch
+- [x] #5 --version-from-workspace <name> creates a version from that workspace (no publish) and uses Latest; it is never done implicitly
+- [x] #6 Unit tests use createFakeService from @anthnyalxndr/gtm-client/testing; no test needs credentials
 
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+
+src/auth/environment-codes.ts resolves a container public id plus an environment name or number to a code through @anthnyalxndr/gtm-client (readonly scope; edit.containerversions only for createVersionFromWorkspace), caching container ids and codes owner-only in ~/.config/gtm-preview/environment-codes.json with fingerprint and fetch time. Scenarios may name Live, Latest, or a custom environment and omit authCodeEnv. The CLI resolves before launching the browser, retries once on a 403 with a cached code, and offers --refresh and --version-from-workspace. Verified live against the test container: first run from the API, second from cache, and a deliberately corrupted cache entry recovered through the retry. Fixed along the way: a rejected container request now fails before any step runs instead of being masked by a waitForEvent timeout. Ten resolver tests use createFakeService; nothing needs credentials.
+<!-- SECTION:FINAL_SUMMARY:END -->

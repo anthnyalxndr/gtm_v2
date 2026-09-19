@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildReport } from '../src/report/parse-records'
-import { parseScenario, resolveScenario } from '../src/scenario/schema'
+import { parseScenario, resolveScenario, runnableFromEnv } from '../src/scenario/schema'
 import { runSession } from '../src/session/run-session'
 import { startFixtureSite, type FixtureSite } from './fixtures/site/server'
 
@@ -30,10 +30,10 @@ describe.skipIf(!enabled)('runSession against the test container (needs GTM_AUTH
       }),
       process.env,
     )
-    const raw = await runSession(scenario)
+    const raw = await runSession(runnableFromEnv(scenario))
     expect(raw.errors).toEqual([])
     expect(raw.debugBuildLoaded).toBe(true)
-    expect(JSON.stringify(raw)).not.toContain(scenario.authCode)
+    expect(JSON.stringify(raw)).not.toContain(scenario.authCode!)
 
     const report = buildReport(raw, {
       scenario: { name: scenario.name, startUrl: scenario.startUrl },
@@ -58,7 +58,7 @@ describe.skipIf(!enabled)('runSession against the test container (needs GTM_AUTH
       }),
       { GTM_AUTH_BAD: 'not-a-real-code' },
     )
-    await expect(runSession(scenario)).rejects.toThrow(/HTTP 403/)
+    await expect(runSession(runnableFromEnv(scenario))).rejects.toThrow(/HTTP 403/)
   }, 60_000)
 })
 
@@ -80,7 +80,7 @@ describe.skipIf(!enabled)('runSession with a recorded driver (needs GTM_AUTH_WNX
       process.env,
       new URL('.', import.meta.url).pathname,
     )
-    const raw = await runSession(scenario)
+    const raw = await runSession(runnableFromEnv(scenario))
     expect(raw.errors).toEqual([])
     const names = raw.records
       .filter((r) => r.messageType === 'EVENT_STARTED')
@@ -104,6 +104,8 @@ describe.skipIf(!enabled)('runSession with a recorded driver (needs GTM_AUTH_WNX
       process.env,
       new URL('.', import.meta.url).pathname,
     )
-    await expect(runSession(scenario)).rejects.toThrow(/throws\.mjs: boom from the driver/)
+    await expect(runSession(runnableFromEnv(scenario))).rejects.toThrow(
+      /throws\.mjs: boom from the driver/,
+    )
   }, 60_000)
 })

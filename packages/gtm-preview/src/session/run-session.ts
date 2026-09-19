@@ -1,5 +1,5 @@
 import { chromium, type Browser } from 'playwright'
-import type { LoadedScenario } from '../scenario/schema'
+import type { RunnableScenario } from '../scenario/schema'
 import type { RawSession } from '../report/parse-records'
 import type { Hit } from '../report/types'
 import {
@@ -31,7 +31,7 @@ export class ContainerLoadError extends Error {}
  * authorization code redacted from every string.
  */
 export async function runSession(
-  scenario: LoadedScenario,
+  scenario: RunnableScenario,
   opts: RunOptions = {},
 ): Promise<RawSession> {
   const log = opts.log ?? (() => {})
@@ -104,16 +104,36 @@ export async function runSession(
 
     // Load the driver before the browser does anything so a bad module fails fast.
     const driver = scenario.driverPath ? await loadDriver(scenario.driverPath) : undefined
+    const failIfContainerRejected = () => {
+      if (containerStatus !== undefined && containerStatus !== 200) {
+        throw new ContainerLoadError(
+          `container ${scenario.container.id} env-${scenario.container.environment} returned HTTP ${containerStatus}; check the authorization code${scenario.container.authCodeEnv ? ` in ${scenario.container.authCodeEnv}` : ''}`,
+        )
+      }
+    }
+    const waitForContainerStatus = async (timeoutMs = 5000) => {
+      const until = Date.now() + timeoutMs
+      while (containerStatus === undefined && Date.now() < until) await page.waitForTimeout(50)
+    }
 
     log(`opening ${scenario.startUrl}`)
     await page.goto(scenario.startUrl, { waitUntil: 'load' })
-    if (driver && scenario.driverPath) {
-      log(`driver: ${scenario.driverPath}`)
-      await runDriver(driver, scenario.driverPath, page, log)
-    }
-    for (const [index, step] of scenario.steps.entries()) {
-      log(`step ${index}: ${step.kind}`)
-      await executeStep(page, step, index)
+    // A rejected container request (wrong or rotated code) must fail before any step runs,
+    // otherwise a waitForEvent timeout would mask it.
+    await waitForContainerStatus()
+    failIfContainerRejected()
+    try {
+      if (driver && scenario.driverPath) {
+        log(`driver: ${scenario.driverPath}`)
+        await runDriver(driver, scenario.driverPath, page, log)
+      }
+      for (const [index, step] of scenario.steps.entries()) {
+        log(`step ${index}: ${step.kind}`)
+        await executeStep(page, step, index)
+      }
+    } catch (err) {
+      failIfContainerRejected()
+      throw err
     }
     if (opts.pause) {
       log('paused: use the Inspector to record; press Resume when done')
@@ -122,11 +142,6 @@ export async function runSession(
     if (scenario.settleMs > 0) await page.waitForTimeout(scenario.settleMs)
 
     if (containerStatus === undefined) errors.push('the page never requested the container script')
-    if (containerStatus !== undefined && containerStatus !== 200) {
-      throw new ContainerLoadError(
-        `container ${scenario.container.id} env-${scenario.container.environment} returned HTTP ${containerStatus}; check the authorization code in ${scenario.container.authCodeEnv}`,
-      )
-    }
     // Only the debug build emits per-event records. It pauses on CONTAINER_STARTING only when the
     // page carries a debug signal; without one it runs straight through and still emits.
     const debugBuildLoaded = records.some((r) => r.messageType === 'EVENT_STARTED')

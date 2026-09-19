@@ -5,9 +5,18 @@ A scenario is a JSON file the `run` command executes. Fields:
 - `name`: used for the default report filename.
 - `startUrl`: the page to open first.
 - `container.id`: the GTM container the page loads (`GTM-XXXXXXX`).
-- `container.environment`: the environment number. Every container has 1 (Live) and 2 (Latest).
-- `container.authCodeEnv`: the name of the environment variable holding that environment's
-  authorization code. The code itself never goes in the file.
+- `container.environment`: an environment name (`Live`, `Latest`, or a custom environment's
+  name) or number. Every container has 1 (Live) and 2 (Latest).
+- `container.authCodeEnv`: optional. When set, the named environment variable must hold the
+  authorization code and `environment` must be a number. When omitted, the code is fetched
+  through the Tag Manager API with `@anthnyalxndr/gtm-client` (credentials in
+  `~/.config/gtm-apply/`, shared with gtm-apply; the first run opens a browser once) and cached
+  owner-only in `~/.config/gtm-preview/environment-codes.json`. A 403 from the container with
+  a cached code triggers one refetch and retry. `--refresh` forces a refetch. The code itself
+  never goes in a scenario file.
+- `--version-from-workspace <name>` (flag, not a field): create a version from that workspace
+  first, without publishing, so `Latest` points at unpublished work. This is a write to the
+  container and burns a version number, so it is never done implicitly.
 - `hits`: `dry` (default, abort every vendor hit in the browser), `debug` (send hits, mark
   GA4 ones with `_dbg=1` for DebugView), or `live` (send untouched).
 - `settleMs`: how long to wait after the last step before collecting (default 1500).

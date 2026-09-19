@@ -28,8 +28,13 @@ export const ScenarioSchema = z
     startUrl: z.string().url(),
     container: z.object({
       id: z.string().regex(/^GTM-[A-Z0-9]{5,10}$/, 'must look like GTM-XXXXXXX'),
-      environment: z.number().int().positive(),
-      authCodeEnv: z.string().min(1),
+      /** Environment number, or a name such as Live, Latest, or a custom environment. */
+      environment: z.union([z.number().int().positive(), z.string().min(1)]),
+      /**
+       * Environment variable holding the authorization code. When omitted the code is
+       * resolved through the Tag Manager API (gtm-client) and cached per user.
+       */
+      authCodeEnv: z.string().min(1).optional(),
     }),
     hits: HitPolicySchema.default('dry'),
     settleMs: z.number().int().nonnegative().default(1500),
@@ -46,10 +51,18 @@ export const ScenarioSchema = z
   })
 export type Scenario = z.infer<typeof ScenarioSchema>
 
+/** A scenario read from disk, with the code taken from the environment when it names one. */
 export type LoadedScenario = Scenario & {
-  authCode: string
+  authCode?: string
   /** Absolute path of the driver module when the scenario names one. */
   driverPath?: string
+}
+
+/** A scenario the runner can execute: code present, environment numeric. */
+export type RunnableScenario = Omit<LoadedScenario, 'authCode' | 'container'> & {
+  authCode: string
+  container: Scenario['container'] & { environment: number }
+  codeSource: 'env' | 'cache' | 'api'
 }
 
 export class ScenarioError extends Error {}
@@ -71,13 +84,21 @@ export function resolveScenario(
   env: Record<string, string | undefined>,
   scenarioDir = process.cwd(),
 ): LoadedScenario {
-  const authCode = env[scenario.container.authCodeEnv]
-  if (!authCode) {
-    throw new ScenarioError(
-      `environment variable ${scenario.container.authCodeEnv} is not set (it must hold the GTM environment authorization code)`,
-    )
+  const loaded: LoadedScenario = { ...scenario }
+  if (scenario.container.authCodeEnv) {
+    const authCode = env[scenario.container.authCodeEnv]
+    if (!authCode) {
+      throw new ScenarioError(
+        `environment variable ${scenario.container.authCodeEnv} is not set (it must hold the GTM environment authorization code)`,
+      )
+    }
+    if (typeof scenario.container.environment !== 'number') {
+      throw new ScenarioError(
+        'container.environment must be a number when authCodeEnv is used; names need the API',
+      )
+    }
+    loaded.authCode = authCode
   }
-  const loaded: LoadedScenario = { ...scenario, authCode }
   if (scenario.driver) {
     loaded.driverPath = isAbsolute(scenario.driver)
       ? scenario.driver
@@ -103,4 +124,17 @@ export async function loadScenario(
     throw new ScenarioError(`scenario ${path} is not valid JSON: ${(err as Error).message}`)
   }
   return resolveScenario(parseScenario(json), env, dirname(resolve(path)))
+}
+
+/** Finish a scenario that already has its code from the environment variable. */
+export function runnableFromEnv(scenario: LoadedScenario): RunnableScenario {
+  if (!scenario.authCode || typeof scenario.container.environment !== 'number') {
+    throw new ScenarioError('scenario has no authorization code from the environment')
+  }
+  return {
+    ...scenario,
+    authCode: scenario.authCode,
+    container: { ...scenario.container, environment: scenario.container.environment },
+    codeSource: 'env',
+  }
 }

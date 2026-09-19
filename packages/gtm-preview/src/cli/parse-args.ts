@@ -9,6 +9,10 @@ export interface RunCommand {
   raw?: string
   tagAssistant?: string
   includeAuth: boolean
+  /** Ignore cached environment codes and fetch them again. */
+  refresh: boolean
+  /** Create a version from this workspace (no publish) before running against Latest. */
+  versionFromWorkspace?: string
 }
 
 export type Command =
@@ -31,6 +35,10 @@ Options for run and record:
   --raw <path>            Also save the raw captured session (records, hits, dataLayer)
   --tag-assistant <path>  Also write a Tag Assistant import file
   --include-auth          Put the environment authorization code in the Tag Assistant file
+  --refresh               Fetch environment codes from the API even if cached
+  --version-from-workspace <name>
+                          Create a version from that workspace (no publish) first, so
+                          environment Latest points at unpublished work
 
 Options for export:
   --out <path>            Tag Assistant file path (default: next to the raw file)
@@ -57,17 +65,27 @@ export function parseArgs(argv: readonly string[]): Command {
     let raw: string | undefined
     let tagAssistant: string | undefined
     let includeAuth = false
+    let refresh = false
+    let versionFromWorkspace: string | undefined
     for (let i = 0; i < flags.length; i += 1) {
       const flag = flags[i]
-      if (flag === '--out' || flag === '--raw' || flag === '--tag-assistant') {
+      if (
+        flag === '--out' ||
+        flag === '--raw' ||
+        flag === '--tag-assistant' ||
+        flag === '--version-from-workspace'
+      ) {
         const v = flags[i + 1]
-        if (v === undefined || v.startsWith('--')) throw new Error(`${flag} requires a path`)
+        if (v === undefined || v.startsWith('--')) throw new Error(`${flag} requires a value`)
         if (flag === '--out') out = v
         else if (flag === '--raw') raw = v
-        else tagAssistant = v
+        else if (flag === '--tag-assistant') tagAssistant = v
+        else versionFromWorkspace = v
         i += 1
       } else if (flag === '--include-auth') {
         includeAuth = true
+      } else if (flag === '--refresh') {
+        refresh = true
       } else if (flag === '--hits') {
         const v = flags[i + 1]
         if (v !== 'dry' && v !== 'debug' && v !== 'live')
@@ -89,6 +107,8 @@ export function parseArgs(argv: readonly string[]): Command {
       raw,
       tagAssistant,
       includeAuth,
+      refresh,
+      versionFromWorkspace,
     }
   }
   if (command === 'export') {

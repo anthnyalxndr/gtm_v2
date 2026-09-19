@@ -75,4 +75,24 @@ describe('resolveScenario', () => {
     expect(() => resolveScenario(parseScenario(valid), {})).toThrow(ScenarioError)
     expect(() => resolveScenario(parseScenario(valid), {})).toThrow(/GTM_AUTH_EXAMPLE/)
   })
+
+  it('leaves the code unresolved when no authCodeEnv is named, so the API can supply it', () => {
+    const { authCodeEnv: _drop, ...container } = valid.container
+    void _drop
+    const s = resolveScenario(
+      parseScenario({ ...valid, container: { ...container, environment: 'Latest' } }),
+      {},
+    )
+    expect(s.authCode).toBeUndefined()
+    expect(s.container.environment).toBe('Latest')
+  })
+
+  it('rejects a named environment together with authCodeEnv', () => {
+    expect(() =>
+      resolveScenario(
+        parseScenario({ ...valid, container: { ...valid.container, environment: 'Latest' } }),
+        { GTM_AUTH_EXAMPLE: 'abc' },
+      ),
+    ).toThrow(/must be a number when authCodeEnv/)
+  })
 })

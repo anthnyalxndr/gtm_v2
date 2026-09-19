@@ -21,6 +21,8 @@ describe('parseArgs', () => {
       raw: undefined,
       tagAssistant: undefined,
       includeAuth: false,
+      refresh: false,
+      versionFromWorkspace: undefined,
     })
   })
 
@@ -34,7 +36,18 @@ describe('parseArgs', () => {
       raw: undefined,
       tagAssistant: undefined,
       includeAuth: false,
+      refresh: false,
+      versionFromWorkspace: undefined,
     })
+  })
+
+  it('parses --refresh and --version-from-workspace', () => {
+    expect(
+      parseArgs(['run', 's.json', '--refresh', '--version-from-workspace', 'Default Workspace']),
+    ).toMatchObject({ refresh: true, versionFromWorkspace: 'Default Workspace' })
+    expect(() => parseArgs(['run', 's.json', '--version-from-workspace'])).toThrow(
+      '--version-from-workspace requires a value',
+    )
   })
 
   it('parses run with --raw, --tag-assistant, and --include-auth', () => {
@@ -53,7 +66,7 @@ describe('parseArgs', () => {
       tagAssistant: 'ta.json',
       includeAuth: true,
     })
-    expect(() => parseArgs(['run', 's.json', '--raw'])).toThrow('--raw requires a path')
+    expect(() => parseArgs(['run', 's.json', '--raw'])).toThrow('--raw requires a value')
   })
 
   it('parses record as a headed run that pauses', () => {
@@ -98,7 +111,7 @@ describe('parseArgs', () => {
   })
 
   it('rejects --out without a value', () => {
-    expect(() => parseArgs(['run', 's.json', '--out'])).toThrow('--out requires a path')
+    expect(() => parseArgs(['run', 's.json', '--out'])).toThrow('--out requires a value')
   })
 
   it('rejects unknown flags and commands', () => {

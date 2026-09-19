@@ -42,10 +42,15 @@ not when the network call lands. `debug` lets hits out and appends `_dbg=1` to G
 requests so they show in DebugView. `live` lets hits out untouched. Only GA4 has a debug
 flag: in `debug` and `live` modes, Ads, Floodlight, and Meta hits are real conversions.
 
-Environment authorization codes come from the Tag Manager API (`environments.list`). Every
-container has Live (env 1) and Latest (env 2); workspace previews appear as environments too.
-Codes do not expire and unlock the unpublished container with full instrumentation, so they
-are secrets. Google tags (`G-`, `GT-`) serve their debug build to anyone.
+Environment authorization codes come from the Tag Manager API (`environments.list`) through
+`@anthnyalxndr/gtm-client` (`src/auth/environment-codes.ts`), requested with the readonly
+scope only and cached owner-only under `~/.config/gtm-preview/`. The client's OAuth token in
+`~/.config/gtm-apply/` is shared with gtm-apply. Every container has Live (env 1) and Latest
+(env 2); a scenario names one. A 403 from the container with a cached code means the
+environment was reauthorized: the CLI refetches once and retries. Codes do not expire and
+unlock the unpublished container with full instrumentation, so they are secrets and never
+appear in logs, reports, or the repo. Google tags (`G-`, `GT-`) serve their debug build to
+anyone.
 
 Two reasons this replaced the earlier plan to predict firing from the API (ADR 0002):
 prediction was an inference and this is GTM's verdict, and the dependency is a versioned
@@ -98,9 +103,9 @@ code is left out of the file unless `--include-auth` is passed on `run`.
 - **One `SessionReport` shape.** Ordered events, each with GTM's tag verdicts, observed hits,
   page URL, and timestamp. JSON is the primary output. Any HTML or terminal view, and any
   export to another tool's format, is a renderer over that JSON.
-- **Environment codes come from the API or the operator, never from scenario files.** The
-  Tag Manager API v2 (`tagmanager.googleapis.com`, scope `tagmanager.readonly`) lists
-  environments with their codes. Scenario files name an environment variable that holds one.
+- **Environment codes come from the API or the operator, never from scenario files.**
+  Scenarios name an environment; the resolver fetches and caches its code. `authCodeEnv` is
+  the escape hatch for a code handed over without API access.
 - **Record parsing is a pure function.** Raw queue records in, `SessionReport` out. No
   browser, no network. Most unit tests belong here, and captured record fixtures from real
   containers accumulate under `src/**/fixtures/`.

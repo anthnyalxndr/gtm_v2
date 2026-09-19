@@ -6,7 +6,15 @@ import { readRawSession, writeJson, type SavedRawSession } from './export/write'
 import { buildReport } from './report/parse-records'
 import type { SessionReport } from './report/types'
 import { writeReport } from './report/write'
-import { loadScenario, ScenarioError } from './scenario/schema'
+import {
+  loadScenario,
+  runnableFromEnv,
+  ScenarioError,
+  type LoadedScenario,
+  type RunnableScenario,
+} from './scenario/schema'
+import { defaultCacheFile } from './auth/code-cache'
+import { EnvironmentCodeError, EnvironmentCodeResolver } from './auth/environment-codes'
 import { DriverError } from './session/driver'
 import { ContainerLoadError, runSession } from './session/run-session'
 import { StepError } from './session/steps'
@@ -36,16 +44,60 @@ function summarise(report: SessionReport): string {
   return lines.join('\n')
 }
 
+/** Turn a loaded scenario into a runnable one: code from the environment, or from the API. */
+async function prepare(
+  loaded: LoadedScenario,
+  resolver: EnvironmentCodeResolver,
+  refresh: boolean,
+): Promise<RunnableScenario> {
+  if (loaded.container.authCodeEnv) return runnableFromEnv(loaded)
+  const code = await resolver.resolve(loaded.container.id, loaded.container.environment, {
+    refresh,
+  })
+  console.error(
+    `environment ${code.environmentName || code.environmentId} (env-${code.environmentId}) code from ${code.source}`,
+  )
+  return {
+    ...loaded,
+    authCode: code.authCode,
+    container: { ...loaded.container, environment: code.environmentId },
+    codeSource: code.source,
+  }
+}
+
 async function run(command: RunCommand): Promise<number> {
-  const scenario = await loadScenario(command.scenario)
-  if (command.hits) scenario.hits = command.hits
+  const loaded = await loadScenario(command.scenario)
+  if (command.hits) loaded.hits = command.hits
   const stem = basename(command.scenario, extname(command.scenario))
   const out = command.out ?? join('reports', `${stem}.json`)
-  const raw = await runSession(scenario, {
+  const resolver = new EnvironmentCodeResolver({ cacheFile: defaultCacheFile() })
+  if (command.versionFromWorkspace) {
+    const { versionPath } = await resolver.createVersionFromWorkspace(
+      loaded.container.id,
+      command.versionFromWorkspace,
+      `gtm-preview ${new Date().toISOString()}`,
+    )
+    console.error(
+      `created ${versionPath} from workspace "${command.versionFromWorkspace}"; Latest now points at it`,
+    )
+  }
+  const runOpts = {
     headless: !command.headed,
     pause: command.kind === 'record',
-    log: (l) => console.error(l),
-  })
+    log: (l: string) => console.error(l),
+  }
+  let scenario = await prepare(loaded, resolver, command.refresh)
+  let raw
+  try {
+    raw = await runSession(scenario, runOpts)
+  } catch (err) {
+    // A cached code that stopped working means the environment was reauthorized. Try once more.
+    if (!(err instanceof ContainerLoadError) || scenario.codeSource !== 'cache') throw err
+    console.error('container rejected the cached code; refetching it and retrying once')
+    await resolver.invalidate(scenario.container.id, scenario.container.environment)
+    scenario = await prepare(loaded, resolver, true)
+    raw = await runSession(scenario, runOpts)
+  }
   const meta = {
     scenario: { name: scenario.name, startUrl: scenario.startUrl },
     container: { id: scenario.container.id, environment: scenario.container.environment },
@@ -133,7 +185,8 @@ async function main(argv: readonly string[]): Promise<number> {
       err instanceof ScenarioError ||
       err instanceof ContainerLoadError ||
       err instanceof StepError ||
-      err instanceof DriverError
+      err instanceof DriverError ||
+      err instanceof EnvironmentCodeError
     ) {
       console.error(err.message)
       return 1
