@@ -9,12 +9,18 @@ interface ErrorWithStatus {
   response?: { status?: number };
 }
 
-/** 429 and 5xx are worth retrying. Everything else is the caller's problem. */
-export function isRetryable(err: unknown): boolean {
-  if (typeof err !== "object" || err === null) return false;
+/** The HTTP status an API error carries, wherever gaxios put it; undefined when it has none. */
+export function httpStatus(err: unknown): number | undefined {
+  if (typeof err !== "object" || err === null) return undefined;
   const e = err as ErrorWithStatus;
   const status = Number(e.response?.status ?? e.status ?? e.code);
-  return status === 429 || (status >= 500 && status < 600);
+  return Number.isFinite(status) ? status : undefined;
+}
+
+/** 429 and 5xx are worth retrying. Everything else is the caller's problem. */
+export function isRetryable(err: unknown): boolean {
+  const status = httpStatus(err);
+  return status === 429 || (status !== undefined && status >= 500 && status < 600);
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
