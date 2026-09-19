@@ -16,6 +16,8 @@ describe('parseArgs', () => {
       kind: 'run',
       scenario: 'scenarios/home.json',
       out: undefined,
+      hits: undefined,
+      headed: false,
     })
   })
 
@@ -24,7 +26,19 @@ describe('parseArgs', () => {
       kind: 'run',
       scenario: 's.json',
       out: 'report.json',
+      hits: undefined,
+      headed: false,
     })
+  })
+
+  it('parses --hits and --headed', () => {
+    expect(parseArgs(['run', 's.json', '--hits', 'debug', '--headed'])).toMatchObject({
+      hits: 'debug',
+      headed: true,
+    })
+    expect(() => parseArgs(['run', 's.json', '--hits', 'maybe'])).toThrow(
+      '--hits must be dry, debug, or live',
+    )
   })
 
   it('rejects run without a scenario', () => {

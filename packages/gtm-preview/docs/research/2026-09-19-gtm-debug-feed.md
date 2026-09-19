@@ -29,15 +29,19 @@ Manager API. GTM's own verdict is available, so prediction is unnecessary.
    authorization code is what the server checks. For Google tags (gtag.js, `G-` and `GT-`
    ids) the debug build is served to anyone with `gtm_debug=x`, since a Google tag has no
    unpublished state to protect.
-3. **The pause.** The debug build creates `window["google.tagmanager.debugui2.queue"]`,
-   injects Google's `debug/bootstrap` script, pushes a `CONTAINER_STARTING` record whose
-   `data.resume` is a function, and stops. In a real session the bootstrap script talks to
-   Tag Assistant through `window.opener` or the extension, gets container details back, and
-   calls `resume()`.
+3. **The pause, when it happens.** If the page carries one of the four debug signals, the
+   build creates `window["google.tagmanager.debugui2.queue"]`, injects Google's
+   `debug/bootstrap` script, pushes a `CONTAINER_STARTING` record whose `data.resume` is a
+   function, and stops until something calls it. In a real session the bootstrap script talks
+   to Tag Assistant through `window.opener` or the extension, gets container details back,
+   and resumes. **Without a signal on the page, the debug build does not pause and does not
+   push `CONTAINER_STARTING`. It runs immediately and still emits every record.** That is the
+   path the product uses: the signal is only in the container request, never on the page.
 4. **Our hook.** An init script defines the queue property before any page script runs, so
-   the build's `push` calls land in our recorder. When `CONTAINER_STARTING` arrives, the
-   recorder calls `data.resume()` itself. A route handler aborts `debug/bootstrap` and
-   `debug/badge` so nothing tries to reach Tag Assistant.
+   the build's `push` calls land in our recorder. If a `CONTAINER_STARTING` ever arrives (a
+   page with a stale `__TAG_ASSISTANT` cookie, say), the recorder calls `data.resume()`
+   itself. A route handler aborts `debug/bootstrap` and `debug/badge` so nothing tries to
+   reach Tag Assistant.
 5. **Loading the debug build on a real site.** The site's own snippet requests plain
    `gtm.js?id=X`. A Playwright route rewrites that one request in flight to add the
    environment and debug parameters. The page is otherwise untouched.

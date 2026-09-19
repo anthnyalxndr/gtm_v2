@@ -1,0 +1,84 @@
+import { readFile } from 'node:fs/promises'
+import { z } from 'zod'
+
+export const HitPolicySchema = z.enum(['dry', 'debug', 'live'])
+export type HitPolicy = z.infer<typeof HitPolicySchema>
+
+const selector = z.string().min(1)
+
+export const StepSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('navigate'), url: z.string().url() }),
+  z.object({ kind: z.literal('click'), selector }),
+  z.object({ kind: z.literal('fill'), selector, value: z.string() }),
+  z.object({ kind: z.literal('scroll'), y: z.number().int().positive().default(1000) }),
+  z.object({ kind: z.literal('wait'), ms: z.number().int().positive() }),
+  z.object({
+    kind: z.literal('waitForEvent'),
+    event: z.string().min(1),
+    timeoutMs: z.number().int().positive().default(10_000),
+  }),
+  z.object({ kind: z.literal('push'), data: z.record(z.unknown()) }),
+])
+export type Step = z.infer<typeof StepSchema>
+
+export const ScenarioSchema = z.object({
+  name: z.string().min(1),
+  startUrl: z.string().url(),
+  container: z.object({
+    id: z.string().regex(/^GTM-[A-Z0-9]{5,10}$/, 'must look like GTM-XXXXXXX'),
+    environment: z.number().int().positive(),
+    authCodeEnv: z.string().min(1),
+  }),
+  hits: HitPolicySchema.default('dry'),
+  settleMs: z.number().int().nonnegative().default(1500),
+  steps: z.array(StepSchema).default([]),
+})
+export type Scenario = z.infer<typeof ScenarioSchema>
+
+export type LoadedScenario = Scenario & { authCode: string }
+
+export class ScenarioError extends Error {}
+
+function formatIssues(err: z.ZodError): string {
+  return err.issues
+    .map((i) => `${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`)
+    .join('; ')
+}
+
+export function parseScenario(json: unknown): Scenario {
+  const result = ScenarioSchema.safeParse(json)
+  if (!result.success) throw new ScenarioError(`invalid scenario: ${formatIssues(result.error)}`)
+  return result.data
+}
+
+export function resolveScenario(
+  scenario: Scenario,
+  env: Record<string, string | undefined>,
+): LoadedScenario {
+  const authCode = env[scenario.container.authCodeEnv]
+  if (!authCode) {
+    throw new ScenarioError(
+      `environment variable ${scenario.container.authCodeEnv} is not set (it must hold the GTM environment authorization code)`,
+    )
+  }
+  return { ...scenario, authCode }
+}
+
+export async function loadScenario(
+  path: string,
+  env: Record<string, string | undefined> = process.env,
+): Promise<LoadedScenario> {
+  let text: string
+  try {
+    text = await readFile(path, 'utf8')
+  } catch (err) {
+    throw new ScenarioError(`cannot read scenario ${path}: ${(err as Error).message}`)
+  }
+  let json: unknown
+  try {
+    json = JSON.parse(text)
+  } catch (err) {
+    throw new ScenarioError(`scenario ${path} is not valid JSON: ${(err as Error).message}`)
+  }
+  return resolveScenario(parseScenario(json), env)
+}

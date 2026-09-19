@@ -1,10 +1,10 @@
 ---
 id: TASK-12
 title: Oracle harness that drives Tag Assistant
-status: To Do
+status: Deferred
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 16:52'
 labels:
   - oracle
 dependencies:
@@ -31,3 +31,10 @@ Measure how often predicted firings match GTM's own verdict. A separate harness 
 - [ ] #4 The harness reads its browser profile path from an environment variable outside the repo
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Deferred 2026-09-19: the product reads the same record stream Tag Assistant displays (ADR 0003). A scraper adds nothing.
+<!-- SECTION:NOTES:END -->

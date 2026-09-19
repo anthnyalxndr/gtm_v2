@@ -1,9 +1,10 @@
 ---
 id: TASK-3
 title: SessionReport type and JSON writer
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 17:01'
 labels:
   - core
 dependencies: []
@@ -27,3 +28,10 @@ Every runner, including the future oracle harness, emits one report shape so out
 - [ ] #3 A report that has predictions merged into observations cannot be expressed by the type
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Delivered by task-13 (feat/debug-feed-capture) on 2026-09-19; the acceptance criteria that still applied are met there.
+<!-- SECTION:NOTES:END -->

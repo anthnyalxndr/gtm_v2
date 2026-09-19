@@ -7,9 +7,10 @@ trigger with predicate results and pass/fail), `TAG_STARTED` (execute status and
 parameters), `TAG_STATUS`, `TAG_BLOCKED`, `GTAG_HIT`, `CONSENT_STATE`, and others. This is the
 feed Tag Assistant renders. No Google login is involved.
 
-The debug build pauses at `CONTAINER_STARTING` until something calls `data.resume()`. The
-proof of concept replaces the queue with a recorder that calls `resume()` itself and blocks
-the `debug/bootstrap` script so no Tag Assistant handshake is attempted.
+When the page carries a debug signal the build pauses at `CONTAINER_STARTING` until
+something calls `data.resume()`; without one it runs straight through. The proof of concept
+replaces the queue with a recorder that calls `resume()` if it ever arrives and blocks the
+`debug/bootstrap` script so no Tag Assistant handshake is attempted.
 
 Run from the repo root so `playwright` resolves:
 

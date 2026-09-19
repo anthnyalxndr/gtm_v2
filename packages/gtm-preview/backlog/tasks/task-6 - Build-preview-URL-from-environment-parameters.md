@@ -1,10 +1,10 @@
 ---
 id: TASK-6
 title: Build preview URL from environment parameters
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 17:01'
 labels:
   - core
 dependencies:
@@ -29,3 +29,10 @@ Loading the draft container version without a Google login works through gtm_aut
 - [ ] #3 The gtm_auth value comes from the resolved scenario environment and never appears in log output
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Delivered by task-13 (feat/debug-feed-capture) on 2026-09-19; the acceptance criteria that still applied are met there.
+<!-- SECTION:NOTES:END -->

@@ -1,10 +1,10 @@
 ---
 id: TASK-7
 title: Execute scenario steps against a page
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 17:01'
 labels:
   - core
 dependencies:
@@ -32,3 +32,10 @@ The step executor turns the scenario's steps array into Playwright actions. It i
 - [ ] #4 A failing step reports its index and kind in the error
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Delivered by task-13 (feat/debug-feed-capture) on 2026-09-19; the acceptance criteria that still applied are met there.
+<!-- SECTION:NOTES:END -->

@@ -24,9 +24,11 @@ How it works, in order:
    returns the debug build. Without the code it returns 403.
 2. An init script defines `window["google.tagmanager.debugui2.queue"]` before any page
    script runs, so every record the build pushes lands in our recorder.
-3. The build pushes `CONTAINER_STARTING` with a `data.resume` function and waits. We call it.
-   Routes abort Google's `debug/bootstrap` and `debug/badge` scripts so nothing contacts
-   Tag Assistant.
+3. The build runs immediately and emits, because the debug signal is only on the container
+   request, not the page. If a page does carry a signal (a stale `__TAG_ASSISTANT` cookie),
+   the build pushes `CONTAINER_STARTING` with a `data.resume` function and waits; the
+   recorder calls it. Routes abort Google's `debug/bootstrap` and `debug/badge` scripts so
+   nothing contacts Tag Assistant.
 4. Records arrive per event: `EVENT_STARTED`, `MACRO_RESOLVED` (every trigger with its
    predicate results and pass/fail), `TAG_STARTED` (execute, blocked, suppressed) with
    resolved parameters, `TAG_STATUS` (succeeded, failed, exception), `TAG_BLOCKED`,

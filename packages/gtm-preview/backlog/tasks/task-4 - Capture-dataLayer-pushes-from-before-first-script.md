@@ -1,10 +1,10 @@
 ---
 id: TASK-4
 title: Capture dataLayer pushes from before first script
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 17:01'
 labels:
   - capture
 dependencies:
@@ -30,3 +30,10 @@ The runner must see every dataLayer event, including pushes that happen before G
 - [ ] #4 The capture code touching the Page returns plain serialisable objects only
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Delivered by task-13 (feat/debug-feed-capture) on 2026-09-19; the acceptance criteria that still applied are met there.
+<!-- SECTION:NOTES:END -->

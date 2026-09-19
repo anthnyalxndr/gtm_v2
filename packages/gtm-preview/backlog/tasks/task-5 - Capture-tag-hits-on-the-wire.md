@@ -1,10 +1,10 @@
 ---
 id: TASK-5
 title: Capture tag hits on the wire
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 17:01'
 labels:
   - capture
 dependencies:
@@ -30,3 +30,10 @@ Observed hits are the ground truth. A request listener matches outbound requests
 - [ ] #4 A hit records the page URL and timestamp at which it was sent
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Delivered by task-13 (feat/debug-feed-capture) on 2026-09-19; the acceptance criteria that still applied are met there.
+<!-- SECTION:NOTES:END -->

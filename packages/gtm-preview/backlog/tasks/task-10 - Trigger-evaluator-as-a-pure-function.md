@@ -1,10 +1,10 @@
 ---
 id: TASK-10
 title: Trigger evaluator as a pure function
-status: To Do
+status: Deferred
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 16:52'
 labels:
   - predict
 dependencies:
@@ -31,3 +31,10 @@ Predict which tags GTM should fire for an event by evaluating trigger conditions
 - [ ] #5 Output labels every result as predicted, never as fired
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Deferred 2026-09-19: GTM's own trigger verdicts are readable from the debug feed (ADR 0003), so predicting them is unnecessary.
+<!-- SECTION:NOTES:END -->

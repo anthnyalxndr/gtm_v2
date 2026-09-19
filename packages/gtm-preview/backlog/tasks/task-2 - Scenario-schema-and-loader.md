@@ -1,9 +1,10 @@
 ---
 id: TASK-2
 title: Scenario schema and loader
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
+updated_date: '2026-09-19 17:01'
 labels:
   - core
 dependencies: []
@@ -28,3 +29,10 @@ Scenarios are data files, not test files. The loader validates a JSON scenario w
 - [ ] #4 Step kinds navigate, click, fill, and waitForEvent are accepted; an unknown step kind is rejected
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Delivered by task-13 (feat/debug-feed-capture) on 2026-09-19; the acceptance criteria that still applied are met there.
+<!-- SECTION:NOTES:END -->

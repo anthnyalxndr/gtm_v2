@@ -27,3 +27,6 @@ coverage/
 
 # --- Run output ---
 reports/
+
+# --- Remember plugin session history (local only) ---
+.remember/
