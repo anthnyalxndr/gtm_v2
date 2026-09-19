@@ -1,0 +1,189 @@
+{
+  "root": {
+    "name": "string",
+    "version": "number",
+    "timestamp": "number",
+    "data": "object"
+  },
+  "data": {
+    "debugContext": "string",
+    "domainDetails": "object",
+    "containers": "array"
+  },
+  "domainDetails": {
+    "enabled": "boolean",
+    "startUrl": "string",
+    "includeDebugParam": "boolean",
+    "domainName": "string",
+    "containers": "array",
+    "createdTime": "number",
+    "lastUpdatedTime": "number"
+  },
+  "container": {
+    "type": "number",
+    "publicId": "string",
+    "canonicalId": "string",
+    "aliases": "array",
+    "destinations": "array",
+    "version": "string",
+    "product": "string",
+    "containerDetails": "object",
+    "messages": "array",
+    "tagsFired": "object",
+    "isNonDebuggable": "boolean",
+    "summaryLogInfos": "array",
+    "numTaggedPages": "number",
+    "numPages": "number",
+    "errorCount": "number",
+    "logCount": "number",
+    "groups": "array",
+    "vendorTemplates": "object",
+    "pageSummaries": "object",
+    "containerLoadInfoByGroupId": "object",
+    "tagName": "string",
+    "environmentName": "string",
+    "environmentLinkType": "number"
+  },
+  "containerDetails": {
+    "publicId": "string",
+    "container": "object",
+    "createdTime": "number"
+  },
+  "containerDetailsContainer": {
+    "type": "string",
+    "canonicalId": "string",
+    "auth": "string",
+    "preview": "string",
+    "id": "string"
+  },
+  "message": {
+    "index": "number",
+    "eventNameKey": "string",
+    "navType": "string",
+    "consentData": "object",
+    "title": "string",
+    "eventName": "string",
+    "data": "array",
+    "tagInfo": "array",
+    "groupId": "string",
+    "eventId": "number",
+    "message": "object",
+    "messageString": "string",
+    "abstractModelString": "string",
+    "macroInfo": "array",
+    "abstractModel": "object"
+  },
+  "messageConsentData": {
+    "consentList": "array",
+    "consentStatus": "object",
+    "fullConsentList": "object"
+  },
+  "consentStatus": {
+    "default": "boolean",
+    "update": "boolean",
+    "tcf": "boolean",
+    "wasSetLate": "boolean",
+    "usedContainerConsent": "boolean"
+  },
+  "ruleInfo": {
+    "name": "string",
+    "predicates": "array",
+    "pass": "boolean",
+    "firingTags": "array",
+    "blockingTags": "array"
+  },
+  "predicate": {
+    "function": "string",
+    "arg0": "array",
+    "arg1": "array",
+    "pass": "boolean",
+    "isIgnored": "boolean"
+  },
+  "tagInfoFired": {
+    "index": "number",
+    "name": "string",
+    "displayName": "string",
+    "publicId": "string",
+    "type": "string",
+    "vtType": "number",
+    "params": "array",
+    "internalParams": "array",
+    "nominatedTags": "array",
+    "setupTags": "array",
+    "teardownTags": "array",
+    "consentData": "object",
+    "isHidden": "boolean",
+    "thumbnail": "string",
+    "disabledInGoogleMode": "boolean",
+    "execute": "string",
+    "seenEventIdPriorityIds": "array"
+  },
+  "tagInfoIdle": {
+    "index": "number",
+    "name": "string",
+    "displayName": "string",
+    "publicId": "string",
+    "type": "string",
+    "vtType": "number",
+    "params": "array",
+    "internalParams": "array",
+    "nominatedTags": "array",
+    "setupTags": "array",
+    "teardownTags": "array",
+    "consentData": "object",
+    "isHidden": "boolean",
+    "thumbnail": "string",
+    "disabledInGoogleMode": "boolean"
+  },
+  "param": {
+    "key": "string",
+    "name": "string",
+    "value": "array"
+  },
+  "macroInfo": {
+    "name": "string",
+    "variablePublicId": "string",
+    "variableType": "string",
+    "returnType": "string",
+    "params": "array",
+    "internalParams": "array",
+    "rawResolvedValue": "string",
+    "resolvedValue": "string",
+    "debugMetadata": "object",
+    "isHidden": "boolean"
+  },
+  "group": {
+    "navType": "string",
+    "messageCount": "number",
+    "memoCount": "number",
+    "logInfo": "array",
+    "consentData": "object",
+    "groupId": "string",
+    "title": "string",
+    "navTitle": "string",
+    "emoji": "string",
+    "url": "string",
+    "snippetType": "string",
+    "consentKey": "object"
+  },
+  "pageSummary": {
+    "href": "string",
+    "title": "string",
+    "referrer": "string",
+    "readyState": "string",
+    "groupId": "string",
+    "emoji": "string"
+  },
+  "containerLoadInfo": {
+    "targetId": "string",
+    "containerLoadSource": "number",
+    "gtg": "object"
+  },
+  "vendorTemplatesEntry": {
+    "containerName": "string",
+    "environmentName": "string",
+    "environmentLinkType": "number",
+    "vendorTemplateTypes": "object",
+    "paramMaps": "object"
+  }
+}

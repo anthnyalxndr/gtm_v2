@@ -18,6 +18,9 @@ describe('parseArgs', () => {
       out: undefined,
       hits: undefined,
       headed: false,
+      raw: undefined,
+      tagAssistant: undefined,
+      includeAuth: false,
     })
   })
 
@@ -28,7 +31,45 @@ describe('parseArgs', () => {
       out: 'report.json',
       hits: undefined,
       headed: false,
+      raw: undefined,
+      tagAssistant: undefined,
+      includeAuth: false,
     })
+  })
+
+  it('parses run with --raw, --tag-assistant, and --include-auth', () => {
+    expect(
+      parseArgs([
+        'run',
+        's.json',
+        '--raw',
+        'r.json',
+        '--tag-assistant',
+        'ta.json',
+        '--include-auth',
+      ]),
+    ).toMatchObject({
+      raw: 'r.json',
+      tagAssistant: 'ta.json',
+      includeAuth: true,
+    })
+    expect(() => parseArgs(['run', 's.json', '--raw'])).toThrow('--raw requires a path')
+  })
+
+  it('parses export', () => {
+    expect(parseArgs(['export', 'r.json'])).toEqual({
+      kind: 'export',
+      raw: 'r.json',
+      out: undefined,
+      includeAuth: false,
+    })
+    expect(parseArgs(['export', 'r.json', '--out', 'x.json', '--include-auth'])).toEqual({
+      kind: 'export',
+      raw: 'r.json',
+      out: 'x.json',
+      includeAuth: true,
+    })
+    expect(() => parseArgs(['export'])).toThrow('export requires a raw session path')
   })
 
   it('parses --hits and --headed', () => {

@@ -30,3 +30,6 @@ reports/
 
 # --- Remember plugin session history (local only) ---
 .remember/
+
+# --- Playwright MCP session files ---
+.playwright-mcp/

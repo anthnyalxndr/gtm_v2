@@ -51,6 +51,17 @@ Two reasons this replaced the earlier plan to predict firing from the API (ADR 0
 prediction was an inference and this is GTM's verdict, and the dependency is a versioned
 data protocol rather than a UI to scrape.
 
+## Tag Assistant import files
+
+`buildTagAssistantExport` in `src/export/tag-assistant.ts` writes the document Tag Assistant's
+"Export session" produces, so a headless run opens through its "Import session" menu (no login
+needed, read-only). Verified on 2026-09-19: events, built-in trigger badges, container details,
+tag cards with parameters, firing triggers with evaluated filters, and variables all render.
+The shape is pinned by `src/export/fixtures/tag-assistant-export-shape.json`, a key-and-type
+signature taken from a real export (no data). Display names and thumbnails for templates come
+from `src/export/templates.ts`; unknown template ids fall back to the id. The authorization
+code is left out of the file unless `--include-auth` is passed on `run`.
+
 ## Tech stack
 
 - TypeScript (strict), Node 22, pnpm

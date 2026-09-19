@@ -6,6 +6,8 @@ export const DATALAYER_GLOBAL = '__gtmPreviewDataLayer'
 /** A record as pushed by the debug build, with our capture timestamp added. */
 export interface RawRecord {
   capturedAt: number
+  pageUrl?: string
+  pageTitle?: string
   messageType: string
   containerProduct?: string
   version?: string
@@ -50,6 +52,8 @@ export function debugQueueInitScript(): string {
         let copy;
         try { copy = strip(m); } catch { copy = { messageType: String(m && m.messageType), unserialisable: true }; }
         copy.capturedAt = Date.now();
+        copy.pageUrl = location.href;
+        copy.pageTitle = document.title;
         records.push(copy);
         if (m && m.messageType === 'CONTAINER_STARTING' && m.data && typeof m.data.resume === 'function') {
           setTimeout(() => { try { m.data.resume(); } catch (e) { records.push({ messageType: '__RESUME_FAILED', error: String(e), capturedAt: Date.now() }); } }, 0);
