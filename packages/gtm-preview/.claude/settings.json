@@ -5,12 +5,22 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git add:*)",
-      "Bash(pnpm install:*)",
-      "Bash(pnpm dev:*)",
-      "Bash(pnpm lint:*)",
-      "Bash(pnpm typecheck:*)",
-      "Bash(pnpm test:*)",
-      "Bash(pnpm build:*)"
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(backlog:*)",
+      "Bash(pnpm:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git push:*)",
+      "Bash(git worktree:*)",
+      "Bash(git show-ref:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)"
     ]
   },
   "enabledPlugins": {
