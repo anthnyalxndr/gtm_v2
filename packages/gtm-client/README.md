@@ -11,7 +11,7 @@ pnpm add @anthnyalxndr/gtm-client
 - **OAuth once, everywhere.** Client secrets and the token live in `~/.config/gtm-apply/` (override with `GTM_APPLY_CONFIG_DIR`, or pass paths to the constructor). First run opens a browser and stores the token; every later run on the machine reuses it. A revoked token produces an error that names the file to delete.
 - **Throttle and retry.** `client.call(fn)` serializes requests with a minimum gap and retries 429 and 5xx with backoff. Every helper goes through it.
 - **The raw service.** `client.service` is the generated `tagmanager_v2.Tagmanager` instance for anything not wrapped.
-- **Typed helpers.** `listAccounts`, `resolveContainer` (find a container by its `GTM-XXXXXXX` public id across every account you can see), `createContainer`.
+- **Typed helpers.** `listAccounts`, `resolveContainer`, `createContainer`. `resolveContainer(client, "GTM-XXXXXXX")` finds a container by its public id with one `accounts.containers.lookup` request. When the lookup answers 404 or 403, or returns a container with a different public id, it falls back to listing every account you can see and every container in each until one matches. Any other lookup error is thrown as is.
 - **A fake for tests.** `@anthnyalxndr/gtm-client/testing` exports `createFakeService`, an in-memory implementation of the API surface with workspace, version, and fingerprint semantics, so code built on the client can be tested without credentials.
 
 ## Usage
@@ -43,6 +43,8 @@ import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
 const { service, state } = createFakeService();
 const client = new GtmClient({ service, minIntervalMs: 0 });
 // state.calls records every method invoked; state.versions holds snapshots.
+// The fake answers accounts.containers.lookup by tagId or destinationId and
+// throws 404 for ids it does not hold, so both resolveContainer paths can be tested.
 ```
 
 ## Credentials file
