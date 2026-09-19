@@ -35,6 +35,17 @@ describe('parseScenario', () => {
     ).toThrow(/container\.id/)
   })
 
+  it('accepts a driver instead of steps and rejects both together', () => {
+    const { steps: _steps, ...noSteps } = valid
+    void _steps
+    expect(parseScenario({ ...noSteps, driver: './flows/home.mjs' }).driver).toBe(
+      './flows/home.mjs',
+    )
+    expect(() => parseScenario({ ...valid, driver: './flows/home.mjs' })).toThrow(
+      /either steps or driver/,
+    )
+  })
+
   it('rejects an unknown hit policy', () => {
     expect(() => parseScenario({ ...valid, hits: 'yolo' })).toThrow(/hits/)
   })
@@ -44,6 +55,20 @@ describe('resolveScenario', () => {
   it('reads the authorization code from the named environment variable', () => {
     const s = resolveScenario(parseScenario(valid), { GTM_AUTH_EXAMPLE: 'abc' })
     expect(s.authCode).toBe('abc')
+  })
+
+  it('resolves the driver path relative to the scenario directory', () => {
+    const { steps: _steps, ...noSteps } = valid
+    void _steps
+    const s = resolveScenario(
+      parseScenario({ ...noSteps, driver: './flows/home.mjs' }),
+      { GTM_AUTH_EXAMPLE: 'abc' },
+      '/tmp/scenarios',
+    )
+    expect(s.driverPath).toBe('/tmp/scenarios/flows/home.mjs')
+    expect(
+      resolveScenario(parseScenario(valid), { GTM_AUTH_EXAMPLE: 'abc' }).driverPath,
+    ).toBeUndefined()
   })
 
   it('fails clearly when the variable is unset', () => {

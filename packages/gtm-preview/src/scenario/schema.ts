@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import { z } from 'zod'
 
 export const HitPolicySchema = z.enum(['dry', 'debug', 'live'])
@@ -21,21 +22,35 @@ export const StepSchema = z.discriminatedUnion('kind', [
 ])
 export type Step = z.infer<typeof StepSchema>
 
-export const ScenarioSchema = z.object({
-  name: z.string().min(1),
-  startUrl: z.string().url(),
-  container: z.object({
-    id: z.string().regex(/^GTM-[A-Z0-9]{5,10}$/, 'must look like GTM-XXXXXXX'),
-    environment: z.number().int().positive(),
-    authCodeEnv: z.string().min(1),
-  }),
-  hits: HitPolicySchema.default('dry'),
-  settleMs: z.number().int().nonnegative().default(1500),
-  steps: z.array(StepSchema).default([]),
-})
+export const ScenarioSchema = z
+  .object({
+    name: z.string().min(1),
+    startUrl: z.string().url(),
+    container: z.object({
+      id: z.string().regex(/^GTM-[A-Z0-9]{5,10}$/, 'must look like GTM-XXXXXXX'),
+      environment: z.number().int().positive(),
+      authCodeEnv: z.string().min(1),
+    }),
+    hits: HitPolicySchema.default('dry'),
+    settleMs: z.number().int().nonnegative().default(1500),
+    steps: z.array(StepSchema).default([]),
+    /**
+     * Path, relative to the scenario file, of a module whose default export is
+     * `async (page, ctx) => void`. Drives the session instead of `steps`. Executed code.
+     */
+    driver: z.string().min(1).optional(),
+  })
+  .refine((s) => !(s.driver && s.steps.length > 0), {
+    message: 'use either steps or driver, not both',
+    path: ['driver'],
+  })
 export type Scenario = z.infer<typeof ScenarioSchema>
 
-export type LoadedScenario = Scenario & { authCode: string }
+export type LoadedScenario = Scenario & {
+  authCode: string
+  /** Absolute path of the driver module when the scenario names one. */
+  driverPath?: string
+}
 
 export class ScenarioError extends Error {}
 
@@ -54,6 +69,7 @@ export function parseScenario(json: unknown): Scenario {
 export function resolveScenario(
   scenario: Scenario,
   env: Record<string, string | undefined>,
+  scenarioDir = process.cwd(),
 ): LoadedScenario {
   const authCode = env[scenario.container.authCodeEnv]
   if (!authCode) {
@@ -61,7 +77,13 @@ export function resolveScenario(
       `environment variable ${scenario.container.authCodeEnv} is not set (it must hold the GTM environment authorization code)`,
     )
   }
-  return { ...scenario, authCode }
+  const loaded: LoadedScenario = { ...scenario, authCode }
+  if (scenario.driver) {
+    loaded.driverPath = isAbsolute(scenario.driver)
+      ? scenario.driver
+      : resolve(scenarioDir, scenario.driver)
+  }
+  return loaded
 }
 
 export async function loadScenario(
@@ -80,5 +102,5 @@ export async function loadScenario(
   } catch (err) {
     throw new ScenarioError(`scenario ${path} is not valid JSON: ${(err as Error).message}`)
   }
-  return resolveScenario(parseScenario(json), env)
+  return resolveScenario(parseScenario(json), env, dirname(resolve(path)))
 }

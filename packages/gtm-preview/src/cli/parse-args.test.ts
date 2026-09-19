@@ -56,6 +56,16 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['run', 's.json', '--raw'])).toThrow('--raw requires a path')
   })
 
+  it('parses record as a headed run that pauses', () => {
+    expect(parseArgs(['record', 's.json', '--out', 'r.json'])).toMatchObject({
+      kind: 'record',
+      scenario: 's.json',
+      out: 'r.json',
+      headed: true,
+    })
+    expect(() => parseArgs(['record'])).toThrow('record requires a scenario path')
+  })
+
   it('parses export', () => {
     expect(parseArgs(['export', 'r.json'])).toEqual({
       kind: 'export',

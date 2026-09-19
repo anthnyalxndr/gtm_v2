@@ -1,21 +1,27 @@
-import { chromium, type Browser, type Page } from 'playwright'
+import { chromium, type Browser } from 'playwright'
 import type { LoadedScenario } from '../scenario/schema'
 import type { RawSession } from '../report/parse-records'
 import type { Hit } from '../report/types'
 import {
-  DATALAYER_GLOBAL,
-  RECORDS_GLOBAL,
+  EMIT_BINDING,
   debugQueueInitScript,
+  type EmittedItem,
   type RawDataLayerPush,
   type RawRecord,
 } from './debug-queue'
 import { decideHit, parseHit } from './hit-policy'
 import { isContainerRequest, redactAuthCode, toDebugBuildUrl } from './preview-url'
+import { loadDriver, runDriver } from './driver'
 import { executeStep } from './steps'
 
 export interface RunOptions {
   headless?: boolean
   log?: (line: string) => void
+  /**
+   * After the start URL loads (and any steps or driver run), call page.pause() so the
+   * Playwright Inspector opens with its Record button. Needs a headed browser.
+   */
+  pause?: boolean
 }
 
 export class ContainerLoadError extends Error {}
@@ -35,8 +41,15 @@ export async function runSession(
     const page = await context.newPage()
     const hits: Hit[] = []
     const errors: string[] = []
+    const records: RawRecord[] = []
+    const dataLayer: RawDataLayerPush[] = []
     let containerStatus: number | undefined
 
+    // Records stream to Node as they happen so a navigation cannot lose them.
+    await page.exposeBinding(EMIT_BINDING, (_source, item: EmittedItem) => {
+      if (item.kind === 'record') records.push(item.value)
+      else dataLayer.push(item.value)
+    })
     await page.addInitScript(debugQueueInitScript())
 
     // Nothing may reach Tag Assistant.
@@ -89,15 +102,25 @@ export async function runSession(
       },
     )
 
+    // Load the driver before the browser does anything so a bad module fails fast.
+    const driver = scenario.driverPath ? await loadDriver(scenario.driverPath) : undefined
+
     log(`opening ${scenario.startUrl}`)
     await page.goto(scenario.startUrl, { waitUntil: 'load' })
+    if (driver && scenario.driverPath) {
+      log(`driver: ${scenario.driverPath}`)
+      await runDriver(driver, scenario.driverPath, page, log)
+    }
     for (const [index, step] of scenario.steps.entries()) {
       log(`step ${index}: ${step.kind}`)
       await executeStep(page, step, index)
     }
+    if (opts.pause) {
+      log('paused: use the Inspector to record; press Resume when done')
+      await page.pause()
+    }
     if (scenario.settleMs > 0) await page.waitForTimeout(scenario.settleMs)
 
-    const { records, dataLayer } = await collect(page)
     if (containerStatus === undefined) errors.push('the page never requested the container script')
     if (containerStatus !== undefined && containerStatus !== 200) {
       throw new ContainerLoadError(
@@ -115,19 +138,4 @@ export async function runSession(
   } finally {
     await browser.close()
   }
-}
-
-async function collect(
-  page: Page,
-): Promise<{ records: RawRecord[]; dataLayer: RawDataLayerPush[] }> {
-  return page.evaluate(
-    ({ recordsGlobal, dataLayerGlobal }) => {
-      const w = window as unknown as Record<string, unknown>
-      return {
-        records: (w[recordsGlobal] as RawRecord[]) ?? [],
-        dataLayer: (w[dataLayerGlobal] as RawDataLayerPush[]) ?? [],
-      }
-    },
-    { recordsGlobal: RECORDS_GLOBAL, dataLayerGlobal: DATALAYER_GLOBAL },
-  )
 }

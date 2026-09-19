@@ -61,3 +61,49 @@ describe.skipIf(!enabled)('runSession against the test container (needs GTM_AUTH
     await expect(runSession(scenario)).rejects.toThrow(/HTTP 403/)
   }, 60_000)
 })
+
+describe.skipIf(!enabled)('runSession with a recorded driver (needs GTM_AUTH_WNX8FFXW)', () => {
+  let site: FixtureSite
+  beforeAll(async () => {
+    site = await startFixtureSite(CONTAINER)
+  })
+  afterAll(() => site.close())
+
+  it('runs a codegen-shaped driver unchanged and captures both pages', async () => {
+    const scenario = resolveScenario(
+      parseScenario({
+        name: 'driver',
+        startUrl: site.baseUrl + '/',
+        container: { id: CONTAINER, environment: 2, authCodeEnv: AUTH_ENV },
+        driver: './fixtures/drivers/codegen-like.mjs',
+      }),
+      process.env,
+      new URL('.', import.meta.url).pathname,
+    )
+    const raw = await runSession(scenario)
+    expect(raw.errors).toEqual([])
+    const names = raw.records
+      .filter((r) => r.messageType === 'EVENT_STARTED')
+      .map((r) => r.key?.eventName)
+    expect(names).toContain('cta_click')
+    expect(names).toContain('form_submit')
+    expect(names).toContain('page2_ready')
+    const groups = new Set(raw.records.map((r) => r.key?.groupId).filter(Boolean))
+    expect(groups.size).toBe(2)
+  }, 90_000)
+
+  it('exits with a DriverError naming the file when the driver throws', async () => {
+    const scenario = resolveScenario(
+      parseScenario({
+        name: 'driver-throws',
+        startUrl: site.baseUrl + '/',
+        container: { id: CONTAINER, environment: 2, authCodeEnv: AUTH_ENV },
+        driver: './fixtures/drivers/throws.mjs',
+        settleMs: 0,
+      }),
+      process.env,
+      new URL('.', import.meta.url).pathname,
+    )
+    await expect(runSession(scenario)).rejects.toThrow(/throws\.mjs: boom from the driver/)
+  }, 60_000)
+})

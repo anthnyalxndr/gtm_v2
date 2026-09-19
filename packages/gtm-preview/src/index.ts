@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { basename, dirname, extname, join } from 'node:path'
-import { parseArgs, usage } from './cli/parse-args'
+import { parseArgs, usage, type RunCommand } from './cli/parse-args'
 import { buildTagAssistantExport } from './export/tag-assistant'
 import { readRawSession, writeJson, type SavedRawSession } from './export/write'
 import { buildReport } from './report/parse-records'
 import type { SessionReport } from './report/types'
 import { writeReport } from './report/write'
 import { loadScenario, ScenarioError } from './scenario/schema'
+import { DriverError } from './session/driver'
 import { ContainerLoadError, runSession } from './session/run-session'
 import { StepError } from './session/steps'
 
@@ -35,15 +36,14 @@ function summarise(report: SessionReport): string {
   return lines.join('\n')
 }
 
-async function run(
-  command: Extract<ReturnType<typeof parseArgs>, { kind: 'run' }>,
-): Promise<number> {
+async function run(command: RunCommand): Promise<number> {
   const scenario = await loadScenario(command.scenario)
   if (command.hits) scenario.hits = command.hits
   const stem = basename(command.scenario, extname(command.scenario))
   const out = command.out ?? join('reports', `${stem}.json`)
   const raw = await runSession(scenario, {
     headless: !command.headed,
+    pause: command.kind === 'record',
     log: (l) => console.error(l),
   })
   const meta = {
@@ -123,6 +123,7 @@ async function main(argv: readonly string[]): Promise<number> {
         console.log(usage())
         return 0
       case 'run':
+      case 'record':
         return await run(command)
       case 'export':
         return await exportCommand(command)
@@ -131,7 +132,8 @@ async function main(argv: readonly string[]): Promise<number> {
     if (
       err instanceof ScenarioError ||
       err instanceof ContainerLoadError ||
-      err instanceof StepError
+      err instanceof StepError ||
+      err instanceof DriverError
     ) {
       console.error(err.message)
       return 1

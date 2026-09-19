@@ -88,9 +88,13 @@ code is left out of the file unless `--include-auth` is passed on `run`.
 
 ## Architecture to keep as the code grows
 
-- **Scenarios are data, not test files.** A scenario names the start URL, the container and
-  environment, an optional consent state, and a list of steps (navigate, click, fill, wait for
-  event). Playwright executes steps. Scenario files live under `scenarios/`.
+- **Scenarios are data, plus an optional driver.** A scenario names the start URL, the
+  container and environment, and either JSON steps or a `driver` module (default export
+  `async (page, ctx) => {}`, usually pasted from the Playwright recorder). Drivers are executed
+  code. Scenario files live under `scenarios/`.
+- **Records stream to Node as they happen.** The init script calls an exposed binding for
+  every debug record and dataLayer push, so nothing is lost on navigation. The in-page arrays
+  exist only for `waitForFunction` polling within one page.
 - **One `SessionReport` shape.** Ordered events, each with GTM's tag verdicts, observed hits,
   page URL, and timestamp. JSON is the primary output. Any HTML or terminal view, and any
   export to another tool's format, is a renderer over that JSON.

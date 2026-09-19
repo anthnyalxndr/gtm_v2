@@ -1,30 +1,33 @@
 export type HitsOverride = 'dry' | 'debug' | 'live'
 
+export interface RunCommand {
+  kind: 'run' | 'record'
+  scenario: string
+  out?: string
+  hits?: HitsOverride
+  headed: boolean
+  raw?: string
+  tagAssistant?: string
+  includeAuth: boolean
+}
+
 export type Command =
-  | {
-      kind: 'run'
-      scenario: string
-      out?: string
-      hits?: HitsOverride
-      headed: boolean
-      raw?: string
-      tagAssistant?: string
-      includeAuth: boolean
-    }
+  | RunCommand
   | { kind: 'export'; raw: string; out?: string; includeAuth: boolean }
   | { kind: 'help' }
 
 const USAGE = `gtm-preview <command>
 
 Commands:
-  run <scenario.json> [options]   Run a scenario and write a SessionReport
-  export <raw.json> [options]     Write a Tag Assistant import file from a saved raw session
-  help                            Show this message
+  run <scenario.json> [options]     Run a scenario and write a SessionReport
+  record <scenario.json> [options]  Open the page headed and paused so you can record a driver
+  export <raw.json> [options]       Write a Tag Assistant import file from a saved raw session
+  help                              Show this message
 
-Options for run:
+Options for run and record:
   --out <path>            Report path (default: reports/<scenario name>.json)
   --hits <policy>         Override the scenario's hit policy: dry | debug | live
-  --headed                Show the browser
+  --headed                Show the browser (record always does)
   --raw <path>            Also save the raw captured session (records, hits, dataLayer)
   --tag-assistant <path>  Also write a Tag Assistant import file
   --include-auth          Put the environment authorization code in the Tag Assistant file
@@ -43,10 +46,10 @@ export function parseArgs(argv: readonly string[]): Command {
   if (command === undefined || command === 'help' || command === '--help' || command === '-h') {
     return { kind: 'help' }
   }
-  if (command === 'run') {
+  if (command === 'run' || command === 'record') {
     const [scenario, ...flags] = rest
     if (scenario === undefined || scenario.startsWith('--')) {
-      throw new Error('run requires a scenario path')
+      throw new Error(`${command} requires a scenario path`)
     }
     let out: string | undefined
     let hits: HitsOverride | undefined
@@ -77,7 +80,16 @@ export function parseArgs(argv: readonly string[]): Command {
         throw new Error(`unknown flag: ${flag}`)
       }
     }
-    return { kind: 'run', scenario, out, hits, headed, raw, tagAssistant, includeAuth }
+    return {
+      kind: command,
+      scenario,
+      out,
+      hits,
+      headed: headed || command === 'record',
+      raw,
+      tagAssistant,
+      includeAuth,
+    }
   }
   if (command === 'export') {
     const [raw, ...flags] = rest
