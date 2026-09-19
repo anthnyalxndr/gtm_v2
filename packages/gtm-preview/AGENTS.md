@@ -10,40 +10,44 @@ Given a container and a target site, it loads pages, performs interactions, and 
 dataLayer events occurred, which tags fired or should have fired, and what each tag sent over
 the network.
 
-## The core decision: build it, do not drive Tag Assistant
+## The core decision: read GTM's own debug feed, headless
 
-The product is a from-scratch reimplementation over Playwright. It does not depend on
-tagassistant.google.com at runtime. Two reasons, both decided on 2026-09-18:
+The product loads the container's **debug build** in Playwright and reads the records it
+pushes. That build is what Tag Assistant displays; we skip Tag Assistant and own the queue
+ourselves. Full findings with reproduction scripts: `docs/research/2026-09-19-gtm-debug-feed.md`
+and `docs/spikes/debug-queue/`. Decision record: ADR 0003.
 
-1. Owning the pipeline means every layer is extensible. Custom reporters, CI gates, diffing two
-   container versions, and consent-state matrices are all additions to code we control.
-2. If Google deprecates or redesigns Tag Assistant, the product keeps working. A scraper of the
-   debug pane would break on any UI change and die with the product.
+How it works, in order:
 
-Driving the real Tag Assistant still has one job: it is the **oracle**. A separate, optional
-harness under `oracle/` opens Tag Assistant through Playwright, runs the same scenario, and
-scrapes GTM's own verdict so we can measure how often our inferred "tag fired" matches the real
-one. It is allowed to be brittle, is never imported by `src/`, and runs on demand, not in CI.
+1. The site's snippet requests `gtm.js?id=<container>`. A Playwright route rewrites that
+   request to add `gtm_auth=<environment code>&gtm_preview=env-<n>&gtm_debug=x`. Google
+   returns the debug build. Without the code it returns 403.
+2. An init script defines `window["google.tagmanager.debugui2.queue"]` before any page
+   script runs, so every record the build pushes lands in our recorder.
+3. The build pushes `CONTAINER_STARTING` with a `data.resume` function and waits. We call it.
+   Routes abort Google's `debug/bootstrap` and `debug/badge` scripts so nothing contacts
+   Tag Assistant.
+4. Records arrive per event: `EVENT_STARTED`, `MACRO_RESOLVED` (every trigger with its
+   predicate results and pass/fail), `TAG_STARTED` (execute, blocked, suppressed) with
+   resolved parameters, `TAG_STATUS` (succeeded, failed, exception), `TAG_BLOCKED`,
+   `GTAG_HIT`, `CONSENT_STATE`, and more. GTM web containers use protocol `version: "2"`,
+   Google tags `"3"`.
+5. A request listener records every vendor hit that left, or would have left, the browser.
 
-## How the reimplementation works
+Hits are governed by a per-run policy. `dry` (default) aborts every vendor hit inside the
+browser; the debug stream is unchanged because GTM reports success when tag code finishes,
+not when the network call lands. `debug` lets hits out and appends `_dbg=1` to GA4 collect
+requests so they show in DebugView. `live` lets hits out untouched. Only GA4 has a debug
+flag: in `debug` and `live` modes, Ads, Floodlight, and Meta hits are real conversions.
 
-- **Load the draft container without a login.** The container's environment parameters select a
-  version: `gtm_auth=<token>&gtm_preview=env-<n>&gtm_cookies_win=x`. The tokens come from the
-  Environments page or the Tag Manager API. The `gtm_cookies_win=x` part sets a cookie so the
-  selection survives navigation.
-- **Instrument before any page script runs.** `page.addInitScript` wraps `dataLayer.push` and
-  records every event with a timestamp and page URL. At runtime, read
-  `google_tag_manager[<containerId>].dataLayer.get(...)` for resolved variable values.
-- **Capture hits on the wire.** `page.on('request')` matches outbound tag hits by URL pattern
-  (GA4 `/g/collect`, Google Ads conversion, Floodlight, Meta, and whatever the container uses)
-  and parses their payloads. These are facts.
-- **Predict what should have fired.** Pull the workspace's tags, triggers, and variables from the
-  Tag Manager API v2 and evaluate trigger conditions against the captured events. This is an
-  inference. Custom JavaScript variables, lookup tables with side effects, and consent state can
-  make GTM's real decision differ, so reports must label predicted firings as predicted and keep
-  them in a separate column from observed hits.
-- **Reconcile.** For each event, the report shows predicted tags, observed hits, and the
-  mismatch set. A mismatch is the finding a user cares about.
+Environment authorization codes come from the Tag Manager API (`environments.list`). Every
+container has Live (env 1) and Latest (env 2); workspace previews appear as environments too.
+Codes do not expire and unlock the unpublished container with full instrumentation, so they
+are secrets. Google tags (`G-`, `GT-`) serve their debug build to anyone.
+
+Two reasons this replaced the earlier plan to predict firing from the API (ADR 0002):
+prediction was an inference and this is GTM's verdict, and the dependency is a versioned
+data protocol rather than a UI to scrape.
 
 ## Tech stack
 
@@ -73,17 +77,16 @@ one. It is allowed to be brittle, is never imported by `src/`, and runs on deman
 
 - **Scenarios are data, not test files.** A scenario names the start URL, the container and
   environment, an optional consent state, and a list of steps (navigate, click, fill, wait for
-  event). Playwright executes steps. Scenario files live under `scenarios/` and the same file
-  must run under both the product and the oracle harness.
-- **One `SessionReport` shape.** Ordered events, each with predicted tags, observed hits, page
-  URL, and timestamp. JSON is the primary output. Any HTML or terminal view is a renderer over
-  that JSON, and the oracle harness emits the same shape so the two can be diffed.
-- **Container config comes from the API, never a hand-copied export.** The Tag Manager API v2
-  (`tagmanager.googleapis.com`, scope `tagmanager.readonly`) supplies tags, triggers, variables,
-  and environment tokens. Cache it per workspace fingerprint so a run is reproducible.
-- **Trigger evaluation is a pure function.** `(containerConfig, event, variableValues) =>
-predictedTags`. No browser, no network. Most unit tests belong here, and fixtures captured
-  from real containers should accumulate here.
+  event). Playwright executes steps. Scenario files live under `scenarios/`.
+- **One `SessionReport` shape.** Ordered events, each with GTM's tag verdicts, observed hits,
+  page URL, and timestamp. JSON is the primary output. Any HTML or terminal view, and any
+  export to another tool's format, is a renderer over that JSON.
+- **Environment codes come from the API or the operator, never from scenario files.** The
+  Tag Manager API v2 (`tagmanager.googleapis.com`, scope `tagmanager.readonly`) lists
+  environments with their codes. Scenario files name an environment variable that holds one.
+- **Record parsing is a pure function.** Raw queue records in, `SessionReport` out. No
+  browser, no network. Most unit tests belong here, and captured record fixtures from real
+  containers accumulate under `src/**/fixtures/`.
 - **Browser work is thin.** Code that touches a `Page` only collects raw events and requests
   into plain objects. Everything after that is testable without a browser.
 - **Secrets stay out of scenario files.** The `gtm_auth` token and any Google OAuth credentials
@@ -93,12 +96,12 @@ predictedTags`. No browser, no network. Most unit tests belong here, and fixture
 
 - Environment preview parameters select which container version loads. They do not turn on the
   debug pane. Environment selection and debug mode are independent.
-- Tag Assistant's debug connection works by opening the target URL with `gtm_debug=<ms
-timestamp>` and `__TAG_ASSISTANT=<token>` and talking to the page through `window.opener`. This
-  matters only for the oracle harness, and it is why that harness is brittle: a full navigation
-  that drops the parameters or the opener loses the connection.
-- GTM preview sets `debug_mode` on GA4 hits automatically. When diffing product output against
-  oracle output, strip the parameters preview mode injects before comparing payloads.
+- Tag Assistant's own connection works by opening the target URL with `gtm_debug=<ms
+timestamp>` and `__TAG_ASSISTANT=<token>` and talking to the page through `window.opener`.
+  We never use it. If the product ever needs to talk to Tag Assistant, that is the protocol.
+- The debug build does not mark GA4 hits with `_dbg=1` by itself. In a real preview session
+  Tag Assistant supplies `debug_mode` over its connection. The `debug` hit policy appends
+  `_dbg=1` at the network layer instead.
 - Consent Mode changes which tags fire. A scenario that sets no consent state tests the
   container's default, and the report should name which default applied.
 - Server-side tagging containers add a hop: the browser hit goes to the tagging server, which
