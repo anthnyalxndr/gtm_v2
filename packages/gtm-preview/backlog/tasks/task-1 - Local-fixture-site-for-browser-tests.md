@@ -1,10 +1,10 @@
 ---
 id: TASK-1
 title: Local fixture site for browser tests
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-19 04:21'
-updated_date: '2026-09-19 17:01'
+updated_date: '2026-09-19 19:49'
 labels:
   - infra
 dependencies: []

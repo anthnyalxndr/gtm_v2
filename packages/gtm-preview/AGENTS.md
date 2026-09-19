@@ -131,6 +131,7 @@ These are non-negotiable for all agents and humans:
 - **Never** use `git push --force` or bypass hooks with `--no-verify`.
 - **Security** — never commit secrets; `.env*`, `*.pem`, `*.key`, `*_rsa`, `*.p12` are gitignored. Check `git diff --cached` before committing. Never read/print `.env` files.
 - **Hook strictness:** `standard` (see `.husky/` or `.pre-commit-config.yaml`).
+- **What is next** lives in the Backlog.md document titled `Plan` (`backlog doc view` or `backlog/docs/`), an ordered list with rationale rewritten at each planning pass; `backlog-next` reads it first.
 
 ## Suggested workflow loop
 

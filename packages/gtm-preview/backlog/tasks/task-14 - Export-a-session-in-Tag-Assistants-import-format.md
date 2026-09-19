@@ -1,10 +1,10 @@
 ---
 id: TASK-14
 title: Export a session in Tag Assistant's import format
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-19 17:04'
-updated_date: '2026-09-19 17:11'
+updated_date: '2026-09-19 19:49'
 labels:
   - export
 dependencies:

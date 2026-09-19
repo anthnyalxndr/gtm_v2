@@ -1,10 +1,10 @@
 ---
 id: TASK-13
 title: Headless debug-feed capture behind the run command
-status: Review
+status: Done
 assignee: []
 created_date: '2026-09-19 16:53'
-updated_date: '2026-09-19 17:01'
+updated_date: '2026-09-19 19:49'
 labels:
   - core
 dependencies:
