@@ -1,9 +1,10 @@
 ---
 id: TASK-17
 title: Verify the three paths that need a person or a real write
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-19 20:13'
+updated_date: '2026-09-20 19:50'
 labels:
   - verification
 dependencies:
@@ -24,9 +25,16 @@ Three shipped behaviours were tested only against fakes or on the wire, never en
 
 <!-- AC:BEGIN -->
 
-- [ ] #1 run --version-from-workspace "Default Workspace" against GTM-WNX8FFXW creates a version without publishing, the CLI reports the version path, and a following run against Latest loads that version; the created version is noted here
+- [x] #1 run --version-from-workspace "Default Workspace" against GTM-WNX8FFXW creates a version without publishing, the CLI reports the version path, and a following run against Latest loads that version; the created version is noted here
 - [ ] #2 record scenarios/example.json opens headed, pauses in the Inspector with Record available, and after Resume writes the report for the clicks made; the generated code from the Inspector is pasted into a driver and replays headless without edits
 - [ ] #3 run --hits debug against the fixture site with a scenario whose container sends to a real GA4 property shows the events in that property's DebugView, and the note records which property was used and that the hits carried _dbg=1
 - [ ] #4 Any discrepancy found is fixed in the same change with a test, or split into its own task
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Check 1 (2026-09-20, GTM-WNX8FFXW): run --version-from-workspace "Default Workspace" created accounts/6335001612/containers/241202947/versions/3 (named gtm-preview 2026-09-20T19:48:30.183Z, 1 tag, 1 trigger, 1 variable) and the run that followed loaded Latest from the API. Verified via the API that Live (env 1) still serves version 1 and Latest (env 2) serves version 3. Two observations: GTM created version 3 even though the workspace had no changes since version 2, and it replaced the Default Workspace with a new one (id 2 became 8), which the client's fake modelled correctly. Fixed the first: the resolver now calls workspaces.getStatus first, skips the write when there are no changes, refuses on merge conflicts, and surfaces compilerError; a second live run reported 'no changes since the latest version; not creating a version' and Latest stayed at version 3. Tests cover the skip and the conflict paths.
+<!-- SECTION:NOTES:END -->

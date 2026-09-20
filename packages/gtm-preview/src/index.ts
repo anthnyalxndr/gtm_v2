@@ -90,14 +90,18 @@ async function run(command: RunCommand): Promise<number> {
   const out = command.out ?? join('reports', `${stem}.json`)
   const resolver = new EnvironmentCodeResolver({ cacheFile: defaultCacheFile() })
   if (command.versionFromWorkspace) {
-    const { versionPath } = await resolver.createVersionFromWorkspace(
+    const result = await resolver.createVersionFromWorkspace(
       loaded.container.id,
       command.versionFromWorkspace,
       `gtm-preview ${new Date().toISOString()}`,
     )
-    console.error(
-      `created ${versionPath} from workspace "${command.versionFromWorkspace}"; Latest now points at it`,
-    )
+    if (result.created) {
+      console.error(
+        `created ${result.versionPath} from workspace "${command.versionFromWorkspace}"; Latest now points at it`,
+      )
+    } else {
+      console.error(`${result.reason}; not creating a version`)
+    }
   }
   const runOpts = {
     headless: !command.headed,

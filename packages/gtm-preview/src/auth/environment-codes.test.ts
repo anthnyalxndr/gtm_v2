@@ -155,18 +155,43 @@ describe('EnvironmentCodeResolver', () => {
   })
 
   it('creates a version from a named workspace with the edit scope and drops the Latest cache entry', async () => {
-    const { r, state } = resolver()
+    const f = fake()
+    // The fake reports no workspace changes by default; give this workspace one.
+    f.service.accounts.containers.workspaces.getStatus = (async () => ({
+      data: { mergeConflict: [], workspaceChange: [{}] },
+    })) as never
+    const { r, state } = resolver(f)
     await r.resolve('GTM-ABC1234', 'Latest')
     const result = await r.createVersionFromWorkspace(
       'GTM-ABC1234',
       'Default Workspace',
       'gtm-preview 2026-09-19',
     )
-    expect(result.versionPath).toMatch(/\/versions\/\d+$/)
+    expect(result.created).toBe(true)
+    if (result.created) expect(result.versionPath).toMatch(/\/versions\/\d+$/)
     expect(state.calls).toContain('workspaces.create_version')
     expect(state.published).toEqual([])
     expect(scopesRequested.at(-1)).toEqual([READONLY_SCOPE, EDIT_VERSIONS_SCOPE])
     expect((await r.resolve('GTM-ABC1234', 'Latest')).source).toBe('api')
+  })
+
+  it('does not create a version when the workspace has no changes', async () => {
+    const { r, state } = resolver()
+    const result = await r.createVersionFromWorkspace('GTM-ABC1234', 'Default Workspace', 'v')
+    expect(result).toEqual({
+      created: false,
+      reason: 'workspace "Default Workspace" has no changes since the latest version',
+    })
+    expect(state.calls).not.toContain('workspaces.create_version')
+  })
+
+  it('refuses when the workspace has merge conflicts', async () => {
+    const f = fake()
+    f.state.mergeConflicts = 1
+    const { r } = resolver(f)
+    await expect(
+      r.createVersionFromWorkspace('GTM-ABC1234', 'Default Workspace', 'v'),
+    ).rejects.toThrow(/merge conflicts/)
   })
 
   it('names the available workspaces when the requested one is missing', async () => {

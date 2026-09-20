@@ -16,7 +16,9 @@ A scenario is a JSON file the `run` command executes. Fields:
   never goes in a scenario file.
 - `--version-from-workspace <name>` (flag, not a field): create a version from that workspace
   first, without publishing, so `Latest` points at unpublished work. This is a write to the
-  container and burns a version number, so it is never done implicitly.
+  container and burns a version number, so it is never done implicitly, and it is skipped
+  with a message when the workspace has no changes since the latest version. GTM replaces the
+  workspace with a fresh one of the same name afterwards, so workspace ids change.
 - `hits`: `dry` (default, abort every vendor hit in the browser), `debug` (send hits, mark
   GA4 ones with `_dbg=1` for DebugView), or `live` (send untouched).
 - `settleMs`: how long to wait after the last step before collecting (default 1500).

@@ -116,13 +116,15 @@ export class EnvironmentCodeResolver {
 
   /**
    * Create a version from a named workspace (no publish) so the Latest environment points at
-   * it. This is a write and burns a version number; callers must make it explicit.
+   * it. This is a write and burns a version number; callers must make it explicit. When the
+   * workspace has no changes since the latest version, nothing is created: GTM would happily
+   * make an identical version, which is waste (observed on the test container, 2026-09-20).
    */
   async createVersionFromWorkspace(
     publicId: string,
     workspaceName: string,
     versionName: string,
-  ): Promise<{ versionPath: string }> {
+  ): Promise<{ versionPath: string; created: true } | { created: false; reason: string }> {
     const client = await this.getClient([READONLY_SCOPE, EDIT_VERSIONS_SCOPE])
     const cache = await readCache(this.opts.cacheFile)
     const container = await this.containerRef(cache, client, publicId)
@@ -137,21 +139,42 @@ export class EnvironmentCodeResolver {
         `container ${publicId} has no workspace named "${workspaceName}"; available: ${names || 'none'}`,
       )
     }
+    const status = await client.call(() =>
+      client.service.accounts.containers.workspaces.getStatus({ path: ws.path! }),
+    )
+    if ((status.data.mergeConflict ?? []).length > 0) {
+      throw new EnvironmentCodeError(
+        `workspace "${workspaceName}" has merge conflicts with the latest version; resolve them in Tag Manager first`,
+      )
+    }
+    if ((status.data.workspaceChange ?? []).length === 0) {
+      return {
+        created: false,
+        reason: `workspace "${workspaceName}" has no changes since the latest version`,
+      }
+    }
     const res = await client.call(() =>
       client.service.accounts.containers.workspaces.create_version({
         path: ws.path!,
         requestBody: { name: versionName },
       }),
     )
+    if (res.data.compilerError) {
+      throw new EnvironmentCodeError(
+        `creating a version from workspace "${workspaceName}" failed with a compiler error; check the workspace in Tag Manager`,
+      )
+    }
     const versionPath = res.data.containerVersion?.path
-    if (!versionPath)
+    if (!versionPath) {
       throw new EnvironmentCodeError(
         `creating a version from workspace "${workspaceName}" returned no version`,
       )
+    }
     // Latest now points at the new version; its code is unchanged but the cache entry's
-    // fingerprint is stale, so drop it.
+    // fingerprint is stale, so drop it. GTM also replaces the workspace with a fresh one of
+    // the same name, so any workspace id the caller held is stale too.
     await this.invalidate(publicId, 2)
-    return { versionPath }
+    return { versionPath, created: true }
   }
 
   private findCached(
