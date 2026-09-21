@@ -10,8 +10,10 @@ export const HitSchema = z.object({
   params: z.record(z.string()),
   eventName: z.string().optional(),
   outcome: HitOutcomeSchema,
-  /** GTM event id this hit was attributed to, when known. */
+  /** GTM event id this hit was attributed to, when known. Ids restart on every page load. */
   eventId: z.number().optional(),
+  /** Container load (page load) the attributed event belongs to. */
+  groupId: z.string().optional(),
 })
 export type Hit = z.infer<typeof HitSchema>
 
@@ -58,7 +60,11 @@ export const MismatchSchema = z.discriminatedUnion('kind', [
 export type Mismatch = z.infer<typeof MismatchSchema>
 
 export const EventReportSchema = z.object({
+  /** Per container load; restarts at 1 on every page load. */
   eventId: z.number(),
+  /** The container load (page load) this event belongs to. */
+  groupId: z.string(),
+  pageUrl: z.string().optional(),
   eventName: z.string(),
   at: z.number(),
   /** The dataLayer message that started the event, when the build reported it. */

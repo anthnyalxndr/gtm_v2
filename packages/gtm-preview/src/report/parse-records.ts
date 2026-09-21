@@ -58,7 +58,9 @@ function decisionOf(execute: unknown): EventReport['tags'][number]['decision'] {
 }
 
 export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
-  const byEvent = new Map<number, RawRecord[]>()
+  // Event ids restart at 1 on every container load (page load); the groupId the runtime
+  // stamps on each record tells loads apart, so events are keyed by both, plus the name.
+  const byEvent = new Map<string, RawRecord[]>()
   let product: string | undefined
   let protocolVersion: string | undefined
   for (const r of raw.records) {
@@ -66,8 +68,9 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
     protocolVersion ??= str(r.version)
     const id = num(r.key?.eventId)
     if (id === undefined) continue
-    if (!byEvent.has(id)) byEvent.set(id, [])
-    byEvent.get(id)!.push(r)
+    const key = eventKey(str(r.key?.groupId) ?? '', id, str(r.key?.eventName) ?? '')
+    if (!byEvent.has(key)) byEvent.set(key, [])
+    byEvent.get(key)!.push(r)
   }
 
   const firstEvent = raw.records.find((r) => r.messageType === 'EVENT_STARTED')
@@ -86,18 +89,36 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
   }))
 
   // Hits reported by the runtime itself, used to attribute network hits to events by URL.
-  const gtagHitEvent = new Map<string, number>()
+  const gtagHitEvent = new Map<string, string>()
   for (const r of raw.records) {
     if (r.messageType !== 'GTAG_HIT') continue
     const id = num(r.key?.eventId)
     const url = str(r.url)
-    if (id !== undefined && url) gtagHitEvent.set(stripDebugParam(url), id)
+    if (id !== undefined && url)
+      gtagHitEvent.set(
+        stripDebugParam(url),
+        eventKey(str(r.key?.groupId) ?? '', id, str(r.key?.eventName) ?? ''),
+      )
   }
 
   const events: EventReport[] = []
-  for (const [eventId, recs] of [...byEvent.entries()].sort((a, b) => a[0] - b[0])) {
-    const started = recs.find((r) => r.messageType === 'EVENT_STARTED')
-    if (!started) continue
+  const eventsByKey = new Map<string, EventReport>()
+  const ordered = [...byEvent.entries()]
+    .map(([key, recs]) => ({
+      key,
+      recs,
+      started: recs.find((r) => r.messageType === 'EVENT_STARTED'),
+    }))
+    .filter(
+      (e): e is { key: string; recs: RawRecord[]; started: RawRecord } => e.started !== undefined,
+    )
+    .sort(
+      (a, b) =>
+        a.started.capturedAt - b.started.capturedAt ||
+        (num(a.started.key?.eventId) ?? 0) - (num(b.started.key?.eventId) ?? 0),
+    )
+  for (const { key, recs, started } of ordered) {
+    const eventId = num(started.key?.eventId) ?? 0
     const eventName = str(started.key?.eventName) ?? ''
     const rules = recs.find((r) => r.messageType === 'MACRO_RESOLVED')
     const triggerResults = arr(rules?.ruleInfo).map((t) => {
@@ -143,8 +164,10 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
     }
 
     const dataLayerRecord = recs.find((r) => r.messageType === 'DATA_LAYER')
-    events.push({
+    const report: EventReport = {
       eventId,
+      groupId: str(started.key?.groupId) ?? '',
+      pageUrl: str(started.pageUrl),
       eventName,
       at: started.capturedAt,
       message: dataLayerRecord?.message,
@@ -153,21 +176,25 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
       consent: consentOf(started),
       hits: [],
       mismatches: [],
-    })
+    }
+    events.push(report)
+    eventsByKey.set(key, report)
   }
 
   // Attribute network hits: by the runtime's own hit record first, then by time.
   const hits = raw.hits.map((h) => ({ ...h }))
   for (const h of hits) {
     const url = `https://${h.host}${h.path}?${new URLSearchParams(h.params).toString()}`
-    const byUrl = gtagHitEvent.get(stripDebugParam(url))
-    if (byUrl !== undefined) h.eventId = byUrl
-    else {
+    let ev = eventsByKey.get(gtagHitEvent.get(stripDebugParam(url)) ?? '')
+    if (!ev) {
       const before = events.filter((e) => e.at <= h.at)
-      if (before.length) h.eventId = before[before.length - 1]!.eventId
+      ev = before[before.length - 1]
     }
-    const ev = events.find((e) => e.eventId === h.eventId)
-    if (ev) ev.hits.push(h)
+    if (ev) {
+      h.eventId = ev.eventId
+      h.groupId = ev.groupId
+      ev.hits.push(h)
+    }
   }
 
   for (const e of events) e.mismatches = findMismatches(e)
@@ -210,6 +237,10 @@ export function buildReport(raw: RawSession, meta: ReportMeta): SessionReport {
     },
   }
 }
+
+/** GTM can reuse an event id within a load for a different event name (seen with form_start), so the name is part of the key. */
+const eventKey = (groupId: string, eventId: number, eventName: string): string =>
+  `${groupId}:${eventId}:${eventName}`
 
 function stripDebugParam(url: string): string {
   try {

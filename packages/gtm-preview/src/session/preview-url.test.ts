@@ -19,6 +19,15 @@ describe('isContainerRequest', () => {
       ),
     ).toBe(false)
   })
+
+  it('ignores the diagnostics beacon GTM sends to the same path', () => {
+    expect(
+      isContainerRequest(
+        'https://www.googletagmanager.com/gtm.js?id=GTM-AAA1111&is_td=1&v=3&t=t&pid=1888418727&seq=2&z=0',
+        'GTM-AAA1111',
+      ),
+    ).toBe(false)
+  })
 })
 
 describe('toDebugBuildUrl', () => {

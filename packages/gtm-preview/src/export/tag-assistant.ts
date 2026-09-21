@@ -169,14 +169,24 @@ export function buildTagAssistantExport(
   const product = str(first?.containerProduct ?? init?.containerProduct, 'GTM')
   const environmentName = `env-${opts.environment}`
 
-  const byEvent = new Map<number, RawRecord[]>()
+  // Event ids restart on every container load; key by groupId as well and order by time.
+  const byEvent = new Map<string, RawRecord[]>()
   for (const r of records) {
     const id = num(r.key?.eventId)
     if (id === undefined) continue
-    if (!byEvent.has(id)) byEvent.set(id, [])
-    byEvent.get(id)!.push(r)
+    const key = `${str(r.key?.groupId)}:${id}:${str(r.key?.eventName)}`
+    if (!byEvent.has(key)) byEvent.set(key, [])
+    byEvent.get(key)!.push(r)
   }
-  const eventIds = [...byEvent.keys()].sort((a, b) => a - b)
+  const eventKeys = [...byEvent.entries()]
+    .map(([key, recs]) => ({ key, started: recs.find((r) => r.messageType === 'EVENT_STARTED') }))
+    .filter((e) => e.started !== undefined)
+    .sort(
+      (a, b) =>
+        a.started!.capturedAt - b.started!.capturedAt ||
+        (num(a.started!.key?.eventId) ?? 0) - (num(b.started!.key?.eventId) ?? 0),
+    )
+    .map((e) => e.key)
 
   // Groups are container loads (page loads); the runtime stamps each record with a groupId.
   const groupOrder: string[] = []
@@ -214,10 +224,10 @@ export function buildTagAssistantExport(
   const messages: AnyRecord[] = []
   const tagsFired: Record<string, AnyRecord[]> = {}
   let index = 0
-  for (const eventId of eventIds) {
-    const recs = byEvent.get(eventId)!
-    const started = recs.find((r) => r.messageType === 'EVENT_STARTED')
-    if (!started) continue
+  for (const key of eventKeys) {
+    const recs = byEvent.get(key)!
+    const started = recs.find((r) => r.messageType === 'EVENT_STARTED')!
+    const eventId = num(started.key?.eventId) ?? 0
     index += 1
     const eventName = str(started.key?.eventName)
     const rules = recs.find((r) => r.messageType === 'MACRO_RESOLVED')

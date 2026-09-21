@@ -27,7 +27,12 @@ function summarise(report: SessionReport): string {
       `, hits: ${report.hitPolicy}`,
     `${s.events} events, ${s.tagsExecuted} tags executed, ${s.tagsBlocked} blocked, ${s.tagsFailed} failed, ${s.hitsAttempted} hits attempted, ${s.hitsSent} sent`,
   ]
+  let currentGroup: string | undefined
   for (const e of report.events) {
+    if (e.groupId !== currentGroup) {
+      currentGroup = e.groupId
+      lines.push(`  page: ${e.pageUrl ?? '(unknown url)'}`)
+    }
     const fired = e.tags
       .filter((t) => t.decision === 'execute')
       .map((t) => `${t.name}${t.status ? ` [${t.status.replace('execute_', '')}]` : ''}`)

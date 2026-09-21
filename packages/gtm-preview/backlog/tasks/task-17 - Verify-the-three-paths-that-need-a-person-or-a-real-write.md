@@ -4,7 +4,7 @@ title: Verify the three paths that need a person or a real write
 status: In Progress
 assignee: []
 created_date: '2026-09-19 20:13'
-updated_date: '2026-09-20 19:50'
+updated_date: '2026-09-21 02:29'
 labels:
   - verification
 dependencies:
@@ -37,4 +37,6 @@ Three shipped behaviours were tested only against fakes or on the wire, never en
 <!-- SECTION:NOTES:BEGIN -->
 
 Check 1 (2026-09-20, GTM-WNX8FFXW): run --version-from-workspace "Default Workspace" created accounts/6335001612/containers/241202947/versions/3 (named gtm-preview 2026-09-20T19:48:30.183Z, 1 tag, 1 trigger, 1 variable) and the run that followed loaded Latest from the API. Verified via the API that Live (env 1) still serves version 1 and Latest (env 2) serves version 3. Two observations: GTM created version 3 even though the workspace had no changes since version 2, and it replaced the Default Workspace with a new one (id 2 became 8), which the client's fake modelled correctly. Fixed the first: the resolver now calls workspaces.getStatus first, skips the write when there are no changes, refuses on merge conflicts, and surfaces compilerError; a second live run reported 'no changes since the latest version; not creating a version' and Latest stayed at version 3. Tests cover the skip and the conflict paths.
+
+Check 2, part 1 (2026-09-20, www.sjpools.com, GTM-5KNSPW9K Live, hits dry): record opened headed, paused in the Inspector, and after Resume wrote the report, raw session, and Tag Assistant file for a two-page session (home, then /contact with a form submit): 35 events, 20 tags executed, 3 Google Ads tags reported failed by GTM, 36 hits all aborted. Two defects found and fixed in the same change: (1) GTM sends a diagnostics beacon to gtm.js with is_td=1 that Google answers with 204; the container matcher rewrote it and the run failed as if the code were rejected (Wix sends it, Squarespace did not). (2) Event ids restart on every page load and GTM can reuse an id within a load for a different event name, so the parser and exporter now key events by groupId, id, and name; before, the second page's events merged into the first page's and every later hit fell onto the wrong event. A two-page regression test covers it. Part 2 (paste the Inspector's generated code into a driver and replay headless) is pending the code.
 <!-- SECTION:NOTES:END -->

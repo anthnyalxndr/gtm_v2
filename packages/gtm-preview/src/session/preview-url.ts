@@ -1,11 +1,16 @@
 const CONTAINER_HOST = 'www.googletagmanager.com'
 
+/**
+ * True for the request that loads the container script. GTM also sends a diagnostics beacon
+ * to the same path with `is_td=1` (answered with 204), which must be left alone.
+ */
 export function isContainerRequest(url: string, containerId: string): boolean {
   const u = new URL(url)
   return (
     u.host === CONTAINER_HOST &&
     u.pathname === '/gtm.js' &&
-    u.searchParams.get('id') === containerId
+    u.searchParams.get('id') === containerId &&
+    !u.searchParams.has('is_td')
   )
 }
 
