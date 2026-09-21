@@ -109,3 +109,59 @@ describe.skipIf(!enabled)('runSession with a recorded driver (needs GTM_AUTH_WNX
     )
   }, 60_000)
 })
+
+describe.skipIf(!enabled)('recording a session to a driver (needs GTM_AUTH_WNX8FFXW)', () => {
+  let site: FixtureSite
+  beforeAll(async () => {
+    site = await startFixtureSite(CONTAINER)
+  })
+  afterAll(() => site.close())
+
+  it('writes the recorder output for the steps it performed, and the converted driver replays', async () => {
+    const { mkdtemp, readFile } = await import('node:fs/promises')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { writeFile } = await import('node:fs/promises')
+    const { driverFromCodegen } = await import('../src/session/codegen-to-driver')
+    const dir = await mkdtemp(join(tmpdir(), 'gtm-preview-rec-'))
+    const recordTo = join(dir, 'codegen.js')
+    const scenario = resolveScenario(
+      parseScenario({
+        name: 'record',
+        startUrl: site.baseUrl + '/',
+        container: { id: CONTAINER, environment: 2, authCodeEnv: AUTH_ENV },
+        settleMs: 300,
+        steps: [
+          { kind: 'click', selector: '#cta' },
+          { kind: 'fill', selector: '#email', value: 'someone@example.com' },
+          { kind: 'click', selector: '#submit' },
+          { kind: 'waitForEvent', event: 'form_submit' },
+        ],
+      }),
+      process.env,
+    )
+    await runSession(runnableFromEnv(scenario), { recordTo })
+    const source = await readFile(recordTo, 'utf8')
+    expect(source).toContain("getByRole('button', { name: 'Call to action' }).click()")
+    expect(source).toContain("fill('someone@example.com')")
+
+    const driverPath = join(dir, 'recorded.mjs')
+    await writeFile(driverPath, driverFromCodegen(source, { startUrl: site.baseUrl + '/' }), 'utf8')
+    const replay = resolveScenario(
+      parseScenario({
+        name: 'replay',
+        startUrl: site.baseUrl + '/',
+        container: { id: CONTAINER, environment: 2, authCodeEnv: AUTH_ENV },
+        driver: driverPath,
+        settleMs: 1500,
+      }),
+      process.env,
+    )
+    const raw = await runSession(runnableFromEnv(replay))
+    const names = raw.records
+      .filter((r) => r.messageType === 'EVENT_STARTED')
+      .map((r) => r.key?.eventName)
+    expect(names).toContain('cta_click')
+    expect(names).toContain('form_submit')
+  }, 120_000)
+})

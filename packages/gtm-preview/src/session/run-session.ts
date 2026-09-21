@@ -14,14 +14,32 @@ import { isContainerRequest, redactAuthCode, toDebugBuildUrl } from './preview-u
 import { loadDriver, runDriver } from './driver'
 import { executeStep } from './steps'
 
+/** Playwright's recorder is the same private call `playwright codegen --output` uses. */
+async function enableRecorder(context: unknown, outputFile: string): Promise<void> {
+  const c = context as { _enableRecorder?: (p: Record<string, unknown>) => Promise<void> }
+  if (typeof c._enableRecorder !== 'function') {
+    throw new Error(
+      'this Playwright version has no recorder API; upgrade playwright or record without --driver-out',
+    )
+  }
+  await c._enableRecorder({ language: 'javascript', mode: 'recording', outputFile })
+}
+
 export interface RunOptions {
   headless?: boolean
   log?: (line: string) => void
   /**
    * After the start URL loads (and any steps or driver run), call page.pause() so the
-   * Playwright Inspector opens with its Record button. Needs a headed browser.
+   * Playwright Inspector opens. Needs a headed browser. The session ends when the person
+   * presses Resume or closes the window.
    */
   pause?: boolean
+  /**
+   * Turn on Playwright's recorder for the whole session and write the generated code (the
+   * "Node.js Library" shape) to this file. Actions performed by steps or a driver are
+   * recorded too, which is how this is tested headless.
+   */
+  recordTo?: string
 }
 
 export class ContainerLoadError extends Error {}
@@ -38,6 +56,7 @@ export async function runSession(
   const browser: Browser = await chromium.launch({ headless: opts.headless ?? true })
   try {
     const context = await browser.newContext()
+    if (opts.recordTo) await enableRecorder(context, opts.recordTo)
     const page = await context.newPage()
     const hits: Hit[] = []
     const errors: string[] = []
@@ -111,6 +130,17 @@ export async function runSession(
         )
       }
     }
+    const redactSession = (): RawSession => {
+      if (containerStatus === undefined)
+        errors.push('the page never requested the container script')
+      // Only the debug build emits per-event records. It pauses on CONTAINER_STARTING only when the
+      // page carries a debug signal; without one it runs straight through and still emits.
+      const debugBuildLoaded = records.some((r) => r.messageType === 'EVENT_STARTED')
+      if (!debugBuildLoaded) errors.push('no EVENT_STARTED records: the debug build did not run')
+      const redact = <T>(v: T): T =>
+        JSON.parse(redactAuthCode(JSON.stringify(v), scenario.authCode)) as T
+      return redact({ records, hits, dataLayer, errors, debugBuildLoaded })
+    }
     const waitForContainerStatus = async (timeoutMs = 5000) => {
       const until = Date.now() + timeoutMs
       while (containerStatus === undefined && Date.now() < until) await page.waitForTimeout(50)
@@ -136,20 +166,18 @@ export async function runSession(
       throw err
     }
     if (opts.pause) {
-      log('paused: use the Inspector to record; press Resume when done')
-      await page.pause()
+      log(
+        'paused: click through the site; press Resume in the Inspector or close the window when done',
+      )
+      // page.pause() rejects when the page is closed; either way the session is over.
+      await page.pause().catch(() => {})
+      if (page.isClosed()) {
+        if (scenario.settleMs > 0) await new Promise((r) => setTimeout(r, scenario.settleMs))
+        return redactSession()
+      }
     }
     if (scenario.settleMs > 0) await page.waitForTimeout(scenario.settleMs)
-
-    if (containerStatus === undefined) errors.push('the page never requested the container script')
-    // Only the debug build emits per-event records. It pauses on CONTAINER_STARTING only when the
-    // page carries a debug signal; without one it runs straight through and still emits.
-    const debugBuildLoaded = records.some((r) => r.messageType === 'EVENT_STARTED')
-    if (!debugBuildLoaded) errors.push('no EVENT_STARTED records: the debug build did not run')
-
-    const redact = <T>(v: T): T =>
-      JSON.parse(redactAuthCode(JSON.stringify(v), scenario.authCode)) as T
-    return redact({ records, hits, dataLayer, errors, debugBuildLoaded })
+    return redactSession()
   } finally {
     await browser.close()
   }

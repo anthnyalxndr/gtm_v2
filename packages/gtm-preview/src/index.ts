@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { basename, dirname, extname, join } from 'node:path'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { basename, dirname, extname, join, relative } from 'node:path'
 import { parseArgs, usage, type RunCommand } from './cli/parse-args'
 import { buildTagAssistantExport } from './export/tag-assistant'
 import { readRawSession, writeJson, type SavedRawSession } from './export/write'
@@ -15,6 +17,7 @@ import {
 } from './scenario/schema'
 import { defaultCacheFile } from './auth/code-cache'
 import { EnvironmentCodeError, EnvironmentCodeResolver } from './auth/environment-codes'
+import { driverFromCodegen } from './session/codegen-to-driver'
 import { DriverError } from './session/driver'
 import { ContainerLoadError, runSession } from './session/run-session'
 import { StepError } from './session/steps'
@@ -108,9 +111,15 @@ async function run(command: RunCommand): Promise<number> {
       console.error(`${result.reason}; not creating a version`)
     }
   }
+  const driverOut =
+    command.kind === 'record'
+      ? (command.driverOut ?? join('scenarios', 'flows', `${stem}.recorded.mjs`))
+      : undefined
+  const recordTo = driverOut ? join(tmpdir(), `gtm-preview-codegen-${process.pid}.js`) : undefined
   const runOpts = {
     headless: !command.headed,
     pause: command.kind === 'record',
+    recordTo,
     log: (l: string) => console.error(l),
   }
   let scenario = await prepare(loaded, resolver, command.refresh)
@@ -134,6 +143,22 @@ async function run(command: RunCommand): Promise<number> {
   await writeReport(out, report)
   console.log(summarise(report))
   console.log(`report written to ${out}`)
+  if (driverOut && recordTo) {
+    let source = ''
+    try {
+      source = await readFile(recordTo, 'utf8')
+    } catch {
+      console.error('the recorder wrote no file; no driver written')
+    }
+    if (source) {
+      await mkdir(dirname(driverOut), { recursive: true })
+      await writeFile(driverOut, driverFromCodegen(source, { startUrl: scenario.startUrl }), 'utf8')
+      await rm(recordTo, { force: true })
+      console.log(
+        `driver written to ${driverOut}; add "driver": "${relative(dirname(command.scenario), driverOut)}" to the scenario to replay it`,
+      )
+    }
+  }
   if (command.raw) {
     const saved: SavedRawSession = {
       ...raw,

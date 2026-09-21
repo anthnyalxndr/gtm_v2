@@ -8,6 +8,8 @@ export interface RunCommand {
   headed: boolean
   raw?: string
   tagAssistant?: string
+  /** record only: where to write the driver module generated from the recording. */
+  driverOut?: string
   includeAuth: boolean
   /** Ignore cached environment codes and fetch them again. */
   refresh: boolean
@@ -36,6 +38,8 @@ Options for run and record:
   --headed                Show the browser (record always does)
   --raw <path>            Also save the raw captured session (records, hits, dataLayer)
   --tag-assistant <path>  Also write a Tag Assistant import file
+  --driver-out <path>     record only: driver module to write from the recording
+                          (default: scenarios/flows/<scenario name>.recorded.mjs)
   --include-auth          Put the environment authorization code in the Tag Assistant file
   --refresh               Fetch environment codes from the API even if cached
   --fail-on-mismatch      Exit 3 when GTM's verdicts and the observed hits disagree
@@ -67,6 +71,7 @@ export function parseArgs(argv: readonly string[]): Command {
     let headed = false
     let raw: string | undefined
     let tagAssistant: string | undefined
+    let driverOut: string | undefined
     let includeAuth = false
     let refresh = false
     let failOnMismatch = false
@@ -77,13 +82,15 @@ export function parseArgs(argv: readonly string[]): Command {
         flag === '--out' ||
         flag === '--raw' ||
         flag === '--tag-assistant' ||
-        flag === '--version-from-workspace'
+        flag === '--version-from-workspace' ||
+        flag === '--driver-out'
       ) {
         const v = flags[i + 1]
         if (v === undefined || v.startsWith('--')) throw new Error(`${flag} requires a value`)
         if (flag === '--out') out = v
         else if (flag === '--raw') raw = v
         else if (flag === '--tag-assistant') tagAssistant = v
+        else if (flag === '--driver-out') driverOut = v
         else versionFromWorkspace = v
         i += 1
       } else if (flag === '--include-auth') {
@@ -112,6 +119,7 @@ export function parseArgs(argv: readonly string[]): Command {
       headed: headed || command === 'record',
       raw,
       tagAssistant,
+      driverOut,
       includeAuth,
       refresh,
       versionFromWorkspace,

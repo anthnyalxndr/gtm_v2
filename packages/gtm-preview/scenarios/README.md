@@ -34,13 +34,15 @@ A scenario is a JSON file the `run` command executes. Fields:
 
 1. Write a scenario with the start URL and container but no steps.
 2. Run `pnpm dev record scenarios/<name>.json`. The page opens headed with the container's
-   debug build loaded and pauses in the Playwright Inspector.
-3. Press Record in the Inspector, click through the site, then press Resume. The run writes
-   the report (and `--raw` or `--tag-assistant` files if asked) for what you just did.
-4. Copy the generated code from the Inspector into `scenarios/flows/<name>.mjs` as the body
-   of `export default async function (page, ctx) { ... }`, and add `"driver":
-"./flows/<name>.mjs"` to the scenario. Add `await ctx.waitForEvent('...')` after actions
-   that push events so replay waits for GTM instead of racing it.
+   debug build loaded, Playwright's recorder is on, and the Inspector shows the generated
+   code as you go.
+3. Click through the site. Press Resume in the Inspector or close the browser window when
+   done. The run writes the report (and `--raw` or `--tag-assistant` files if asked) for what
+   you did, and writes the recording as a driver to `scenarios/flows/<name>.recorded.mjs`
+   (or `--driver-out <path>`). The initial `goto` to the start URL is dropped because the
+   runner performs it.
+4. Add `await ctx.waitForEvent('...')` after actions that push events so replay waits for GTM
+   instead of racing it, then add `"driver": "./flows/<name>.recorded.mjs"` to the scenario.
 5. Replay headless with `pnpm dev run scenarios/<name>.json`.
 
 `test/fixtures/drivers/codegen-like.mjs` is a driver made this way against the fixture site.

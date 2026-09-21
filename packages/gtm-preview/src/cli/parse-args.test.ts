@@ -20,6 +20,7 @@ describe('parseArgs', () => {
       headed: false,
       raw: undefined,
       tagAssistant: undefined,
+      driverOut: undefined,
       includeAuth: false,
       refresh: false,
       versionFromWorkspace: undefined,
@@ -36,6 +37,7 @@ describe('parseArgs', () => {
       headed: false,
       raw: undefined,
       tagAssistant: undefined,
+      driverOut: undefined,
       includeAuth: false,
       refresh: false,
       versionFromWorkspace: undefined,
@@ -75,6 +77,12 @@ describe('parseArgs', () => {
       includeAuth: true,
     })
     expect(() => parseArgs(['run', 's.json', '--raw'])).toThrow('--raw requires a value')
+  })
+
+  it('parses --driver-out', () => {
+    expect(parseArgs(['record', 's.json', '--driver-out', 'flows/x.mjs'])).toMatchObject({
+      driverOut: 'flows/x.mjs',
+    })
   })
 
   it('parses record as a headed run that pauses', () => {
