@@ -15,21 +15,34 @@ export class StepError extends Error {
 }
 
 /** Resolve once the debug feed has reported an event with the given name. */
-export async function waitForGtmEvent(page: Page, event: string, timeoutMs: number): Promise<void> {
+/**
+ * Resolve once the debug feed on the current page has reported at least `count` events with
+ * the given name. Counts are per page, since the in-page record array restarts on navigation.
+ */
+export async function waitForGtmEvent(
+  page: Page,
+  event: string,
+  timeoutMs: number,
+  count = 1,
+): Promise<void> {
   try {
     await page.waitForFunction(
-      ({ global, event }) => {
+      ({ global, event, count }) => {
         const records = (window as unknown as Record<string, unknown[]>)[global] ?? []
-        return records.some((r) => {
+        let seen = 0
+        for (const r of records) {
           const rec = r as { messageType?: string; key?: { eventName?: string } }
-          return rec.messageType === 'EVENT_STARTED' && rec.key?.eventName === event
-        })
+          if (rec.messageType === 'EVENT_STARTED' && rec.key?.eventName === event) seen += 1
+        }
+        return seen >= count
       },
-      { global: RECORDS_GLOBAL, event },
+      { global: RECORDS_GLOBAL, event, count },
       { timeout: timeoutMs },
     )
   } catch {
-    throw new Error(`event "${event}" did not start within ${timeoutMs}ms`)
+    throw new Error(
+      `event "${event}" did not start${count > 1 ? ` ${count} times` : ''} within ${timeoutMs}ms`,
+    )
   }
 }
 
@@ -52,7 +65,7 @@ export async function executeStep(page: Page, step: Step, index: number): Promis
         await page.waitForTimeout(step.ms)
         return
       case 'waitForEvent':
-        await waitForGtmEvent(page, step.event, step.timeoutMs)
+        await waitForGtmEvent(page, step.event, step.timeoutMs, step.count)
         return
       case 'push':
         await page.evaluate((data) => {

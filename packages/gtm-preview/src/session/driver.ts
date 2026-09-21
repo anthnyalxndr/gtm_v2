@@ -5,8 +5,11 @@ import { waitForGtmEvent } from './steps'
 
 /** What a driver receives besides the page. */
 export interface DriverContext {
-  /** Resolve once GTM's debug feed reports an event with this name. */
-  waitForEvent: (event: string, timeoutMs?: number) => Promise<void>
+  /**
+   * Resolve once GTM's debug feed reports an event with this name on the current page.
+   * `count` waits for that many occurrences, for a second click that fires the same event.
+   */
+  waitForEvent: (event: string, opts?: { timeoutMs?: number; count?: number }) => Promise<void>
   log: (line: string) => void
 }
 
@@ -53,7 +56,8 @@ export async function loadDriver(driverPath: string): Promise<Driver> {
 
 export function driverContext(page: Page, log: (line: string) => void): DriverContext {
   return {
-    waitForEvent: (event, timeoutMs = 10_000) => waitForGtmEvent(page, event, timeoutMs),
+    waitForEvent: (event, opts = {}) =>
+      waitForGtmEvent(page, event, opts.timeoutMs ?? 10_000, opts.count ?? 1),
     log,
   }
 }

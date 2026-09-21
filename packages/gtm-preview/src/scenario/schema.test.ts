@@ -16,7 +16,12 @@ describe('parseScenario', () => {
     const s = parseScenario(valid)
     expect(s.hits).toBe('dry')
     expect(s.settleMs).toBe(1500)
-    expect(s.steps[1]).toEqual({ kind: 'waitForEvent', event: 'cta_click', timeoutMs: 10_000 })
+    expect(s.steps[1]).toEqual({
+      kind: 'waitForEvent',
+      event: 'cta_click',
+      timeoutMs: 10_000,
+      count: 1,
+    })
   })
 
   it('rejects a missing startUrl and names the path', () => {

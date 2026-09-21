@@ -17,6 +17,8 @@ export const StepSchema = z.discriminatedUnion('kind', [
     kind: z.literal('waitForEvent'),
     event: z.string().min(1),
     timeoutMs: z.number().int().positive().default(10_000),
+    /** Wait until this many events with the name have started on the current page. */
+    count: z.number().int().positive().default(1),
   }),
   z.object({ kind: z.literal('push'), data: z.record(z.unknown()) }),
 ])
