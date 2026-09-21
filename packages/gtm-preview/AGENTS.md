@@ -34,12 +34,22 @@ How it works, in order:
    resolved parameters, `TAG_STATUS` (succeeded, failed, exception), `TAG_BLOCKED`,
    `GTAG_HIT`, `CONSENT_STATE`, and more. GTM web containers use protocol `version: "2"`,
    Google tags `"3"`.
-5. A request listener records every vendor hit that left, or would have left, the browser.
+5. Every Google tag the page loads (`gtag/js`, `gtag/destination`) is rewritten to its debug
+   build too by adding `gtm_debug=x`; no code is needed for those. Each Google tag then
+   reports as its own container (`containerProduct: "OGT"`) in the same queue, and its
+   `GTAG_HIT` records tie the GA4 and Ads hits it sends to the event that caused them. The
+   GTM container's own feed reports hits only for endpoints its runtime owns.
+6. A request listener records every vendor hit that left, or would have left, the browser.
+   Hits are attributed to events by the runtime's own hit records first (matched on
+   identifying parameters, since the request on the wire gains timing parameters and may go
+   to a second host), then by time to the nearest earlier GTM event, preferring one within
+   two seconds that has a tag able to explain the hit.
 
 Hits are governed by a per-run policy. `dry` (default) aborts every vendor hit inside the
 browser; the debug stream is unchanged because GTM reports success when tag code finishes,
 not when the network call lands. `debug` lets hits out and appends `_dbg=1` to GA4 collect
-requests so they show in DebugView. `live` lets hits out untouched. Only GA4 has a debug
+requests so they show in DebugView. `live` lets hits out untouched, except that it strips the
+`_dbg=1` the Google tag's debug build adds to its own hits. Only GA4 has a debug
 flag: in `debug` and `live` modes, Ads, Floodlight, and Meta hits are real conversions.
 
 Environment authorization codes come from the Tag Manager API (`environments.list`) through
@@ -104,9 +114,15 @@ code is left out of the file unless `--include-auth` is passed on `run`.
   page URL, timestamp, and mismatches. JSON is the primary output. Any HTML or terminal view,
   and any export to another tool's format, is a renderer over that JSON.
 - **Mismatches are the finding.** `src/report/mismatches.ts` compares verdicts with hits per
-  event: a hit-sending tag (GA4 event, Ads, Floodlight, image) that executed with no hit for
-  that event, or a hit with no executed tag that could explain it. Hits that leave before
-  GTM's first event are listed as unattributed. `--fail-on-mismatch` makes `run` exit 3.
+  GTM event: a hit-sending tag (GA4 event, Ads, Floodlight, image) that executed with no hit
+  in its window, or a hit attributed by time with no executed tag that could explain it. A hit
+  the runtime reported itself is never "without a tag". Hits that leave before GTM's first
+  event are listed as unattributed. `--fail-on-mismatch` makes `run` exit 3. Summary counts
+  describe the GTM container only; Google tag containers' internal activity tags are kept out
+  of them.
+- **Events are keyed by container, load, id, and name.** Ids restart on every page load, each
+  container numbers its own events, and GTM can reuse an id within a load for a different
+  event name.
 - **Environment codes come from the API or the operator, never from scenario files.**
   Scenarios name an environment; the resolver fetches and caches its code. `authCodeEnv` is
   the escape hatch for a code handed over without API access.

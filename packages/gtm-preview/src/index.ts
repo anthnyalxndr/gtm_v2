@@ -30,12 +30,18 @@ function summarise(report: SessionReport): string {
       `, hits: ${report.hitPolicy}`,
     `${s.events} events, ${s.tagsExecuted} tags executed, ${s.tagsBlocked} blocked, ${s.tagsFailed} failed, ${s.hitsAttempted} hits attempted, ${s.hitsSent} sent`,
   ]
+  const multi = report.containers.length > 1
+  if (multi)
+    lines.push(
+      `containers: ${report.containers.map((c) => `${c.id} (${c.product ?? '?'})`).join(', ')}`,
+    )
   let currentGroup: string | undefined
   for (const e of report.events) {
     if (e.groupId !== currentGroup) {
       currentGroup = e.groupId
       lines.push(`  page: ${e.pageUrl ?? '(unknown url)'}`)
     }
+    if (multi && e.container !== report.container.id) continue
     const fired = e.tags
       .filter((t) => t.decision === 'execute')
       .map((t) => `${t.name}${t.status ? ` [${t.status.replace('execute_', '')}]` : ''}`)

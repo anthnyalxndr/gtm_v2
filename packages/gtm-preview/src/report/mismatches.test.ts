@@ -39,6 +39,20 @@ describe('findMismatches', () => {
       }),
     ).toEqual([])
   })
+  it('lets the Conversion Linker and a call conversion explain Ads hits, and never flags a runtime-attributed hit', () => {
+    expect(findMismatches({ tags: [tag('Linker', 'gclidw')], hits: [hit('google_ads')] })).toEqual(
+      [],
+    )
+    expect(findMismatches({ tags: [tag('Calls', 'awcc')], hits: [] })).toEqual([
+      { kind: 'tag_without_hit', tag: 'Calls', tagType: 'awcc' },
+    ])
+    expect(
+      findMismatches({ tags: [], hits: [{ ...hit('ga4', 'page_view'), attributedBy: 'runtime' }] }),
+    ).toEqual([])
+  })
+  it('judges tags against the window hits and hits against the attributed ones', () => {
+    expect(findMismatches({ tags: [tag('GA4', 'gaawe')], hits: [] }, [hit('ga4', 'x')])).toEqual([])
+  })
   it('does not require the Google tag to send a hit but lets it explain one', () => {
     expect(findMismatches({ tags: [tag('Google Tag', 'googtag')], hits: [] })).toEqual([])
     expect(

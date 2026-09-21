@@ -16,6 +16,7 @@ export const TAG_TEMPLATES: Record<string, TemplateInfo> = {
   awct: { name: 'Google Ads Conversion Tracking', thumbnail: 'thumbnail-adwords.svg' },
   sp: { name: 'Google Ads Remarketing', thumbnail: 'thumbnail-adwords.svg' },
   gclidw: { name: 'Conversion Linker', thumbnail: 'thumbnail-adwords.svg' },
+  awcc: { name: 'Google Ads Calls from Website Conversion', thumbnail: 'thumbnail-adwords.svg' },
   flc: { name: 'Floodlight Counter', thumbnail: 'thumbnail-floodlight.svg' },
   fls: { name: 'Floodlight Sales', thumbnail: 'thumbnail-floodlight.svg' },
   html: { name: 'Custom HTML', thumbnail: 'thumbnail-custom-html.svg' },

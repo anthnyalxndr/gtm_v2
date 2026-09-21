@@ -32,7 +32,11 @@ const VENDOR_RULES: VendorRule[] = [
     test: (u) =>
       (host(u, 'googleads.g.doubleclick.net', 'googleadservices.com') &&
         u.pathname.startsWith('/pagead/')) ||
-      (u.host === 'www.google.com' && u.pathname.startsWith('/pagead/')),
+      (u.host === 'www.google.com' && u.pathname.startsWith('/pagead/')) ||
+      // Consent-mode conversion endpoints the Google tag runtime uses.
+      (host(u, 'www.google.com', 'pagead2.googlesyndication.com', 'ad.doubleclick.net') &&
+        u.pathname.startsWith('/ccm/')) ||
+      (u.host === 'www.google.com' && u.pathname.startsWith('/rmkt/')),
   },
   {
     vendor: 'floodlight',
@@ -71,11 +75,18 @@ export type HitDecision = { action: 'abort' } | { action: 'continue'; url: strin
 /** Decide what happens to a vendor hit under the given policy. */
 export function decideHit(url: string, policy: HitPolicy): HitDecision {
   if (policy === 'dry') return { action: 'abort' }
-  if (policy === 'debug') {
+  if (matchVendor(url) === 'ga4') {
     const u = new URL(url)
-    if (matchVendor(url) === 'ga4' && u.searchParams.get('v') === '2') {
-      u.searchParams.set('_dbg', '1')
-      return { action: 'continue', url: u.toString(), marked: true }
+    if (u.searchParams.get('v') === '2') {
+      if (policy === 'debug') {
+        u.searchParams.set('_dbg', '1')
+        return { action: 'continue', url: u.toString(), marked: true }
+      }
+      // The Google tag's debug build marks its own hits; live mode must not carry that.
+      if (u.searchParams.has('_dbg')) {
+        u.searchParams.delete('_dbg')
+        return { action: 'continue', url: u.toString(), marked: false }
+      }
     }
   }
   return { action: 'continue', url, marked: false }

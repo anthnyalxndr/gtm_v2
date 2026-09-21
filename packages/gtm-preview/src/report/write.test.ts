@@ -8,6 +8,7 @@ const base: SessionReport = {
   scenario: { name: 'n', startUrl: 'u' },
   container: { id: 'GTM-1', environment: 1, debugBuildLoaded: true },
   hitPolicy: 'dry',
+  containers: [{ id: 'GTM-1' }],
   tags: [],
   triggers: [],
   events: [],

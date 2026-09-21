@@ -10,7 +10,13 @@ import {
   type RawRecord,
 } from './debug-queue'
 import { decideHit, parseHit } from './hit-policy'
-import { isContainerRequest, redactAuthCode, toDebugBuildUrl } from './preview-url'
+import {
+  isContainerRequest,
+  isGoogleTagRequest,
+  redactAuthCode,
+  toDebugBuildUrl,
+  toGoogleTagDebugUrl,
+} from './preview-url'
 import { loadDriver, runDriver } from './driver'
 import { executeStep } from './steps'
 
@@ -74,6 +80,13 @@ export async function runSession(
     // Nothing may reach Tag Assistant.
     await page.route(/https:\/\/www\.googletagmanager\.com\/debug\/(bootstrap|badge)/, (route) =>
       route.abort(),
+    )
+
+    // Every Google tag the page loads (gtag.js, destinations) gets its debug build too, so
+    // the hits it sends are recorded with the event that caused them. No code is needed.
+    await page.route(
+      (url) => isGoogleTagRequest(url.toString()),
+      (route) => route.continue({ url: toGoogleTagDebugUrl(route.request().url()) }),
     )
 
     // The site's snippet asks for the plain container; hand it the environment's debug build.

@@ -22,6 +22,10 @@ describe('matchVendor', () => {
     expect(matchVendor('https://fls.doubleclick.net/activityi;src=1')).toBe('floodlight')
     expect(matchVendor('https://www.facebook.com/tr?id=1&ev=PageView')).toBe('meta')
     expect(matchVendor('https://bat.bing.com/action/0?ti=1')).toBe('microsoft_ads')
+    expect(matchVendor('https://www.google.com/ccm/collect?rcb=1&en=page_view')).toBe('google_ads')
+    expect(
+      matchVendor('https://pagead2.googlesyndication.com/ccm/collect?tid=AW-1&en=conversion'),
+    ).toBe('google_ads')
   })
   it('ignores everything else', () => {
     expect(matchVendor('https://www.googletagmanager.com/gtm.js?id=GTM-1')).toBeNull()
@@ -49,8 +53,11 @@ describe('decideHit', () => {
       marked: false,
     })
   })
-  it('does nothing in live mode', () => {
+  it('does nothing in live mode, except stripping the debug flag the debug build adds', () => {
     expect(decideHit(ga4, 'live')).toEqual({ action: 'continue', url: ga4, marked: false })
+    const d = decideHit(ga4 + '&_dbg=1', 'live')
+    expect(d.action).toBe('continue')
+    if (d.action === 'continue') expect(new URL(d.url).searchParams.has('_dbg')).toBe(false)
   })
 })
 

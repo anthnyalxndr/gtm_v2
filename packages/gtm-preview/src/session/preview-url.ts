@@ -34,3 +34,23 @@ export function redactAuthCode(text: string, authCode: string): string {
   if (!authCode) return text
   return text.split(authCode).join('<redacted>')
 }
+
+/**
+ * True for a Google tag script request (gtag.js or a destination the container loads). These
+ * serve their debug build to anyone with `gtm_debug=x`; no authorization code is involved.
+ */
+export function isGoogleTagRequest(url: string): boolean {
+  const u = new URL(url)
+  return (
+    u.host === CONTAINER_HOST &&
+    (u.pathname === '/gtag/js' || u.pathname === '/gtag/destination') &&
+    u.searchParams.has('id') &&
+    !u.searchParams.has('is_td')
+  )
+}
+
+export function toGoogleTagDebugUrl(url: string): string {
+  const u = new URL(url)
+  u.searchParams.set('gtm_debug', 'x')
+  return u.toString()
+}

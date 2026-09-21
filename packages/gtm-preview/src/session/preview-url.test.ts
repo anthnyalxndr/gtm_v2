@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { isContainerRequest, redactAuthCode, toDebugBuildUrl } from './preview-url'
+import {
+  isContainerRequest,
+  isGoogleTagRequest,
+  redactAuthCode,
+  toDebugBuildUrl,
+  toGoogleTagDebugUrl,
+} from './preview-url'
 
 describe('isContainerRequest', () => {
   it('matches the container script and nothing else', () => {
@@ -53,5 +59,31 @@ describe('redactAuthCode', () => {
   })
   it('is a no-op for an empty code', () => {
     expect(redactAuthCode('x', '')).toBe('x')
+  })
+})
+
+describe('isGoogleTagRequest / toGoogleTagDebugUrl', () => {
+  it('matches gtag.js and destination loads and nothing else', () => {
+    expect(isGoogleTagRequest('https://www.googletagmanager.com/gtag/js?id=G-9ECPFL5LDC')).toBe(
+      true,
+    )
+    expect(
+      isGoogleTagRequest(
+        'https://www.googletagmanager.com/gtag/destination?id=G-1&cx=c&gtm=4e69g1',
+      ),
+    ).toBe(true)
+    expect(isGoogleTagRequest('https://www.googletagmanager.com/gtm.js?id=GTM-AAA1111')).toBe(false)
+    expect(isGoogleTagRequest('https://www.googletagmanager.com/gtag/js?id=G-1&is_td=1')).toBe(
+      false,
+    )
+    expect(isGoogleTagRequest('https://www.googletagmanager.com/td?id=GTM-AAA1111')).toBe(false)
+  })
+  it('adds the debug parameter and keeps the rest', () => {
+    const u = new URL(
+      toGoogleTagDebugUrl('https://www.googletagmanager.com/gtag/js?id=G-1&l=dataLayer'),
+    )
+    expect(u.searchParams.get('gtm_debug')).toBe('x')
+    expect(u.searchParams.get('l')).toBe('dataLayer')
+    expect(u.searchParams.get('id')).toBe('G-1')
   })
 })

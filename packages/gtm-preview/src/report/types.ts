@@ -14,6 +14,10 @@ export const HitSchema = z.object({
   eventId: z.number().optional(),
   /** Container load (page load) the attributed event belongs to. */
   groupId: z.string().optional(),
+  /** Container (GTM or Google tag public id) of the attributed event. */
+  container: z.string().optional(),
+  /** runtime: the tag runtime reported this hit itself; time: nearest earlier GTM event. */
+  attributedBy: z.enum(['runtime', 'time']).optional(),
 })
 export type Hit = z.infer<typeof HitSchema>
 
@@ -62,6 +66,8 @@ export type Mismatch = z.infer<typeof MismatchSchema>
 export const EventReportSchema = z.object({
   /** Per container load; restarts at 1 on every page load. */
   eventId: z.number(),
+  /** Public id of the container that reported the event (GTM-… or a Google tag G-…/AW-…). */
+  container: z.string(),
   /** The container load (page load) this event belongs to. */
   groupId: z.string(),
   pageUrl: z.string().optional(),
@@ -89,6 +95,14 @@ export const SessionReportSchema = z.object({
     protocolVersion: z.string().optional(),
     debugBuildLoaded: z.boolean(),
   }),
+  /** Every container that reported events, the GTM container first. */
+  containers: z.array(
+    z.object({
+      id: z.string(),
+      product: z.string().optional(),
+      protocolVersion: z.string().optional(),
+    }),
+  ),
   hitPolicy: z.enum(['dry', 'debug', 'live']),
   /** Every tag in the container, by index, from the first event record. */
   tags: z.array(z.object({ index: z.number(), name: z.string(), type: z.string().optional() })),

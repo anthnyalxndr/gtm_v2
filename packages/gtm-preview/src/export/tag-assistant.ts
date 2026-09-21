@@ -151,22 +151,19 @@ function buildMacroInfo(dataLayer: RawRecord | undefined): AnyRecord[] {
   })
 }
 
-/**
- * Build a document in the shape Tag Assistant's "Export session" produces, so a headless run
- * can be opened through "Import session".
- */
-export function buildTagAssistantExport(
-  raw: RawSession,
+/** One entry of `data.containers`: everything one container (GTM or a Google tag) reported. */
+function buildContainer(
+  records: RawRecord[],
+  publicId: string,
   opts: TagAssistantExportOptions,
+  now: Date,
 ): AnyRecord {
-  const now = opts.now ?? new Date()
-  const records = raw.records
   const init = records.find((r) => r.messageType === 'INIT')
   const first = records.find((r) => r.messageType === 'EVENT_STARTED')
   const targetRef = obj(first?.key?.targetRef ?? init?.key?.targetRef)
-  const publicId = str(first?.key?.publicId ?? init?.key?.publicId, opts.containerId)
   const canonicalId = str(targetRef.canonicalId)
   const product = str(first?.containerProduct ?? init?.containerProduct, 'GTM')
+  const isGtm = product === 'GTM'
   const environmentName = `env-${opts.environment}`
 
   // Event ids restart on every container load; key by groupId as well and order by time.
@@ -305,7 +302,7 @@ export function buildTagAssistantExport(
   const errors = records.filter((r) => r.messageType === 'ERROR')
   const containerName = opts.containerName ?? new URL(opts.startUrl).host
 
-  const container: AnyRecord = {
+  return {
     type: 0,
     publicId,
     canonicalId,
@@ -315,13 +312,15 @@ export function buildTagAssistantExport(
     product,
     containerDetails: {
       publicId,
-      container: {
-        type: 'TAG_MANAGER',
-        canonicalId,
-        auth: opts.includeAuth && opts.authCode ? opts.authCode : '',
-        preview: environmentName,
-        id: publicId,
-      },
+      container: isGtm
+        ? {
+            type: 'TAG_MANAGER',
+            canonicalId,
+            auth: opts.includeAuth && opts.authCode ? opts.authCode : '',
+            preview: environmentName,
+            id: publicId,
+          }
+        : { type: 'GTE', preview: 'env-1', auth: '' },
       createdTime: now.getTime(),
     },
     messages,
@@ -355,6 +354,30 @@ export function buildTagAssistantExport(
     environmentName,
     environmentLinkType: 4,
   }
+}
+
+/**
+ * Build a document in the shape Tag Assistant's "Export session" produces, so a headless run
+ * can be opened through "Import session". One container entry per container that reported
+ * records: the GTM container first, then each Google tag the page loaded.
+ */
+export function buildTagAssistantExport(
+  raw: RawSession,
+  opts: TagAssistantExportOptions,
+): AnyRecord {
+  const now = opts.now ?? new Date()
+  const byContainer = new Map<string, RawRecord[]>()
+  for (const r of raw.records) {
+    const id = str(r.key?.publicId)
+    if (!id) continue
+    if (!byContainer.has(id)) byContainer.set(id, [])
+    byContainer.get(id)!.push(r)
+  }
+  if (!byContainer.has(opts.containerId)) byContainer.set(opts.containerId, [])
+  const ids = [...byContainer.keys()].sort((a, b) =>
+    a === opts.containerId ? -1 : b === opts.containerId ? 1 : 0,
+  )
+  const containers = ids.map((id) => buildContainer(byContainer.get(id)!, id, opts, now))
 
   const domain = new URL(opts.startUrl).hostname.replace(/^www\./, '')
   return {
@@ -368,11 +391,11 @@ export function buildTagAssistantExport(
         startUrl: opts.startUrl,
         includeDebugParam: true,
         domainName: domain,
-        containers: [publicId],
+        containers: ids,
         createdTime: now.getTime(),
         lastUpdatedTime: now.getTime(),
       },
-      containers: [container],
+      containers,
     },
   }
 }
