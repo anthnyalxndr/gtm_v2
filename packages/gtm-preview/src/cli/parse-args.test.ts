@@ -23,7 +23,7 @@ describe('parseArgs', () => {
       driverOut: undefined,
       includeAuth: false,
       refresh: false,
-      versionFromWorkspace: undefined,
+      workspace: undefined,
       failOnMismatch: false,
     })
   })
@@ -40,7 +40,7 @@ describe('parseArgs', () => {
       driverOut: undefined,
       includeAuth: false,
       refresh: false,
-      versionFromWorkspace: undefined,
+      workspace: undefined,
       failOnMismatch: false,
     })
   })
@@ -51,12 +51,12 @@ describe('parseArgs', () => {
     })
   })
 
-  it('parses --refresh and --version-from-workspace', () => {
+  it('parses --refresh and --workspace', () => {
     expect(
-      parseArgs(['run', 's.json', '--refresh', '--version-from-workspace', 'Default Workspace']),
-    ).toMatchObject({ refresh: true, versionFromWorkspace: 'Default Workspace' })
-    expect(() => parseArgs(['run', 's.json', '--version-from-workspace'])).toThrow(
-      '--version-from-workspace requires a value',
+      parseArgs(['run', 's.json', '--refresh', '--workspace', 'Default Workspace']),
+    ).toMatchObject({ refresh: true, workspace: 'Default Workspace' })
+    expect(() => parseArgs(['run', 's.json', '--workspace'])).toThrow(
+      '--workspace requires a value',
     )
   })
 

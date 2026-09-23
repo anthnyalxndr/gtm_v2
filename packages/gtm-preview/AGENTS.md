@@ -54,6 +54,15 @@ requests so they show in DebugView. `live` lets hits out untouched, except that 
 `_dbg=1` the Google tag's debug build adds to its own hits. Only GA4 has a debug
 flag: in `debug` and `live` modes, Ads, Floodlight, and Meta hits are real conversions.
 
+To exercise **unsaved** workspace changes, `--workspace <name>` previews that workspace
+(`workspaces.quick_preview`) and runs against the environment of type `workspace` that GTM
+creates or reuses for it. No version is created, and the environment is found by the
+`workspaceId` it points at, never by its name (GTM names it `Preview Environment <n>
+<timestamp>`). The environment is a snapshot of the workspace at the moment of the preview
+call, so the CLI previews immediately before every session. This replaced creating a version,
+which burned a version number and made GTM replace the workspace with a fresh one of a
+different id (verified on GTM-WNX8FFXW, 2026-09-23; task 19).
+
 Environment authorization codes come from the Tag Manager API (`environments.list`) through
 `@anthnyalxndr/gtm-client` (`src/auth/environment-codes.ts`), requested with the readonly
 scope only and cached owner-only under `~/.config/gtm-preview/`. The client's OAuth token in

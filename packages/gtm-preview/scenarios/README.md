@@ -14,11 +14,12 @@ A scenario is a JSON file the `run` command executes. Fields:
   owner-only in `~/.config/gtm-preview/environment-codes.json`. A 403 from the container with
   a cached code triggers one refetch and retry. `--refresh` forces a refetch. The code itself
   never goes in a scenario file.
-- `--version-from-workspace <name>` (flag, not a field): create a version from that workspace
-  first, without publishing, so `Latest` points at unpublished work. This is a write to the
-  container and burns a version number, so it is never done implicitly, and it is skipped
-  with a message when the workspace has no changes since the latest version. GTM replaces the
-  workspace with a fresh one of the same name afterwards, so workspace ids change.
+- `--workspace <name>` (flag, not a field): run against that workspace's unsaved changes
+  instead of a saved version. The CLI previews the workspace through the Tag Manager API,
+  which creates or refreshes a reusable environment of type `workspace` and creates **no**
+  version, then runs against that environment. It overrides the scenario's `environment`.
+  The preview is a snapshot taken at that moment, so the CLI refreshes it on every run.
+  Needs the `tagmanager.edit.containers` scope, because previewing writes an environment.
 - `hits`: `dry` (default, abort every vendor hit in the browser), `debug` (send hits, mark
   GA4 ones with `_dbg=1` for DebugView), or `live` (send untouched).
 - `settleMs`: how long to wait after the last step before collecting (default 1500).

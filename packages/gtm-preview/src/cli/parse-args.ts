@@ -13,8 +13,8 @@ export interface RunCommand {
   includeAuth: boolean
   /** Ignore cached environment codes and fetch them again. */
   refresh: boolean
-  /** Create a version from this workspace (no publish) before running against Latest. */
-  versionFromWorkspace?: string
+  /** Preview this workspace and run against it, so unsaved changes are what is exercised. */
+  workspace?: string
   /** Exit non-zero when the report has mismatches. */
   failOnMismatch: boolean
 }
@@ -43,9 +43,10 @@ Options for run and record:
   --include-auth          Put the environment authorization code in the Tag Assistant file
   --refresh               Fetch environment codes from the API even if cached
   --fail-on-mismatch      Exit 3 when GTM's verdicts and the observed hits disagree
-  --version-from-workspace <name>
-                          Create a version from that workspace (no publish) first, so
-                          environment Latest points at unpublished work
+  --workspace <name>      Preview that workspace and run against it, so the session
+                          exercises unsaved changes. Creates no version; it refreshes a
+                          reusable preview environment and overrides the scenario's
+                          environment
 
 Options for export:
   --out <path>            Tag Assistant file path (default: next to the raw file)
@@ -75,14 +76,14 @@ export function parseArgs(argv: readonly string[]): Command {
     let includeAuth = false
     let refresh = false
     let failOnMismatch = false
-    let versionFromWorkspace: string | undefined
+    let workspace: string | undefined
     for (let i = 0; i < flags.length; i += 1) {
       const flag = flags[i]
       if (
         flag === '--out' ||
         flag === '--raw' ||
         flag === '--tag-assistant' ||
-        flag === '--version-from-workspace' ||
+        flag === '--workspace' ||
         flag === '--driver-out'
       ) {
         const v = flags[i + 1]
@@ -91,7 +92,7 @@ export function parseArgs(argv: readonly string[]): Command {
         else if (flag === '--raw') raw = v
         else if (flag === '--tag-assistant') tagAssistant = v
         else if (flag === '--driver-out') driverOut = v
-        else versionFromWorkspace = v
+        else workspace = v
         i += 1
       } else if (flag === '--include-auth') {
         includeAuth = true
@@ -122,7 +123,7 @@ export function parseArgs(argv: readonly string[]): Command {
       driverOut,
       includeAuth,
       refresh,
-      versionFromWorkspace,
+      workspace,
       failOnMismatch,
     }
   }

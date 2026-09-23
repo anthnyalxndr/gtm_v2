@@ -9,8 +9,8 @@ import {
 } from './code-cache'
 
 export const READONLY_SCOPE = 'https://www.googleapis.com/auth/tagmanager.readonly'
-export const EDIT_VERSIONS_SCOPE =
-  'https://www.googleapis.com/auth/tagmanager.edit.containerversions'
+/** quick_preview writes an environment, so previewing a workspace needs more than readonly. */
+export const EDIT_CONTAINERS_SCOPE = 'https://www.googleapis.com/auth/tagmanager.edit.containers'
 
 /** The fields we rely on from an Environment resource; anything else is ignored. */
 const EnvironmentSchema = z.object({
@@ -115,66 +115,63 @@ export class EnvironmentCodeResolver {
   }
 
   /**
-   * Create a version from a named workspace (no publish) so the Latest environment points at
-   * it. This is a write and burns a version number; callers must make it explicit. When the
-   * workspace has no changes since the latest version, nothing is created: GTM would happily
-   * make an identical version, which is waste (observed on the test container, 2026-09-20).
+   * Point a preview at a named workspace and return its environment code, so a session
+   * exercises unsaved workspace changes.
+   *
+   * `quick_preview` creates an environment of type `workspace` for that workspace, or reuses
+   * the one it made before, and creates no version. The environment is a **snapshot**: it
+   * keeps serving the content captured at the last `quick_preview` call, so this must run
+   * immediately before the session (verified on GTM-WNX8FFXW, 2026-09-23).
    */
-  async createVersionFromWorkspace(
-    publicId: string,
-    workspaceName: string,
-    versionName: string,
-  ): Promise<{ versionPath: string; created: true } | { created: false; reason: string }> {
-    const client = await this.getClient([READONLY_SCOPE, EDIT_VERSIONS_SCOPE])
+  async previewWorkspace(publicId: string, workspaceName: string): Promise<ResolvedCode> {
+    const client = await this.getClient([READONLY_SCOPE, EDIT_CONTAINERS_SCOPE])
     const cache = await readCache(this.opts.cacheFile)
     const container = await this.containerRef(cache, client, publicId)
-    await writeCache(this.opts.cacheFile, cache)
     const workspaces = await client.call(() =>
       client.service.accounts.containers.workspaces.list({ parent: container.path }),
     )
     const ws = (workspaces.data.workspace ?? []).find((w) => w.name === workspaceName)
-    if (!ws?.path) {
+    if (!ws?.path || !ws.workspaceId) {
       const names = (workspaces.data.workspace ?? []).map((w) => w.name).join(', ')
       throw new EnvironmentCodeError(
         `container ${publicId} has no workspace named "${workspaceName}"; available: ${names || 'none'}`,
       )
     }
-    const status = await client.call(() =>
-      client.service.accounts.containers.workspaces.getStatus({ path: ws.path! }),
+    await client.call(() =>
+      client.service.accounts.containers.workspaces.quick_preview({ path: ws.path! }),
     )
-    if ((status.data.mergeConflict ?? []).length > 0) {
-      throw new EnvironmentCodeError(
-        `workspace "${workspaceName}" has merge conflicts with the latest version; resolve them in Tag Manager first`,
-      )
-    }
-    if ((status.data.workspaceChange ?? []).length === 0) {
-      return {
-        created: false,
-        reason: `workspace "${workspaceName}" has no changes since the latest version`,
-      }
-    }
-    const res = await client.call(() =>
-      client.service.accounts.containers.workspaces.create_version({
-        path: ws.path!,
-        requestBody: { name: versionName },
-      }),
+    const list = await client.call(() =>
+      client.service.accounts.containers.environments.list({ parent: container.path }),
     )
-    if (res.data.compilerError) {
+    // GTM names these "Preview Environment <n> <timestamp>", so match on the workspace it
+    // points at, never on the name.
+    const env = (list.data.environment ?? []).find((e) => e.workspaceId === ws.workspaceId)
+    if (!env) {
       throw new EnvironmentCodeError(
-        `creating a version from workspace "${workspaceName}" failed with a compiler error; check the workspace in Tag Manager`,
+        `previewing workspace "${workspaceName}" of ${publicId} created no environment for it`,
       )
     }
-    const versionPath = res.data.containerVersion?.path
-    if (!versionPath) {
+    const parsed = EnvironmentSchema.safeParse(env)
+    if (!parsed.success) {
       throw new EnvironmentCodeError(
-        `creating a version from workspace "${workspaceName}" returned no version`,
+        `unexpected environment shape from the API for ${publicId}: ${parsed.error.issues[0]?.message}`,
       )
     }
-    // Latest now points at the new version; its code is unchanged but the cache entry's
-    // fingerprint is stale, so drop it. GTM also replaces the workspace with a fresh one of
-    // the same name, so any workspace id the caller held is stale too.
-    await this.invalidate(publicId, 2)
-    return { versionPath, created: true }
+    cache.environments[environmentKey(publicId, parsed.data.environmentId)] = {
+      environmentId: parsed.data.environmentId,
+      environmentName: parsed.data.name,
+      environmentType: parsed.data.type,
+      authorizationCode: parsed.data.authorizationCode,
+      fingerprint: parsed.data.fingerprint,
+      fetchedAt: this.now().toISOString(),
+    }
+    await writeCache(this.opts.cacheFile, cache)
+    return {
+      authCode: parsed.data.authorizationCode,
+      environmentId: Number(parsed.data.environmentId),
+      environmentName: parsed.data.name,
+      source: 'api',
+    }
   }
 
   private findCached(

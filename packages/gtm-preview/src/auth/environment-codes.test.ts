@@ -5,7 +5,7 @@ import { GtmClient } from '@anthnyalxndr/gtm-client'
 import { createFakeService } from '@anthnyalxndr/gtm-client/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
-  EDIT_VERSIONS_SCOPE,
+  EDIT_CONTAINERS_SCOPE,
   EnvironmentCodeError,
   EnvironmentCodeResolver,
   READONLY_SCOPE,
@@ -49,8 +49,46 @@ function fake() {
     workspaceId: '11',
     name: 'Default Workspace',
   })
+  addQuickPreview(service, state)
   return { service, state }
 }
+
+/**
+ * The published fake has no `quick_preview`, so model what GTM does: create an environment of
+ * type `workspace` for the workspace, or reuse the one already pointing at it, and create no
+ * version. Verified against GTM-WNX8FFXW on 2026-09-23.
+ */
+function addQuickPreview(service: FakeService, state: FakeState): void {
+  let nextId = 20
+  service.accounts.containers.workspaces.quick_preview = (async ({ path }: { path: string }) => {
+    state.calls.push('workspaces.quick_preview')
+    const ws = state.workspaces.find((w) => w.path === path)
+    if (!ws) throw new Error(`no workspace ${path}`)
+    const containerPathOf = path.replace(/\/workspace\/\d+$/, '')
+    const existing = state.environments.find((e) => e.workspaceId === ws.workspaceId)
+    if (existing) existing.fingerprint = `f-${state.calls.length}`
+    else {
+      const id = String(nextId++)
+      state.environments.push({
+        path: `${containerPathOf}/environments/${id}`,
+        environmentId: id,
+        type: 'workspace',
+        name: `Preview Environment ${ws.workspaceId} 2026-09-23 120000`,
+        authorizationCode: `code-ws-${ws.workspaceId}`,
+        fingerprint: 'fw1',
+        workspaceId: ws.workspaceId,
+      })
+    }
+    return {
+      data: {
+        containerVersion: { path: `${containerPathOf}/versions/0`, containerVersionId: '0' },
+      },
+    }
+  }) as never
+}
+
+type FakeService = ReturnType<typeof createFakeService>['service']
+type FakeState = ReturnType<typeof createFakeService>['state']
 
 let cacheFile: string
 let scopesRequested: string[][]
@@ -154,49 +192,66 @@ describe('EnvironmentCodeResolver', () => {
     await expect(r.resolve('GTM-ABC1234', 'Live')).rejects.toThrow(/unexpected environment shape/)
   })
 
-  it('creates a version from a named workspace with the edit scope and drops the Latest cache entry', async () => {
-    const f = fake()
-    // The fake reports no workspace changes by default; give this workspace one.
-    f.service.accounts.containers.workspaces.getStatus = (async () => ({
-      data: { mergeConflict: [], workspaceChange: [{}] },
-    })) as never
-    const { r, state } = resolver(f)
-    await r.resolve('GTM-ABC1234', 'Latest')
-    const result = await r.createVersionFromWorkspace(
-      'GTM-ABC1234',
-      'Default Workspace',
-      'gtm-preview 2026-09-19',
-    )
-    expect(result.created).toBe(true)
-    if (result.created) expect(result.versionPath).toMatch(/\/versions\/\d+$/)
-    expect(state.calls).toContain('workspaces.create_version')
-    expect(state.published).toEqual([])
-    expect(scopesRequested.at(-1)).toEqual([READONLY_SCOPE, EDIT_VERSIONS_SCOPE])
-    expect((await r.resolve('GTM-ABC1234', 'Latest')).source).toBe('api')
-  })
-
-  it('does not create a version when the workspace has no changes', async () => {
+  it('previews a named workspace, creating no version, and returns that environment code', async () => {
     const { r, state } = resolver()
-    const result = await r.createVersionFromWorkspace('GTM-ABC1234', 'Default Workspace', 'v')
-    expect(result).toEqual({
-      created: false,
-      reason: 'workspace "Default Workspace" has no changes since the latest version',
+    const preview = await r.previewWorkspace('GTM-ABC1234', 'Default Workspace')
+    expect(preview).toEqual({
+      authCode: 'code-ws-11',
+      environmentId: 20,
+      environmentName: 'Preview Environment 11 2026-09-23 120000',
+      source: 'api',
     })
+    expect(state.calls).toContain('workspaces.quick_preview')
     expect(state.calls).not.toContain('workspaces.create_version')
+    expect(state.versions).toEqual([])
+    expect(state.published).toEqual([])
   })
 
-  it('refuses when the workspace has merge conflicts', async () => {
+  it('asks for the edit scope, because quick_preview writes an environment', async () => {
+    const { r } = resolver()
+    await r.previewWorkspace('GTM-ABC1234', 'Default Workspace')
+    expect(scopesRequested.at(-1)).toEqual([READONLY_SCOPE, EDIT_CONTAINERS_SCOPE])
+  })
+
+  it('reuses the workspace environment on a second preview instead of creating another', async () => {
+    const { r, state } = resolver()
+    const first = await r.previewWorkspace('GTM-ABC1234', 'Default Workspace')
+    const second = await r.previewWorkspace('GTM-ABC1234', 'Default Workspace')
+    expect(second.environmentId).toBe(first.environmentId)
+    expect(second.authCode).toBe(first.authCode)
+    expect(state.environments.filter((e) => e.type === 'workspace')).toHaveLength(1)
+  })
+
+  it('matches the environment by the workspace it points at, not by its name', async () => {
     const f = fake()
-    f.state.mergeConflicts = 1
+    // An environment whose name looks like a preview but points at a different workspace.
+    f.state.environments.push({
+      path: `${containerPath}/environments/9`,
+      environmentId: '9',
+      type: 'workspace',
+      name: 'Preview Environment 11 2020-01-01 000000',
+      authorizationCode: 'code-wrong',
+      fingerprint: 'f9',
+      workspaceId: '99',
+    })
     const { r } = resolver(f)
-    await expect(
-      r.createVersionFromWorkspace('GTM-ABC1234', 'Default Workspace', 'v'),
-    ).rejects.toThrow(/merge conflicts/)
+    expect((await r.previewWorkspace('GTM-ABC1234', 'Default Workspace')).authCode).toBe(
+      'code-ws-11',
+    )
+  })
+
+  it('caches the preview environment code so a later resolve by id is served from cache', async () => {
+    const { r, state } = resolver()
+    const preview = await r.previewWorkspace('GTM-ABC1234', 'Default Workspace')
+    const calls = state.calls.length
+    const again = await r.resolve('GTM-ABC1234', preview.environmentId)
+    expect(again).toEqual({ ...preview, source: 'cache' })
+    expect(state.calls.length).toBe(calls)
   })
 
   it('names the available workspaces when the requested one is missing', async () => {
     const { r } = resolver()
-    await expect(r.createVersionFromWorkspace('GTM-ABC1234', 'Nope', 'v')).rejects.toThrow(
+    await expect(r.previewWorkspace('GTM-ABC1234', 'Nope')).rejects.toThrow(
       /available: Default Workspace/,
     )
   })

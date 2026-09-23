@@ -81,7 +81,21 @@ async function prepare(
   loaded: LoadedScenario,
   resolver: EnvironmentCodeResolver,
   refresh: boolean,
+  workspace?: string,
 ): Promise<RunnableScenario> {
+  if (workspace) {
+    // The preview environment is a snapshot, so this runs immediately before every session.
+    const preview = await resolver.previewWorkspace(loaded.container.id, workspace)
+    console.error(
+      `workspace "${workspace}" previewed as env-${preview.environmentId}; no version created`,
+    )
+    return {
+      ...loaded,
+      authCode: preview.authCode,
+      container: { ...loaded.container, environment: preview.environmentId },
+      codeSource: preview.source,
+    }
+  }
   if (loaded.container.authCodeEnv) return runnableFromEnv(loaded)
   const code = await resolver.resolve(loaded.container.id, loaded.container.environment, {
     refresh,
@@ -103,20 +117,6 @@ async function run(command: RunCommand): Promise<number> {
   const stem = basename(command.scenario, extname(command.scenario))
   const out = command.out ?? join('reports', `${stem}.json`)
   const resolver = new EnvironmentCodeResolver({ cacheFile: defaultCacheFile() })
-  if (command.versionFromWorkspace) {
-    const result = await resolver.createVersionFromWorkspace(
-      loaded.container.id,
-      command.versionFromWorkspace,
-      `gtm-preview ${new Date().toISOString()}`,
-    )
-    if (result.created) {
-      console.error(
-        `created ${result.versionPath} from workspace "${command.versionFromWorkspace}"; Latest now points at it`,
-      )
-    } else {
-      console.error(`${result.reason}; not creating a version`)
-    }
-  }
   const driverOut =
     command.kind === 'record'
       ? (command.driverOut ?? join('scenarios', 'flows', `${stem}.recorded.mjs`))
@@ -128,7 +128,7 @@ async function run(command: RunCommand): Promise<number> {
     recordTo,
     log: (l: string) => console.error(l),
   }
-  let scenario = await prepare(loaded, resolver, command.refresh)
+  let scenario = await prepare(loaded, resolver, command.refresh, command.workspace)
   let raw
   try {
     raw = await runSession(scenario, runOpts)
@@ -137,7 +137,7 @@ async function run(command: RunCommand): Promise<number> {
     if (!(err instanceof ContainerLoadError) || scenario.codeSource !== 'cache') throw err
     console.error('container rejected the cached code; refetching it and retrying once')
     await resolver.invalidate(scenario.container.id, scenario.container.environment)
-    scenario = await prepare(loaded, resolver, true)
+    scenario = await prepare(loaded, resolver, true, command.workspace)
     raw = await runSession(scenario, runOpts)
   }
   const meta = {
