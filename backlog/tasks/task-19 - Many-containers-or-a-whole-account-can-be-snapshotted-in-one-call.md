@@ -4,6 +4,7 @@ title: 'Many containers, or a whole account, can be snapshotted in one call'
 status: To Do
 assignee: []
 created_date: '2026-09-17 15:30'
+updated_date: '2026-09-23 21:29'
 labels:
   - gtm-apply
   - feature
@@ -28,3 +29,9 @@ gtm-apply snapshot and Gtm.snapshot take one container. Snapshotting an account 
 - [ ] #6 Unit tests cover the multi-container and account paths with a mocked client
 - [ ] #7 README documents the multi-container and account forms with examples
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-23: TASK-35 (gtm-apply pull --account --out) consumes the account listing and multi-container pull this task adds and writes one directory per container instead of one file. The implementation plan docs/superpowers/plans/2026-09-23-gtm-as-code-foundations.md covers this task's library and CLI parts together with TASK-34 and TASK-35.
+<!-- SECTION:NOTES:END -->

@@ -4,6 +4,7 @@ title: 'The repo ships the GTM as code workflow: docs, CI templates and runbook'
 status: To Do
 assignee: []
 created_date: '2026-09-17 15:57'
+updated_date: '2026-09-23 21:29'
 labels:
   - gtm-apply
   - gtm-as-code
@@ -16,6 +17,7 @@ dependencies:
   - TASK-29
   - TASK-30
   - TASK-31
+  - TASK-36
 documentation:
   - backlog/docs/doc-1 - GTM-as-code-plan.md
 priority: high
@@ -37,3 +39,9 @@ Ties the pieces into a workflow a customer repo can adopt. Permission model: hum
 - [ ] #5 The drift job opens a reconcile pull request from export --live when configured to import, and re-applies main when configured to enforce
 - [ ] #6 The templates are exercised against a test container (anthny.xyz - test account) and the run links are recorded in the task notes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-23: the CI workflow templates this task defines are what gtm init (TASK-36) bundles into a new account repo and gtm update (TASK-38) refreshes; the jobs call the gtm loop commands from TASK-37. See docs/superpowers/specs/2026-09-23-gtm-as-code-package-design.md.
+<!-- SECTION:NOTES:END -->

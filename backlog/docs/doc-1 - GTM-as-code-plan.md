@@ -3,7 +3,7 @@ id: doc-1
 title: GTM as code plan
 type: specification
 created_date: '2026-09-17 15:55'
-updated_date: '2026-09-17 16:10'
+updated_date: '2026-09-23 21:40'
 tags:
   - gtm-as-code
   - plan
@@ -51,3 +51,19 @@ Zones are a Tag Manager 360 feature, so they are not applied. Enabling built-in 
 ## The workflow the last task documents
 
 Permissions: humans hold Read on managed containers, the deploy identity alone holds Publish, and account admins accept that they can bypass this and rely on drift detection instead. On pull request: plan against the live version, post the plan and policy hits as a PR comment, and write the change to a workspace named after the PR so a reviewer can preview it in the UI. On merge to main: apply and publish with the commit subject as the version name, inside a concurrency group so two merges cannot race. On a schedule: plan against live for every managed container; on drift, either open a reconcile PR from `export --live` or re-apply main, per repo config. Rollback is a git revert and redeploy, with GTM version history as the safety net. Break-glass edits in the UI are imported by the reconcile PR.
+
+## Update 2026-09-23: how an account repo is created and kept current
+
+The rows above cover what gtm-apply must do so a repo can be the source of truth. They do not say how such a repo comes into being. Decision-11 answers that: a fourth workspace package, `packages/gtm-as-code` (`@anthnyalxndr/gtm-as-code`, bin `gtm`), scaffolds an account repo and imports its containers in one command, then runs the day-to-day loop (pull, diff, plan, apply, publish) over every managed container, and refreshes its own scaffold with `update`. The base layer (hooks, prettier, scripts, CI workflows) is bundled in the package rather than delegated to copier-templates, with a test that pins the copier base so divergence is visible. The full design is `docs/superpowers/specs/2026-09-23-gtm-as-code-package-design.md`.
+
+| Task | Why | Depends on |
+| --- | --- | --- |
+| TASK-34 Specs serialize canonically | A committed spec must diff only when the container changed. Exports come out in the API's order, so serialization has to be a pure function of content, applied where a spec is written. The planner must compare keyed parameter arrays by key so a canonical spec never plans a spurious update. | none |
+| TASK-35 gtm-apply pull writes a container directory | The import primitive: `spec.json`, `snapshot.json`, `container.json` per container, for one container or a whole account, with partial-failure reporting. | TASK-34, TASK-19 |
+| TASK-36 gtm-as-code scaffolds an account repo and imports its containers | `gtm init` is the one command a client engineer runs. It writes the shell from bundled templates, imports every chosen container, writes TASK-30's config file, and makes the first commit. | TASK-35, TASK-30 |
+| TASK-37 gtm runs the repo loop | pull, diff (git-side drift, exit 2), plan, apply (into a workspace named after the commit), publish, with `--changed <ref>` so CI touches only what a merge changed. | TASK-36, TASK-28 |
+| TASK-38 gtm update refreshes the scaffold | Standards change; update rewrites only scaffold-owned files after showing a diff, and a test keeps the bundled base honest against copier-templates. | TASK-36 |
+
+TASK-32's CI templates become the files TASK-36 bundles, so TASK-32 now also depends on TASK-36. TASK-19's account snapshot is consumed by TASK-35. TASK-30's config file is written by TASK-36 and read by TASK-37.
+
+The implementation plan for TASK-34, TASK-19 and TASK-35 is `docs/superpowers/plans/2026-09-23-gtm-as-code-foundations.md`; nothing in it waits on unfinished work. A second plan for TASK-36 to TASK-38 follows once TASK-30 and TASK-28 have landed, since init writes the one's file and the loop consumes the other's output.
