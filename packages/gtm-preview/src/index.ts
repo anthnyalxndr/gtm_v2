@@ -94,6 +94,8 @@ async function prepare(
       authCode: preview.authCode,
       container: { ...loaded.container, environment: preview.environmentId },
       codeSource: preview.source,
+      environmentName: preview.environmentName,
+      environmentType: preview.environmentType ?? 'workspace',
     }
   }
   if (loaded.container.authCodeEnv) return runnableFromEnv(loaded)
@@ -108,6 +110,8 @@ async function prepare(
     authCode: code.authCode,
     container: { ...loaded.container, environment: code.environmentId },
     codeSource: code.source,
+    environmentName: code.environmentName,
+    environmentType: code.environmentType,
   }
 }
 
@@ -188,6 +192,8 @@ async function run(command: RunCommand): Promise<number> {
       includeAuth: command.includeAuth,
       startUrl: scenario.startUrl,
       containerName: scenario.name,
+      environmentName: scenario.environmentName,
+      environmentType: scenario.environmentType,
     })
     await writeJson(command.tagAssistant, doc)
     console.log(`Tag Assistant import file written to ${command.tagAssistant}`)

@@ -22,7 +22,8 @@
     "browsers": "playwright install chromium",
     "verify": "pnpm lint && pnpm typecheck && pnpm test",
     "prepare": "husky",
-    "fixture": "PORT=4173 tsx test/fixtures/site/serve.ts"
+    "fixture": "PORT=4173 tsx test/fixtures/site/serve.ts",
+    "compare": "tsx scripts/compare-exports.ts"
   },
   "dependencies": {
     "@anthnyalxndr/gtm-client": "^1.1.0",

@@ -25,6 +25,8 @@ export interface ResolvedCode {
   authCode: string
   environmentId: number
   environmentName: string
+  /** live, latest, user or workspace; a workspace preview is exported as QUICK_PREVIEW. */
+  environmentType?: string
   source: 'cache' | 'api'
 }
 
@@ -170,6 +172,7 @@ export class EnvironmentCodeResolver {
       authCode: parsed.data.authorizationCode,
       environmentId: Number(parsed.data.environmentId),
       environmentName: parsed.data.name,
+      environmentType: parsed.data.type,
       source: 'api',
     }
   }
@@ -196,6 +199,7 @@ export class EnvironmentCodeResolver {
       authCode: match.authorizationCode,
       environmentId: Number(match.environmentId),
       environmentName: match.environmentName,
+      environmentType: match.environmentType,
       source: 'cache',
     }
   }

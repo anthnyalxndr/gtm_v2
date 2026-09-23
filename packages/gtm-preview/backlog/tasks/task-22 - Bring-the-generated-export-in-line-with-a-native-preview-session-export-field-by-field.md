@@ -3,10 +3,10 @@ id: TASK-22
 title: >-
   Bring the generated export in line with a native preview session export, field
   by field
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-23 20:53'
-updated_date: '2026-09-23 21:17'
+updated_date: '2026-09-23 21:27'
 labels:
   - export
 dependencies:
@@ -32,7 +32,7 @@ Differences already suspected, as a starting list rather than the whole of it: t
 
 <!-- AC:BEGIN -->
 
-- [ ] #1 A script compares two export files structurally and prints differences by path, normalising the fields that cannot match (timestamps, groupIds, nonces, page ids, random ids, and the authorization code) so the output is only meaningful divergence
+- [x] #1 A script compares two export files structurally and prints differences by path, normalising the fields that cannot match (timestamps, groupIds, nonces, page ids, random ids, and the authorization code) so the output is only meaningful divergence
 - [ ] #2 Phase one, a single page load with no interaction on one container captured both ways: every difference the script reports is either eliminated in the exporter or recorded in a findings document with the reason it cannot be matched
 - [ ] #3 Phase two, a flow with clicks, a navigation, and a consent choice captured both ways, given the same treatment; event ordering, page grouping, and per-event consent state are compared explicitly because they are the most likely to diverge
 - [ ] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
@@ -42,3 +42,21 @@ Differences already suspected, as a starting list rather than the whole of it: t
 - [ ] #8 It is confirmed whether an implicit tag can appear anywhere but last in tagInfo, since surviving entries keep their original indices, and whether any other generated name is dropped from a GTM container
 
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+
+1. Diff script that normalises volatile fields and reports differences by path.
+2. Capture our page view of sjpools.com; diff against the native export the user supplied.
+3. Fix phase-one differences one at a time with a test each.
+4. Record accepted differences in a findings doc.
+
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Phase one started 2026-09-23 against the native page-view export the user captured. Built src/export/compare.ts plus 'pnpm compare', which aligns containers and messages by identity rather than position and normalises clocks, session ids, the auth code and gtm_debug/gtm_auth/gtm_preview/_dbg URL parameters. Matching the environment first mattered: the scenario now names environment 8, the workspace preview the native session used, so container content is identical and what remains is format. Fixed: product OGT to GTAG; environment named as Tag Manager does with version QUICK_PREVIEW for a workspace preview; the Google tag container given its own protocol version, an empty environmentName and no environmentLinkType. Both containers now match the native on every identity field. 925 shape differences remain, catalogued in docs/research/2026-09-23-export-fidelity.md; the largest two (372 params/internalParams and their display names, 21 vendorTemplates) are one missing subsystem, the template definitions a native export carries and we write empty. Where Tag Assistant fetches them is the next question; they are not in the debug feed.
+<!-- SECTION:NOTES:END -->

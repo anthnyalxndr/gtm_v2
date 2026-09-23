@@ -50,6 +50,7 @@ describe('a Google tag container alongside the GTM container', () => {
   const report = buildReport(withGoogleTag(), meta)
 
   it('lists both containers, GTM first, and keeps their events apart', () => {
+    // The report keeps the feed's own label; only the export renames OGT to GTAG.
     expect(report.containers.map((c) => `${c.id}:${c.product}`)).toEqual([
       'GTM-WNX8FFXW:GTM',
       'G-TEST1:OGT',
@@ -109,7 +110,7 @@ describe('a Google tag container alongside the GTM container', () => {
       ]),
     ).toEqual([
       ['GTM-WNX8FFXW', 'GTM', 8, 'TAG_MANAGER'],
-      ['G-TEST1', 'OGT', 1, 'GTE'],
+      ['G-TEST1', 'GTAG', 1, 'GTE'],
     ])
   })
 })

@@ -118,6 +118,7 @@ describe('EnvironmentCodeResolver', () => {
       authCode: 'code-latest',
       environmentId: 2,
       environmentName: 'Latest',
+      environmentType: 'latest',
       source: 'api',
     })
     expect((await r.resolve('GTM-ABC1234', 'live')).authCode).toBe('code-live')
@@ -199,6 +200,7 @@ describe('EnvironmentCodeResolver', () => {
       authCode: 'code-ws-11',
       environmentId: 20,
       environmentName: 'Preview Environment 11 2026-09-23 120000',
+      environmentType: 'workspace',
       source: 'api',
     })
     expect(state.calls).toContain('workspaces.quick_preview')

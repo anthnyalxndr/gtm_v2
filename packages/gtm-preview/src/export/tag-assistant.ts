@@ -12,6 +12,10 @@ export interface TagAssistantExportOptions {
   includeAuth?: boolean
   /** Shown as the container name in Tag Assistant. */
   containerName?: string
+  /** The environment's name in Tag Manager, e.g. "Preview Environment 3 2026-06-13 153837". */
+  environmentName?: string
+  /** The environment's type; a workspace preview is labelled QUICK_PREVIEW in the export. */
+  environmentType?: string
   startUrl: string
   now?: Date
 }
@@ -198,9 +202,21 @@ function buildContainer(
   const first = records.find((r) => r.messageType === 'EVENT_STARTED')
   const targetRef = obj(first?.key?.targetRef ?? init?.key?.targetRef)
   const canonicalId = str(targetRef.canonicalId)
-  const product = str(first?.containerProduct ?? init?.containerProduct, 'GTM')
+  // The feed says OGT for a Google tag; a native export writes GTAG (checked against a real
+  // page-view export of GTM-5KNSPW9K, 2026-09-23).
+  const rawProduct = str(first?.containerProduct ?? init?.containerProduct, 'GTM')
+  const product = rawProduct === 'OGT' ? 'GTAG' : rawProduct
   const isGtm = product === 'GTM'
-  const environmentName = `env-${opts.environment}`
+  // A native export names the environment as Tag Manager does and labels a workspace preview
+  // QUICK_PREVIEW rather than an environment number. Only the GTM container belongs to the environment being previewed. A Google tag carries
+  // its own protocol version and an empty environment name, and it has no link type at all
+  // (checked against a native page-view export of GTM-5KNSPW9K, 2026-09-23).
+  const environmentName = isGtm ? (opts.environmentName ?? `env-${opts.environment}`) : ''
+  const version = isGtm
+    ? opts.environmentType === 'workspace'
+      ? 'QUICK_PREVIEW'
+      : environmentName
+    : str(first?.version ?? init?.version, '')
 
   // Event ids restart on every container load; key by groupId as well and order by time.
   const byEvent = new Map<string, RawRecord[]>()
@@ -344,7 +360,7 @@ function buildContainer(
     canonicalId,
     aliases: arr(init?.aliases).length ? arr(init?.aliases) : [publicId],
     destinations: arr(init?.destinations),
-    version: environmentName,
+    version,
     product,
     containerDetails: {
       publicId,
@@ -388,7 +404,7 @@ function buildContainer(
     containerLoadInfoByGroupId,
     tagName: containerName,
     environmentName,
-    environmentLinkType: 4,
+    ...(isGtm ? { environmentLinkType: 4 } : {}),
   }
 }
 

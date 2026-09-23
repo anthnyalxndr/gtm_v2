@@ -65,6 +65,9 @@ export type RunnableScenario = Omit<LoadedScenario, 'authCode' | 'container'> & 
   authCode: string
   container: Scenario['container'] & { environment: number }
   codeSource: 'env' | 'cache' | 'api'
+  /** The environment's name and type in Tag Manager, when the API supplied the code. */
+  environmentName?: string
+  environmentType?: string
 }
 
 export class ScenarioError extends Error {}

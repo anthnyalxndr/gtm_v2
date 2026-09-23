@@ -252,3 +252,50 @@ describe('the provisional implicit-tag rule (task-22)', () => {
     }
   })
 })
+
+describe('container identity fields (task-22)', () => {
+  /** A Google tag alongside the GTM container, as a real page has. */
+  function withGoogleTag(): RawSession {
+    const base = raw as unknown as RawSession
+    const gtm = base.records.find((r) => r.messageType === 'EVENT_STARTED')!
+    const ogt: RawRecord = {
+      ...gtm,
+      containerProduct: 'OGT',
+      version: '2',
+      key: { ...gtm.key, publicId: 'G-TEST1' },
+      tagInfo: [],
+    }
+    return { ...base, records: [...base.records, ogt] }
+  }
+  const build = (o: Partial<Parameters<typeof buildTagAssistantExport>[1]> = {}) =>
+    buildTagAssistantExport(withGoogleTag(), { ...opts, ...o }) as unknown as {
+      data: { containers: Record<string, unknown>[] }
+    }
+
+  it('labels a workspace preview QUICK_PREVIEW and names the environment as Tag Manager does', () => {
+    const c = build({
+      environmentName: 'Preview Environment 3 2026-06-13 153837',
+      environmentType: 'workspace',
+    }).data.containers[0]!
+    expect(c).toMatchObject({
+      product: 'GTM',
+      version: 'QUICK_PREVIEW',
+      environmentName: 'Preview Environment 3 2026-06-13 153837',
+      environmentLinkType: 4,
+    })
+  })
+
+  it('uses the environment name as the version when it is not a workspace preview', () => {
+    const c = build({ environmentName: 'Live', environmentType: 'live' }).data.containers[0]!
+    expect(c).toMatchObject({ version: 'Live', environmentName: 'Live' })
+  })
+
+  it('writes a Google tag as GTAG with its own protocol version and no environment', () => {
+    const c = build({
+      environmentName: 'Preview Environment 3',
+      environmentType: 'workspace',
+    }).data.containers.find((x) => x.publicId === 'G-TEST1')!
+    expect(c).toMatchObject({ product: 'GTAG', version: '2', environmentName: '' })
+    expect(c).not.toHaveProperty('environmentLinkType')
+  })
+})
