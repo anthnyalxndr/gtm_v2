@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-09-23 20:53'
-updated_date: '2026-09-23 21:27'
+updated_date: '2026-09-23 23:39'
 labels:
   - export
 dependencies:
@@ -59,4 +59,6 @@ Differences already suspected, as a starting list rather than the whole of it: t
 <!-- SECTION:NOTES:BEGIN -->
 
 Phase one started 2026-09-23 against the native page-view export the user captured. Built src/export/compare.ts plus 'pnpm compare', which aligns containers and messages by identity rather than position and normalises clocks, session ids, the auth code and gtm_debug/gtm_auth/gtm_preview/_dbg URL parameters. Matching the environment first mattered: the scenario now names environment 8, the workspace preview the native session used, so container content is identical and what remains is format. Fixed: product OGT to GTAG; environment named as Tag Manager does with version QUICK_PREVIEW for a workspace preview; the Google tag container given its own protocol version, an empty environmentName and no environmentLinkType. Both containers now match the native on every identity field. 925 shape differences remain, catalogued in docs/research/2026-09-23-export-fidelity.md; the largest two (372 params/internalParams and their display names, 21 vendorTemplates) are one missing subsystem, the template definitions a native export carries and we write empty. Where Tag Assistant fetches them is the next question; they are not in the debug feed.
+
+Hits Sent implemented and verified in the UI (2026-09-23, ee2f3d6). The panel reads hitInfo entries inside a message's data array, beside the ruleInfo entry; we wrote none, so the tab was empty. Now the Hit Details panel renders as the native one does: destination chip, URL, and a parameters table with friendly names (Client ID, Cookie Consent State, Debug View, Event Name, Measurement ID, Page Location) falling back to the raw key for dma, frm, gcd, gtm, ibt and ngs, exactly as a native export does. GA4 collect is a Google Analytics Hit of type 2, the Ads endpoints a Google Ads Event of type 3, and the destination passes through as the runtime gave it (a string for GA4, an array for Ads). Hits with no destination are dropped, which a native export also does not show; that is provisional. Two remaining hit differences, both understood and recorded in the findings doc: the native hit carries dr (Page Referrer) because a native preview is opened from tagassistant.google.com while a headless run navigates straight to the page, and the Ads endpoint reported two hits to us differing only in fmt (8 and 3) where the native shows one.
 <!-- SECTION:NOTES:END -->
