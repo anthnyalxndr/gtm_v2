@@ -32,6 +32,13 @@ clocks, per-session identifiers, the authorization code, and the `gtm_debug`, `g
 
 Both containers now match the native export on every identity field.
 
+- **Hits were missing entirely.** Tag Assistant's "Hits Sent" panel is fed by `hitInfo`
+  entries inside a message's `data` array, beside the `ruleInfo` entry this tool already
+  wrote. Each describes one request a tag runtime made: `baseUrl`, `destination`, a title,
+  a subtitle, and every parameter with a display name that falls back to the raw key. Our
+  GA4 hit now matches a native one on container, message, title, subtitle, type and
+  destination.
+
 ## Open, in order of how much they account for
 
 Counts are shape differences reported by `pnpm compare` after the fixes above, out of 925.
@@ -73,6 +80,14 @@ messages against the native 13, and the three extra kinds are why.
 `gtm.dom` is 12 and `gtm.load` is 13, because on this page they fired late. This tool orders by
 capture time and put `gtm.dom` at 3. Ordering feeds `abstractModel`, which accumulates dataLayer
 state, so some of those 104 differences are this rather than a separate problem.
+
+**Two differences in the hits themselves, both understood.** A native hit carries `dr`
+(Page Referrer) and ours does not, because a native preview is opened from
+tagassistant.google.com while a headless run navigates straight to the page. That is worth
+knowing beyond the export: a referrer-based trigger would behave differently in a native
+preview than for a real visitor. And the Ads endpoint reported two hits to us, differing only
+in `fmt` (8 and 3), where the native export shows one; both are records the runtime made, so
+both are kept until there is reason to drop one.
 
 **Not yet examined:** `consentData` (the native lists seven consent types to our four, and its
 entries carry `default` and `quiet` flags we do not write), `tagInfo` and `tagsFired`

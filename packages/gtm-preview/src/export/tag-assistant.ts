@@ -1,7 +1,16 @@
 import type { RawSession } from '../report/parse-records'
 import type { RawRecord } from '../session/debug-queue'
 import { toJsLiteral } from './js-literal'
+import { buildHitInfo, type HitContext } from './hits'
 import { eventTitle, tagTemplate, variableTemplate } from './templates'
+
+/** A `data` entry per hit the runtime reported for this message, or nothing when there are none. */
+function hitEntries(records: RawRecord[], ctx: HitContext): AnyRecord[] {
+  const hitInfo = records
+    .map((r) => buildHitInfo(r as unknown as AnyRecord, ctx))
+    .filter((h): h is AnyRecord => h !== undefined)
+  return hitInfo.length ? [{ eventId: ctx.eventId, priorityId: 1, hitInfo }] : []
+}
 
 export interface TagAssistantExportOptions {
   /** Container public id, such as GTM-XXXXXXX. */
@@ -220,9 +229,18 @@ function buildContainer(
 
   // Event ids restart on every container load; key by groupId as well and order by time.
   const byEvent = new Map<string, RawRecord[]>()
+  // Hit records carry the event id and group but no event name, so they are collected
+  // separately and attached to whichever message has that id in that container load.
+  const hitsByEvent = new Map<string, RawRecord[]>()
   for (const r of records) {
     const id = num(r.key?.eventId)
     if (id === undefined) continue
+    if (r.messageType === 'GTAG_HIT') {
+      const hk = `${str(r.key?.groupId)}:${id}`
+      if (!hitsByEvent.has(hk)) hitsByEvent.set(hk, [])
+      hitsByEvent.get(hk)!.push(r)
+      continue
+    }
     const key = `${str(r.key?.groupId)}:${id}:${str(r.key?.eventName)}`
     if (!byEvent.has(key)) byEvent.set(key, [])
     byEvent.get(key)!.push(r)
@@ -294,7 +312,14 @@ function buildContainer(
       consentData: consentData(started),
       title: eventTitle(eventName),
       eventName,
-      data: [{ eventId, ruleInfo: arr(rules?.ruleInfo) }],
+      data: [
+        { eventId, ruleInfo: arr(rules?.ruleInfo) },
+        ...hitEntries(hitsByEvent.get(`${str(started.key?.groupId)}:${eventId}`) ?? [], {
+          messageIndex: index,
+          eventId,
+          groupId: str(started.key?.groupId) ?? '',
+        }),
+      ],
       tagInfo,
       groupId: str(started.key?.groupId),
       eventId,
