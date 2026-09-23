@@ -31,9 +31,10 @@ them out untouched.
 
 - The verdict column is GTM's, not an inference. The mismatch that matters becomes "GTM says
   this tag succeeded but no hit left the browser" and its inverse.
-- The dependency is a versioned data protocol (`version: "2"` for GTM, `"3"` for Google
-  tags), not a UI. If Google changes it, the parser changes. If the feed disappears, the
-  product degrades to network capture.
+- The dependency is a data protocol, not a UI. If Google changes it, the parser changes. If
+  the feed disappears, the product degrades to network capture. Records carry a `version`,
+  but its value varies by container and build, so the parser does not branch on it (see the
+  corrections in the research notes).
 - Every run needs an environment authorization code for GTM containers. Google tags need
   none.
 - Dry run is the default because the debug build fires real tags into real accounts.

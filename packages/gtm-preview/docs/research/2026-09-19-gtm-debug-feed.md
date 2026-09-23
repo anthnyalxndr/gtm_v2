@@ -48,7 +48,7 @@ Manager API. GTM's own verdict is available, so prediction is unnecessary.
 
 ## The record stream
 
-Record types observed from a GTM web container (protocol `version: "2"`):
+Record types observed from a GTM web container (this one reported `version: "2"`):
 
 | Type                                     | What it carries                                                                                                                                         |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,8 +67,8 @@ Record types observed from a GTM web container (protocol `version: "2"`):
 Every record has `key` (publicId, eventId, eventName, tagName, groupId, targetRef) and
 `consentData` with the full consent list at the moment of the record.
 
-Google tags emit the same types with `containerProduct: "OGT"` and `version: "3"`. The two
-protocol versions have not yet been compared field by field.
+Google tags emit the same types with `containerProduct: "OGT"`. See the corrections at the
+end of this file for what the `version` field turned out to mean.
 
 ## What the production build emits
 
@@ -119,3 +119,20 @@ No published tool reads this feed. Simo Ahava's gtm-datalayer-test and puppeteer
 assert on `window.dataLayer` only. ObservePoint, DataTrue, and Tag Inspector capture network
 hits in a real browser. gtm-spy and GTM Parser decode the compiled container resource.
 selnekovic/gtm_scripts_exploration documents the runtime and was the lead for the queue name.
+
+## Corrections
+
+Two statements above were wrong or became wrong. Both were found while verifying task 17 and
+are fixed in the code and in AGENTS.md.
+
+- **The `version` field is not a protocol number to rely on (2026-09-20).** These notes
+  generalised two observations into a rule: `"2"` for GTM containers and `"3"` for Google
+  tags. Since then a GTM container has reported `"16"` (GTM-5KNSPW9K) and a Google tag has
+  reported `"2"` (G-9ECPFL5LDC), while the record shapes stayed the same. The value varies by
+  container and build; nothing in the parser branches on it.
+- **The Google tag's debug build does mark its own hits with `_dbg=1` (2026-09-22).** When
+  these notes were written only the GTM container's debug build was loaded, and that build
+  does not set the flag. The product now loads every Google tag's debug build as well, and
+  that runtime adds `_dbg=1` to the GA4 hits it sends: 14 of 15 GA4 hits in a dry run on
+  www.sjpools.com carried it. The `live` hit policy therefore strips the flag, and `debug`
+  sets it, rather than either assuming it is absent.

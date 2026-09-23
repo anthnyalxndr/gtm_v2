@@ -126,3 +126,32 @@ describe('hitSignature', () => {
     expect(hitSignature('https://example.com/x?only=1')).toBeUndefined()
   })
 })
+
+describe('the record version field', () => {
+  /**
+   * The value varies by container and build: GTM containers have reported "2" and "16", and
+   * Google tags "2" and "3", with the same record shapes throughout. Nothing may branch on it.
+   */
+  it('parses the same whatever version the records claim', () => {
+    const base = withGoogleTag()
+    const relabelled: RawSession = {
+      ...base,
+      records: base.records.map((r) => ({
+        ...r,
+        version: r.containerProduct === 'OGT' ? '3' : '16',
+      })),
+    }
+    const a = buildReport(base, { ...meta, generatedAt: new Date(0) })
+    const b = buildReport(relabelled, { ...meta, generatedAt: new Date(0) })
+    expect(b.containers.map((c) => c.protocolVersion)).toEqual(['16', '3'])
+    expect(stripVersions(b)).toEqual(stripVersions(a))
+  })
+})
+
+function stripVersions(report: ReturnType<typeof buildReport>) {
+  return {
+    ...report,
+    container: { ...report.container, protocolVersion: undefined },
+    containers: report.containers.map((c) => ({ ...c, protocolVersion: undefined })),
+  }
+}

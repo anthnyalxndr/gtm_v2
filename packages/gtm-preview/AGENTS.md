@@ -32,8 +32,10 @@ How it works, in order:
 4. Records arrive per event: `EVENT_STARTED`, `MACRO_RESOLVED` (every trigger with its
    predicate results and pass/fail), `TAG_STARTED` (execute, blocked, suppressed) with
    resolved parameters, `TAG_STATUS` (succeeded, failed, exception), `TAG_BLOCKED`,
-   `GTAG_HIT`, `CONSENT_STATE`, and more. GTM web containers use protocol `version: "2"`,
-   Google tags `"3"`.
+   `GTAG_HIT`, `CONSENT_STATE`, and more. Every record carries a `version`, but its value
+   varies by container and build (GTM containers have reported `"2"` and `"16"`, Google tags
+   `"2"` and `"3"`), so nothing may branch on it. The record shapes have been the same
+   throughout.
 5. Every Google tag the page loads (`gtag/js`, `gtag/destination`) is rewritten to its debug
    build too by adding `gtm_debug=x`; no code is needed for those. Each Google tag then
    reports as its own container (`containerProduct: "OGT"`) in the same queue, and its
@@ -141,9 +143,11 @@ code is left out of the file unless `--include-auth` is passed on `run`.
 - Tag Assistant's own connection works by opening the target URL with `gtm_debug=<ms
 timestamp>` and `__TAG_ASSISTANT=<token>` and talking to the page through `window.opener`.
   We never use it. If the product ever needs to talk to Tag Assistant, that is the protocol.
-- The debug build does not mark GA4 hits with `_dbg=1` by itself. In a real preview session
-  Tag Assistant supplies `debug_mode` over its connection. The `debug` hit policy appends
-  `_dbg=1` at the network layer instead.
+- The GTM container's debug build does not mark GA4 hits with `_dbg=1`; in a real preview
+  session Tag Assistant supplies `debug_mode` over its connection. The **Google tag's** debug
+  build does mark the hits it sends, and since we load that build too, most GA4 hits already
+  carry `_dbg=1` in every mode. That is why `live` strips it and `debug` sets it rather than
+  assuming either.
 - Consent Mode changes which tags fire. A scenario that sets no consent state tests the
   container's default, and the report should name which default applied.
 - Server-side tagging containers add a hop: the browser hit goes to the tagging server, which
