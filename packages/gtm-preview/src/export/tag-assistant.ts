@@ -79,6 +79,15 @@ function consentData(record: RawRecord | undefined): AnyRecord {
   }
 }
 
+/**
+ * GTM auto-creates listener tags named `_implicit_<listener> <trigger>` for click, link
+ * click, form, scroll and similar triggers. Tag Assistant's own export omits them from a GTM
+ * container: a genuine export of GTM-52ZLPX7 had 8 tags and no underscore-prefixed names,
+ * while its Google tag container kept all five `_Product-Owned Activity Tag` entries
+ * (checked 2026-09-23). So the prefix, not the leading underscore, is the rule.
+ */
+const IMPLICIT_TAG_PREFIX = '_implicit_'
+
 function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
   const startedByName = new Map<string, RawRecord>()
   const statusByName = new Map<string, string>()
@@ -91,7 +100,7 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
       if (s) statusByName.set(name, s)
     }
   }
-  return arr(started.tagInfo).map((t, index) => {
+  const entries = arr(started.tagInfo).map((t, index) => {
     const info = obj(t)
     const name = str(info.name, `tag ${index}`)
     const templateId = str(obj(info.metadata).type) || str(obj(info.tagData).function)
@@ -129,6 +138,10 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
     }
     return entry
   })
+  // A real export leaves these out of tagInfo while leaving ruleInfo's firingTags pointing at
+  // their indices, which then dangle. Match that: filter by name, and keep each surviving
+  // entry's original index rather than renumbering.
+  return entries.filter((e) => !str(e.name, '').startsWith(IMPLICIT_TAG_PREFIX))
 }
 
 function buildMacroInfo(dataLayer: RawRecord | undefined): AnyRecord[] {

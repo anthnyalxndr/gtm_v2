@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import raw from '../report/fixtures/test-container-session.json'
 import type { RawSession } from '../report/parse-records'
+import type { RawRecord } from '../session/debug-queue'
 import shape from './fixtures/tag-assistant-export-shape.json'
 import { buildTagAssistantExport } from './tag-assistant'
 
@@ -148,5 +149,86 @@ describe('buildTagAssistantExport', () => {
     })
     expect((container.groups as unknown[]).length).toBe(1)
     expect(container.numPages).toBe(1)
+  })
+})
+
+describe('implicit listener tags', () => {
+  /** The fixture container has one real tag; add the listener tags GTM auto-creates. */
+  function withImplicitTags(): RawSession {
+    const base = raw as unknown as RawSession
+    const implicit = (name: string, fn: string) => ({
+      name,
+      metadata: { type: fn, isVendorTemplate: true },
+      tagData: { function: fn },
+    })
+    return {
+      ...base,
+      records: base.records.map((r) =>
+        r.messageType === 'EVENT_STARTED'
+          ? {
+              ...r,
+              tagInfo: [
+                ...(r.tagInfo as unknown[]),
+                implicit('_implicit_Link Click Listener LC — call_click', 'lcl'),
+                implicit('_implicit_Click Listener Click - Contact Form', 'cl'),
+              ],
+            }
+          : r,
+      ),
+    }
+  }
+
+  const doc = buildTagAssistantExport(withImplicitTags(), opts) as unknown as Record<
+    string,
+    unknown
+  >
+  const container = (
+    (doc.data as Record<string, unknown>).containers as Record<string, unknown>[]
+  )[0]!
+  const messages = container.messages as Record<string, unknown>[]
+
+  it('leaves them out of every message, the way a real export does', () => {
+    const names = messages.flatMap((m) => (m.tagInfo as { name: string }[]).map((t) => t.name))
+    expect(names.some((n) => n.startsWith('_implicit_'))).toBe(false)
+    expect(names).toContain('GA4 - form_submit')
+    expect(Object.keys(container.tagsFired as object).some((n) => n.startsWith('_implicit_'))).toBe(
+      false,
+    )
+  })
+
+  it('keeps the surviving tags at their original indices and leaves the rules untouched', () => {
+    const fired = messages.find((m) => m.eventName === 'form_submit')!
+    expect(fired.tagInfo as { index: number; name: string }[]).toEqual([
+      expect.objectContaining({ index: 0, name: 'GA4 - form_submit' }),
+    ])
+    const rules = (fired.data as { ruleInfo: { firingTags: number[] }[] }[])[0]!.ruleInfo
+    expect(rules[0]?.firingTags).toEqual([0])
+  })
+
+  it("keeps a Google tag container's own underscore-prefixed entities", () => {
+    const withOgt = withImplicitTags()
+    const gtm = withOgt.records.find((r) => r.messageType === 'EVENT_STARTED')!
+    const ogt: RawRecord = {
+      ...gtm,
+      containerProduct: 'OGT',
+      key: { ...gtm.key, publicId: 'G-TEST1' },
+      tagInfo: [
+        {
+          name: '_Product-Owned Activity Tag 118',
+          metadata: { type: 'ogt_auto_events' },
+          tagData: { function: 'ogt_auto_events' },
+        },
+      ],
+    }
+    const multi = buildTagAssistantExport(
+      { ...withOgt, records: [...withOgt.records, ogt] },
+      opts,
+    ) as unknown as {
+      data: { containers: { publicId: string; messages: { tagInfo: { name: string }[] }[] }[] }
+    }
+    const google = multi.data.containers.find((c) => c.publicId === 'G-TEST1')!
+    expect(google.messages.flatMap((m) => m.tagInfo.map((t) => t.name))).toEqual([
+      '_Product-Owned Activity Tag 118',
+    ])
   })
 })
