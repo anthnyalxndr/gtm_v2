@@ -4,7 +4,7 @@ title: Verify the three paths that need a person or a real write
 status: In Progress
 assignee: []
 created_date: '2026-09-19 20:13'
-updated_date: '2026-09-23 20:02'
+updated_date: '2026-09-23 20:25'
 labels:
   - verification
 dependencies:
@@ -45,4 +45,6 @@ Check 2, part 2 (2026-09-20, www.sjpools.com): the first recording was lost beca
 Discrepancies from checks 1 and 2, all fixed and merged: the workspace-status guard before creating a version (6eb01e5); the is_td diagnostics beacon being rewritten as the container load and event ids colliding across page loads (bd5a730); the Inspector never saving its generated code, so record now writes the driver itself (215ea55). Two documentation defects fixed on 2026-09-23: the claim that GTM containers speak protocol version 2 and Google tags version 3 (GTM has reported 2 and 16, Google tags 2 and 3, with identical record shapes, so nothing branches on it, guarded by a test), and the claim that the debug build does not mark GA4 hits with _dbg=1 (true of the GTM container's build, false of the Google tag's, which marked 14 of 15 GA4 hits in a dry run on sjpools). The research notes carry both as dated corrections rather than rewritten history.
 
 Check 3 setup (2026-09-23): the GA4 property is 'GA4 - dev' (properties/519543836, account anthny.xyz 380295431), web stream 'dev.anthny.xyz - web', measurement ID G-GVG5MC89MH, found through the Analytics Admin API dataStreams endpoint since GA4 properties are not in the Tag Manager API. The test container's 'Const - GA4 Measurement ID' variable in workspace 8 now holds that ID; no version was created, so Live and Latest still serve G-PLACEHOLDER. Environment 8 (type workspace, created by quick_preview) serves G-GVG5MC89MH and is what a check-3 run should use. Check 3 still needs someone watching DebugView for that property while the run happens.
+
+Check 3 (DebugView) skipped on 2026-09-23 at the user's request and left unchecked. Everything it needs is in place: the test container's workspace holds G-GVG5MC89MH, and since task-19 the run is 'run <scenario> --workspace "Default Workspace" --hits debug' with no version involved. It needs someone watching DebugView for the GA4 - dev property while the run happens.
 <!-- SECTION:NOTES:END -->
