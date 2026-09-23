@@ -80,13 +80,37 @@ function consentData(record: RawRecord | undefined): AnyRecord {
 }
 
 /**
- * GTM auto-creates listener tags named `_implicit_<listener> <trigger>` for click, link
- * click, form, scroll and similar triggers. Tag Assistant's own export omits them from a GTM
- * container: a genuine export of GTM-52ZLPX7 had 8 tags and no underscore-prefixed names,
- * while its Google tag container kept all five `_Product-Owned Activity Tag` entries
- * (checked 2026-09-23). So the prefix, not the leading underscore, is the rule.
+ * PROVISIONAL, pending task-22. GTM auto-creates listener tags named
+ * `_implicit_<listener> <trigger>` for click, link click, form, scroll and similar triggers,
+ * and Tag Assistant's own export leaves them out of a GTM container's `tagInfo` while leaving
+ * `ruleInfo.firingTags` pointing at their indices, which then dangle.
+ *
+ * The evidence is one genuine export of one container (GTM-52ZLPX7, 2026-09-23): 8 tags, no
+ * underscore-prefixed names, while its Google tag container kept all five `_Product-Owned
+ * Activity Tag` entries. So the rule is this prefix rather than a leading underscore.
+ *
+ * What that evidence cannot settle, and what task-22 should decide against more exports:
+ * whether Tag Assistant filters on the name at all or on a flag the debug feed does not
+ * expose (no record carries one; entries give only `name` and `metadata.type`); whether
+ * filtering on the listener template types instead (`lcl`, `cl`, `fsl`, `sdl`, `evl`, `ytl`,
+ * `tl`, `hl`, `jel`) is more robust, which agrees with the prefix on every session captured
+ * so far; whether other generated names are dropped from GTM containers; and whether an
+ * implicit tag can appear anywhere but last, which would matter because indices are kept.
  */
 const IMPLICIT_TAG_PREFIX = '_implicit_'
+
+/** Listener template types, the second candidate rule task-22 should weigh against the name. */
+export const LISTENER_TAG_TYPES: ReadonlySet<string> = new Set([
+  'lcl',
+  'cl',
+  'fsl',
+  'sdl',
+  'evl',
+  'ytl',
+  'tl',
+  'hl',
+  'jel',
+])
 
 function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
   const startedByName = new Map<string, RawRecord>()
@@ -138,9 +162,8 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
     }
     return entry
   })
-  // A real export leaves these out of tagInfo while leaving ruleInfo's firingTags pointing at
-  // their indices, which then dangle. Match that: filter by name, and keep each surviving
-  // entry's original index rather than renumbering.
+  // Filter by name and keep each surviving entry's original index rather than renumbering,
+  // which is what a real export does. The rule itself is provisional; see above.
   return entries.filter((e) => !str(e.name, '').startsWith(IMPLICIT_TAG_PREFIX))
 }
 

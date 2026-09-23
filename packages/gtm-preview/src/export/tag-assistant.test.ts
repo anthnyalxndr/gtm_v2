@@ -3,7 +3,7 @@ import raw from '../report/fixtures/test-container-session.json'
 import type { RawSession } from '../report/parse-records'
 import type { RawRecord } from '../session/debug-queue'
 import shape from './fixtures/tag-assistant-export-shape.json'
-import { buildTagAssistantExport } from './tag-assistant'
+import { buildTagAssistantExport, LISTENER_TAG_TYPES } from './tag-assistant'
 
 type Shape = Record<string, string>
 const typeOf = (v: unknown): string =>
@@ -230,5 +230,25 @@ describe('implicit listener tags', () => {
     expect(google.messages.flatMap((m) => m.tagInfo.map((t) => t.name))).toEqual([
       '_Product-Owned Activity Tag 118',
     ])
+  })
+})
+
+describe('the provisional implicit-tag rule (task-22)', () => {
+  /**
+   * The name prefix and the listener template types are two candidate rules that agree on
+   * every session captured so far. If a real container ever disagrees, this fails and the
+   * choice has to be made on evidence rather than assumption.
+   */
+  it('agrees with the listener-type rule on the captured fixture', () => {
+    const tagInfo = (raw as unknown as RawSession).records
+      .filter((r) => r.messageType === 'EVENT_STARTED')
+      .flatMap((r) => (r.tagInfo ?? []) as { name?: string; metadata?: { type?: string } }[])
+    for (const t of tagInfo) {
+      const byName = (t.name ?? '').startsWith('_implicit_')
+      const byType = LISTENER_TAG_TYPES.has(t.metadata?.type ?? '')
+      expect(byName, `"${t.name}" (${t.metadata?.type}) matched one rule but not the other`).toBe(
+        byType,
+      )
+    }
   })
 })

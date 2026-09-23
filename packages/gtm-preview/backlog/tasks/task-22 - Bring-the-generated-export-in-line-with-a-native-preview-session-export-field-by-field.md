@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-23 20:53'
+updated_date: '2026-09-23 21:17'
 labels:
   - export
 dependencies:
@@ -37,5 +38,7 @@ Differences already suspected, as a starting list rather than the whole of it: t
 - [ ] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
 - [ ] #5 The findings document lists the accepted differences with reasons, and the shape signature fixture is regenerated from a native export so it covers the fields the comparison checks
 - [ ] #6 The Google tag panel's Source line no longer reads 'Undefined parameter - CONTAINER_ID' when the file is imported, confirmed in the Tag Assistant UI
+- [ ] #7 The rule for leaving GTM's implicit listener tags out of the export is decided on evidence from more than one container and stops being provisional: either the _implicit_ name prefix or the listener template types (lcl, cl, fsl, sdl, evl, ytl, tl, hl, jel), which agree on every session captured so far, or a signal found elsewhere; the comment in tag-assistant.ts naming the open questions is replaced with the finding
+- [ ] #8 It is confirmed whether an implicit tag can appear anywhere but last in tagInfo, since surviving entries keep their original indices, and whether any other generated name is dropped from a GTM container
 
 <!-- AC:END -->
