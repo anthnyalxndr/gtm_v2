@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-09-23 20:53'
-updated_date: '2026-09-24 05:38'
+updated_date: '2026-09-24 06:05'
 labels:
   - export
 dependencies:
@@ -63,4 +63,6 @@ Phase one started 2026-09-23 against the native page-view export the user captur
 Hits Sent implemented and verified in the UI (2026-09-23, ee2f3d6). The panel reads hitInfo entries inside a message's data array, beside the ruleInfo entry; we wrote none, so the tab was empty. Now the Hit Details panel renders as the native one does: destination chip, URL, and a parameters table with friendly names (Client ID, Cookie Consent State, Debug View, Event Name, Measurement ID, Page Location) falling back to the raw key for dma, frm, gcd, gtm, ibt and ngs, exactly as a native export does. GA4 collect is a Google Analytics Hit of type 2, the Ads endpoints a Google Ads Event of type 3, and the destination passes through as the runtime gave it (a string for GA4, an array for Ads). Hits with no destination are dropped, which a native export also does not show; that is provisional. Two remaining hit differences, both understood and recorded in the findings doc: the native hit carries dr (Page Referrer) because a native preview is opened from tagassistant.google.com while a headless run navigates straight to the page, and the Ads endpoint reported two hits to us differing only in fmt (8 and 3) where the native shows one.
 
 Ads hit duplication settled by comparison rather than choice (2026-09-24): /ccm/collect is sent twice, fmt=8 then fmt=3, and both requests leave the browser; the native export keeps the fmt=8 one, so the export collapses a measurement delivered by two transports and this tool now matches. The SessionReport still lists both requests. Hits now match the native export on count, container, message, title, subtitle, type and destination; the only remaining difference is the dr (Page Referrer) parameter a native preview has because it opens the page from tagassistant.google.com.
+
+Phase two flow captured 2026-09-24: scenarios/sjpools-contact.json with flows/sjpools-contact.mjs drives home, contact, email link, phone link, exit, against environment 8. Produces 23 messages over 2 page groups, 14 tags executed with one Ads tag failing, and 15 hits including the email_click and call_click GA4 hits. Found while writing the driver: clicking as soon as the contact page's page_view arrives lands before the page binds its link listeners and the click is lost, so the driver settles for three seconds first; the flow is otherwise the recorder's output. Awaiting a native export of the same flow to compare.
 <!-- SECTION:NOTES:END -->
