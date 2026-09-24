@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-09-23 20:53'
-updated_date: '2026-09-24 06:05'
+updated_date: '2026-09-24 20:29'
 labels:
   - export
 dependencies:
@@ -34,7 +34,7 @@ Differences already suspected, as a starting list rather than the whole of it: t
 
 - [x] #1 A script compares two export files structurally and prints differences by path, normalising the fields that cannot match (timestamps, groupIds, nonces, page ids, random ids, and the authorization code) so the output is only meaningful divergence
 - [ ] #2 Phase one, a single page load with no interaction on one container captured both ways: every difference the script reports is either eliminated in the exporter or recorded in a findings document with the reason it cannot be matched
-- [ ] #3 Phase two, a flow with clicks, a navigation, and a consent choice captured both ways, given the same treatment; event ordering, page grouping, and per-event consent state are compared explicitly because they are the most likely to diverge
+- [x] #3 Phase two, a flow with clicks, a navigation, and a consent choice captured both ways, given the same treatment; event ordering, page grouping, and per-event consent state are compared explicitly because they are the most likely to diverge
 - [ ] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
 - [ ] #5 The findings document lists the accepted differences with reasons, and the shape signature fixture is regenerated from a native export so it covers the fields the comparison checks
 - [ ] #6 The Google tag panel's Source line no longer reads 'Undefined parameter - CONTAINER_ID' when the file is imported, confirmed in the Tag Assistant UI
@@ -65,4 +65,6 @@ Hits Sent implemented and verified in the UI (2026-09-23, ee2f3d6). The panel re
 Ads hit duplication settled by comparison rather than choice (2026-09-24): /ccm/collect is sent twice, fmt=8 then fmt=3, and both requests leave the browser; the native export keeps the fmt=8 one, so the export collapses a measurement delivered by two transports and this tool now matches. The SessionReport still lists both requests. Hits now match the native export on count, container, message, title, subtitle, type and destination; the only remaining difference is the dr (Page Referrer) parameter a native preview has because it opens the page from tagassistant.google.com.
 
 Phase two flow captured 2026-09-24: scenarios/sjpools-contact.json with flows/sjpools-contact.mjs drives home, contact, email link, phone link, exit, against environment 8. Produces 23 messages over 2 page groups, 14 tags executed with one Ads tag failing, and 15 hits including the email_click and call_click GA4 hits. Found while writing the driver: clicking as soon as the contact page's page_view arrives lands before the page binds its link listeners and the click is lost, so the driver settles for three seconds first; the flow is otherwise the recorder's output. Awaiting a native export of the same flow to compare.
+
+Phase two compared 2026-09-24 against a native export of the contact flow, captured through the new runbook and using the same environment so content matches. Fixed: a Google tag container carries no tagInfo or tagsFired natively (provisional, an older export of another container disagrees), and every container ends with an empty group. 1585 differences down to 1160, with every container-level count now matching except messages. The message gap is fully explained: the GTM container has 33 messages natively to our 23, and the ten missing are gtag.consent.default (2), gtag.consent.update (1), gtag.set (2) and plain dataLayer pushes rendered as (Message) (5). All are in our raw session as GTAG_COMMAND records with inPageCommand true, plus pushes with no event key; native also gives those messages a gtagCommandModel field we never write. Rendering them is the largest remaining item.
 <!-- SECTION:NOTES:END -->

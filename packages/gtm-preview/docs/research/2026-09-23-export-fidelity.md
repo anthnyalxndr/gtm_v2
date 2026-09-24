@@ -101,3 +101,58 @@ differently under a native preview than for a real visitor.
 entries carry `default` and `quiet` flags we do not write), `tagInfo` and `tagsFired`
 membership, the empty second group a native export contains, and `tagName` (native uses the
 container's name in Tag Manager, `www.sjpools.com`; this tool uses the scenario name).
+
+## Phase two: a flow with clicks and a navigation
+
+A native export of home, contact, the email link and the phone link is in
+`reports/sjpools-recorded.tag-assistant.contact.json`, captured with the runbook in
+`docs/runbooks/capture-a-native-tag-assistant-export.md`. It used the same environment as
+phase one, so container content matches and the differences are format.
+
+```bash
+pnpm dev run scenarios/sjpools-contact.json --tag-assistant reports/sjpools-contact.tag-assistant.json
+pnpm compare reports/sjpools-recorded.tag-assistant.contact.json reports/sjpools-contact.tag-assistant.json
+```
+
+### Fixed in this pass
+
+- **A Google tag container carries no tags.** A native export gives it an empty `tagInfo` on
+  every message and an empty `tagsFired`, though its runtime reports plenty of generated
+  activity tags. This tool wrote 27 of them. Provisional: an older export of a different
+  container (2026-08-26) does list five, so this either changed in Tag Assistant or turns on
+  something not yet identified. The two recent exports win, because the point is to match Tag
+  Assistant as it is now.
+- **Every container ends with an empty group**, `{navType: GROUP, title: "", navTitle: "",
+logInfo: [], messageCount: 0, memoCount: 0}`, after the real page loads.
+
+That took the flow from 1585 differences to 1160, and every container-level count now matches
+the native export except the number of messages.
+
+### The message gap is now fully understood
+
+The GTM container has 33 messages natively and 23 here. The ten missing ones are exactly the
+record kinds this tool does not render, and our raw session holds all of them:
+
+| Missing                                        | Count           | Comes from                                                                    |
+| ---------------------------------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `gtag.consent.default`, titled Consent Default | 2, one per page | `GTAG_COMMAND` with `commandType: consent`, `commandData.subcommand: default` |
+| `gtag.consent.update`                          | 1               | the same, `subcommand: update`                                                |
+| `gtag.set`, titled Set                         | 2, one per page | `GTAG_COMMAND` with `commandType: set`                                        |
+| `(Message)`, no event name or id               | 5               | a dataLayer push with no `event` key                                          |
+
+Only commands with `inPageCommand: true` become messages: the container's own internal
+`config` and `event` commands do not. Those messages also carry a `gtagCommandModel` field
+this tool never writes. Rendering them is the single largest remaining item and the most
+visible, since a person reading the timeline is missing ten entries.
+
+### Still open after that
+
+| Count | What                                                                                                |
+| ----- | --------------------------------------------------------------------------------------------------- |
+| 562   | `tagInfo` and `tagsFired` detail on the GTM container, where the names match but the entries differ |
+| 120   | `params` against `internalParams`, still waiting on template definitions                            |
+| 113   | `hitInfo`, more numerous in a flow than in a page view                                              |
+| 100   | `abstractModel` contents, which follow from message ordering                                        |
+| 79    | `macroInfo`                                                                                         |
+| 64    | `consentData`                                                                                       |
+| 19    | `vendorTemplates`                                                                                   |

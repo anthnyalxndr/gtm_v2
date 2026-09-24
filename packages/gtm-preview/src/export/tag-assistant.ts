@@ -299,7 +299,15 @@ function buildContainer(
     const eventName = str(started.key?.eventName)
     const rules = recs.find((r) => r.messageType === 'MACRO_RESOLVED')
     const dataLayer = recs.find((r) => r.messageType === 'DATA_LAYER')
-    const tagInfo = buildTagInfo(started, recs)
+    // A native export gives a Google tag container an empty tagInfo on every message and an
+    // empty tagsFired, even though its runtime reports plenty of generated activity tags.
+    // Both sjpools exports agree (page view and contact flow, 2026-09-24).
+    //
+    // PROVISIONAL, task-22: an older export of a different container (GTM-52ZLPX7, taken
+    // 2026-08-26) does list five `_Product-Owned Activity Tag` entries for its Google tag, so
+    // this either changed in Tag Assistant or depends on something not yet identified. The
+    // two recent exports win for now because the aim is to match Tag Assistant as it is.
+    const tagInfo = isGtm ? buildTagInfo(started, recs) : []
     const message = dataLayer?.message ?? { event: eventName, 'gtm.uniqueEventId': eventId }
     const abstractModel = dataLayer?.abstractModel ?? {
       event: eventName,
@@ -339,6 +347,14 @@ function buildContainer(
   messages.reverse()
   for (const list of Object.values(tagsFired)) list.reverse()
 
+  const emptyTrailingGroup: AnyRecord = {
+    navType: 'GROUP',
+    title: '',
+    navTitle: '',
+    logInfo: [],
+    messageCount: 0,
+    memoCount: 0,
+  }
   const groups = groupOrder.map((groupId) => {
     const gi = groupInfo.get(groupId)!
     return {
@@ -415,7 +431,7 @@ function buildContainer(
     numPages: groups.length,
     errorCount: errors.length,
     logCount: logs.length,
-    groups,
+    groups: [...groups, emptyTrailingGroup],
     vendorTemplates: {
       [environmentName]: {
         containerName,

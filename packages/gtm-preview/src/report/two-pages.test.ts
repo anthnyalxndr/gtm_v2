@@ -65,7 +65,8 @@ describe('two container loads with restarting event ids', () => {
       }
     }
     const c = doc.data.containers[0]!
-    expect(c.groups).toHaveLength(2)
+    // Two page loads plus the empty trailing group a native export always ends with.
+    expect(c.groups).toHaveLength(3)
     expect(c.numPages).toBe(2)
     expect(c.messages.map((m) => m.index)).toEqual([
       16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,

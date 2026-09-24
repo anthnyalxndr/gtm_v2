@@ -59,7 +59,17 @@ describe('buildTagAssistantExport', () => {
     expectShape(rule, shape.ruleInfo)
     expectShape((rule as { predicates: unknown[] }).predicates[0], shape.predicate)
     expectShape((fired.tagInfo as { params: unknown[] }[])[0]!.params[0], shape.param)
-    for (const g of container.groups as unknown[]) expectShape(g, shape.group)
+    // The trailing group a native export ends with is a reduced form: no consent, no page.
+    const groups = container.groups as Record<string, unknown>[]
+    for (const g of groups.slice(0, -1)) expectShape(g, shape.group)
+    expect(groups.at(-1)).toEqual({
+      navType: 'GROUP',
+      title: '',
+      navTitle: '',
+      logInfo: [],
+      messageCount: 0,
+      memoCount: 0,
+    })
     for (const p of Object.values(container.pageSummaries as object))
       expectShape(p, shape.pageSummary)
     for (const l of Object.values(container.containerLoadInfoByGroupId as object))
@@ -147,7 +157,7 @@ describe('buildTagAssistantExport', () => {
       containers: ['GTM-WNX8FFXW'],
       startUrl: opts.startUrl,
     })
-    expect((container.groups as unknown[]).length).toBe(1)
+    expect((container.groups as unknown[]).length).toBe(2)
     expect(container.numPages).toBe(1)
   })
 })
@@ -205,7 +215,7 @@ describe('implicit listener tags', () => {
     expect(rules[0]?.firingTags).toEqual([0])
   })
 
-  it("keeps a Google tag container's own underscore-prefixed entities", () => {
+  it('gives a Google tag container no tags at all, as a native export does', () => {
     const withOgt = withImplicitTags()
     const gtm = withOgt.records.find((r) => r.messageType === 'EVENT_STARTED')!
     const ogt: RawRecord = {
@@ -227,9 +237,7 @@ describe('implicit listener tags', () => {
       data: { containers: { publicId: string; messages: { tagInfo: { name: string }[] }[] }[] }
     }
     const google = multi.data.containers.find((c) => c.publicId === 'G-TEST1')!
-    expect(google.messages.flatMap((m) => m.tagInfo.map((t) => t.name))).toEqual([
-      '_Product-Owned Activity Tag 118',
-    ])
+    expect(google.messages.flatMap((m) => m.tagInfo.map((t) => t.name))).toEqual([])
   })
 })
 
