@@ -23,21 +23,33 @@ acme-gtm/
   package.json              pins @anthnyalxndr/gtm-as-code, gtm-apply, gtm-web-recipes; scripts: pull, diff, plan, apply, publish, verify
   gtm.config.json           the repo config file TASK-30 defines (see below)
   gtm/
+    shared/
+      acme-web.ts           recipe list and destination families shared by a staging/prod pair
+      constants.ts          values more than one container uses, e.g. the GA4 measurement id
     containers/
-      GTM-ABC1234/
-        container.json      identity and what was read; no timestamp
+      acme-com/
+        container.json      identity (public id, name, type) and what was read; no timestamp
         spec.json           the apply-able part, canonical; the authority
         snapshot.json       everything the API exposes, canonical; an audit record
         plan.ts             optional: a tracking plan against the recipe library
         custom.ts           optional: bespoke entities as defineContainer()
-      GTM-XYZ5678/
+      acme-com-staging/
+        plan.ts             imports ../../shared/acme-web, supplies staging constants
+        ...
+      sst-acme-com/         the server container; independent, shares only constants
         ...
   .github/workflows/        the three jobs TASK-32 defines: PR plan, merge apply, scheduled drift
   .husky/pre-commit         pnpm exec lint-staged && pnpm verify
   .prettierrc, .gitignore, README.md
 ```
 
-The shell (everything outside `gtm/containers/`) is owned by the scaffold and rewritten by `gtm update`. The container directories are owned by the user and by `gtm pull`, and are never touched by update.
+The shell (everything outside `gtm/`) is owned by the scaffold and rewritten by `gtm update`. Everything under `gtm/` is owned by the user and by `gtm pull`, and is never touched by update.
+
+### Directories are named by a slug, not by public id
+
+A container directory is named by a human slug (`acme-com`, `sst-acme-com`), and the slug is what every `gtm` command takes as its argument and what a drift PR title, a log line and a CI summary show. The public id lives in `container.json` and in the repo config file, which maps slug to public id and is the authority for that mapping. `containerSlug(name, publicId)` in gtm-apply derives the default: the container name lowercased, every run of characters outside `a-z0-9` replaced by one `-`, leading and trailing `-` trimmed, the lowercased public id when nothing is left, and the lowercased public id appended when two containers in one pull would collide. The user renames a slug by moving the directory and editing the config entry; a rename in the GTM UI never forces a directory move.
+
+Staging and prod pairs are the common multi-container case. They want the same desired state with different constant values, and since `plan.ts` is a module, sharing is an import from `gtm/shared/`, not a mechanism. A web container and its server container are independent and share only constants, such as the server URL the web Google tag points at, which also belong in `gtm/shared/constants.ts`. One repo per account is the default; a client with several accounts nests `gtm/accounts/<slug>/containers/` and the config lists the accounts.
 
 ### The files in a container directory
 
@@ -77,14 +89,14 @@ TASK-30 owns the file and gtm-apply's `--env` resolution. The account repo needs
 {
   "account": { "id": "6012345678", "name": "Acme" },
   "containers": {
-    "GTM-ABC1234": { "dir": "gtm/containers/GTM-ABC1234", "env": "prod" },
-    "GTM-STG5678": { "dir": "gtm/containers/GTM-STG5678", "env": "staging" }
+    "acme-com": { "publicId": "GTM-ABC1234", "env": "prod" },
+    "acme-com-staging": { "publicId": "GTM-STG5678", "env": "staging" }
   },
   "defaults": { "workspace": "${commit}", "prune": false }
 }
 ```
 
-`gtm init` writes it with every managed container and `env` unset; the user assigns environments. The loop commands iterate `containers` in key order. If TASK-30 chooses a TypeScript module instead of JSON, init writes that module; the shape above is the contract, not the file type.
+The key is the slug and the directory is `gtm/containers/<slug>/`; an optional `dir` overrides that. `gtm init` writes one entry per managed container with the slug from `containerSlug` and `env` unset; the user renames slugs and assigns environments. The loop commands iterate `containers` in key order. If TASK-30 chooses a TypeScript module instead of JSON, init writes that module; the shape above is the contract, not the file type.
 
 ## Canonical serialization (TASK-34)
 
@@ -103,11 +115,11 @@ The planner compares a desired body to an existing entity with `matches()`, whic
 
 ## Pull (TASK-35) and account listing (TASK-19)
 
-`gtm-apply pull --container GTM-X --out <dir>` writes the three files above into `<dir>`. `--account <id> --out <dir>` lists the account's containers and writes `<dir>/<publicId>/` for each, pulling concurrently through the client's throttle. `--live`, `--version` and `--workspace` mean what they mean for `snapshot`.
+`gtm-apply pull --container GTM-X --out <dir>` writes the three files above into `<dir>`. `--account <id> --out <dir>` lists the account's containers and writes `<dir>/<slug>/` for each, the slug from `containerSlug`, pulling concurrently through the client's throttle. From code, `pullAccount` takes a `dirFor(ref)` option so gtm-as-code can pass the config file's mapping instead of the default slug. `--live`, `--version` and `--workspace` mean what they mean for `snapshot`.
 
 A container whose spec cannot be normalized (a custom-template tag until TASK-10, a trigger group) still gets `snapshot.json` and `container.json`. An existing `spec.json` is left untouched. The error names the container, and the exit code is nonzero once every container has been attempted, so one odd container does not stop an account import.
 
-From code: `writeContainerDir(snapshot, dir)`, `pullContainer(client, source, dir)`, `pullAccount(client, accountId, outDir, { filter })`, and from TASK-19 `listContainers(client, accountId)` in gtm-client, `pullSnapshots(client, sources)` and `snapshotAccount(client, accountId)` in gtm-apply, plus `Gtm.snapshotAccount(accountId)` memoized per container.
+From code: `containerSlug(name, publicId)`, `writeContainerDir(snapshot, dir)`, `pullContainer(client, source, dir)`, `pullAccount(client, accountId, outDir, { filter, dirFor })`, and from TASK-19 `listContainers(client, accountId)` in gtm-client, `pullSnapshots(client, sources)` and `snapshotAccount(client, accountId)` in gtm-apply, plus `Gtm.snapshotAccount(accountId)` memoized per container.
 
 ## The gtm-as-code package
 
@@ -148,11 +160,11 @@ Templates with a `.tmpl` suffix have `{{name}}`, `{{account.id}}` and similar pl
 ### Commands
 
 - `gtm init <dir> --account <id> [--all | --container <id>...]`. Refuses a non-empty directory or a path inside an existing git work tree. Authenticates (browser OAuth if no token). Lists the account's containers and, unless `--all` or `--container` was given, asks which to manage; a non-interactive terminal without either exits 1 naming both flags. Renders the scaffold, runs `pullAccount` filtered to the chosen containers, writes the config file, runs `pnpm install` and `git init`, and commits `feat(gtm): import account <id>`. The first version of this command has no interactive picker beyond a numbered list on stdin.
-- `gtm pull [id]`. Re-pulls every managed container, or one.
-- `gtm diff [id]`. Pulls into a temporary directory and compares canonical `spec.json` files. Exit 0 when all equal, 2 when any differ, 1 on error. Prints, per drifted container, the entity names whose canonical JSON differs. This is git-side drift: what changed in GTM since the last pull. A plan against the live version (TASK-28) is GTM-side drift: what the repo would change; `gtm plan` reuses it.
-- `gtm plan [id] [--changed <ref>]`. Computes the desired state per container and prints gtm-apply's plan (JSON per TASK-28 when available, text otherwise).
-- `gtm apply [id] [--changed <ref>] [--workspace <name>]`. Applies the desired state into a workspace named `--workspace` or the short commit hash, then records the created version in `container.json`. Never publishes.
-- `gtm publish <id> [--version <id>]`. Publishes the recorded version or the named one. Refuses when neither exists.
+- `gtm pull [slug]`. Re-pulls every managed container, or one.
+- `gtm diff [slug]`. Pulls into a temporary directory and compares canonical `spec.json` files. Exit 0 when all equal, 2 when any differ, 1 on error. Prints, per drifted container, the entity names whose canonical JSON differs. This is git-side drift: what changed in GTM since the last pull. A plan against the live version (TASK-28) is GTM-side drift: what the repo would change; `gtm plan` reuses it.
+- `gtm plan [slug] [--changed <ref>]`. Computes the desired state per container and prints gtm-apply's plan (JSON per TASK-28 when available, text otherwise).
+- `gtm apply [slug] [--changed <ref>] [--workspace <name>]`. Applies the desired state into a workspace named `--workspace` or the short commit hash, then records the created version in `container.json`. Never publishes.
+- `gtm publish <slug> [--version <id>]`. Publishes the recorded version or the named one. Refuses when neither exists.
 - `gtm update [--yes]`. Diffs scaffold-owned files against the installed templates, asks, writes.
 
 `--changed <ref>` restricts a command to containers whose directory differs from that git ref, which is how the merge job applies only what a PR touched.

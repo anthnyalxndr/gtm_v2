@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-23 21:28'
+updated_date: '2026-09-24 05:31'
 labels:
   - gtm-as-code
 milestone: m-0
@@ -31,5 +32,5 @@ Once an account repo exists (TASK-36), the day-to-day commands read the repo con
 - [ ] #3 gtm plan compiles plan.ts and custom.ts into one spec per container, fails naming the container on a merge conflict or a tracking-plan issue, and prints gtm-apply's plan for each container
 - [ ] #4 gtm apply --changed origin/main applies only containers whose directory differs from that ref and names the workspace after the current commit unless --workspace is given
 - [ ] #5 gtm publish publishes the version from --version or the one container.json recorded on the last apply, and refuses with a message when neither exists
-- [ ] #6 Every command accepts a container public id to act on one container; unit tests with the fake service cover each command and both exit codes; the README documents the loop and how the CI jobs call it
+- [ ] #6 Every command accepts a container slug (the config file key) to act on one container and rejects an unknown slug naming the config file; unit tests with the fake service cover each command and both exit codes; the README documents the loop and how the CI jobs call it
 <!-- AC:END -->

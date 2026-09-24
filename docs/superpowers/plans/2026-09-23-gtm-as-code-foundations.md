@@ -1161,6 +1161,7 @@ git commit -m "feat(cli): snapshot several containers or an account into a direc
 - Consumes: `stringifySpec`, `stringifySnapshot`, `pullSnapshot`, `snapshotToSpec`.
 - Produces:
   - `SPEC_FILE = "spec.json"`, `SNAPSHOT_FILE = "snapshot.json"`, `RECORD_FILE = "container.json"`.
+  - `containerSlug(name: string, publicId: string): string`: the default directory name for a container.
   - `interface ContainerRecord { publicId; name; containerType; accountId; containerId; source: SnapshotSource; version: { id: string; name: string | null } | null; workspace: string | null; environment: string | null }`.
   - `containerRecord(snapshot: ApiSnapshotData): ContainerRecord`.
   - `interface PullOutcome { dir: string; record: ContainerRecord; specError?: string }`.
@@ -1178,9 +1179,29 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { GtmClient, type tagmanager_v2 } from "@anthnyalxndr/gtm-client";
 import { createFakeService, type FakeState } from "@anthnyalxndr/gtm-client/testing";
-import { pullContainer, RECORD_FILE, SNAPSHOT_FILE, SPEC_FILE } from "../src/snapshot/dir.js";
+import {
+  containerSlug,
+  pullContainer,
+  RECORD_FILE,
+  SNAPSHOT_FILE,
+  SPEC_FILE,
+} from "../src/snapshot/dir.js";
 
 const containerPath = "accounts/1/containers/10";
+
+describe("containerSlug", () => {
+  it("lowercases the name and collapses runs of other characters to one dash", () => {
+    expect(containerSlug("acme.com", "GTM-AAA")).toBe("acme-com");
+    expect(containerSlug("Acme Web (prod)", "GTM-AAA")).toBe("acme-web-prod");
+    expect(containerSlug("sst.acme.com", "GTM-AAA")).toBe("sst-acme-com");
+    expect(containerSlug("  --Acme--  ", "GTM-AAA")).toBe("acme");
+  });
+
+  it("falls back to the lowercased public id when the name yields nothing", () => {
+    expect(containerSlug("", "GTM-AAA")).toBe("gtm-aaa");
+    expect(containerSlug("()", "GTM-AAA")).toBe("gtm-aaa");
+  });
+});
 
 function fake() {
   const { service, state } = createFakeService({
@@ -1352,6 +1373,20 @@ export const SPEC_FILE = "spec.json";
 export const SNAPSHOT_FILE = "snapshot.json";
 export const RECORD_FILE = "container.json";
 
+/**
+ * The default directory name for a container: its name lowercased, every run
+ * of characters outside a-z0-9 replaced by one dash, dashes trimmed, and the
+ * lowercased public id when nothing is left. Directories are named for people,
+ * so "acme.com" becomes "acme-com" and never "GTM-ABC1234".
+ */
+export function containerSlug(name: string, publicId: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug.length > 0 ? slug : publicId.toLowerCase();
+}
+
 export interface ContainerRecord {
   publicId: string;
   name: string;
@@ -1439,6 +1474,7 @@ export {
   SPEC_FILE,
   SNAPSHOT_FILE,
   RECORD_FILE,
+  containerSlug,
   containerRecord,
   writeContainerDir,
   pullContainer,
@@ -1460,11 +1496,11 @@ git commit -m "feat(snapshot): write a container directory with a canonical spec
 - Test: `packages/gtm-apply/test/pull-dir.test.ts` (append)
 
 **Interfaces:**
-- Consumes: `listContainers`, `pullContainer`.
+- Consumes: `listContainers`, `pullContainer`, `containerSlug`.
 - Produces:
-  - `interface PullAccountOptions { filter?: (ref: ContainerRef) => boolean }`.
+  - `interface PullAccountOptions { filter?: (ref: ContainerRef) => boolean; dirFor?: (ref: ContainerRef) => string }`.
   - `interface PullAccountResult { outcomes: PullOutcome[]; failures: { publicId: string; error: string }[] }`.
-  - `pullAccount(client, accountId, outDir, options?): Promise<PullAccountResult>`; one subdirectory per container named by public id; a container whose pull throws lands in `failures` and blocks nothing else.
+  - `pullAccount(client, accountId, outDir, options?): Promise<PullAccountResult>`; one subdirectory per container named by `dirFor(ref)` when given, else `containerSlug(ref.name, ref.publicId)` with the lowercased public id appended when two containers in the same pull would share a slug; a container whose pull throws lands in `failures` and blocks nothing else.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1472,7 +1508,7 @@ Append to `packages/gtm-apply/test/pull-dir.test.ts` (add `pullAccount` to the i
 
 ```ts
 describe("pullAccount", () => {
-  it("writes one directory per container, named by public id", async () => {
+  it("writes one directory per container, named by the container's slug", async () => {
     const { client, state } = fake();
     await seedLeadVersion(client, state, "accounts/1/containers/10");
     await seedLeadVersion(client, state, "accounts/1/containers/11");
@@ -1480,8 +1516,9 @@ describe("pullAccount", () => {
     const result = await pullAccount(client, "1", root);
     expect(result.failures).toEqual([]);
     expect(result.outcomes.map((o) => o.record.publicId)).toEqual(["GTM-AAA", "GTM-BBB"]);
-    expect((await readdir(root)).sort()).toEqual(["GTM-AAA", "GTM-BBB"]);
-    expect((await readdir(join(root, "GTM-BBB"))).sort()).toEqual([RECORD_FILE, SNAPSHOT_FILE, SPEC_FILE]);
+    expect(result.outcomes.map((o) => o.dir)).toEqual([join(root, "a-com"), join(root, "b-com")]);
+    expect((await readdir(root)).sort()).toEqual(["a-com", "b-com"]);
+    expect((await readdir(join(root, "b-com"))).sort()).toEqual([RECORD_FILE, SNAPSHOT_FILE, SPEC_FILE]);
   });
 
   it("reports a container that cannot be pulled and still writes the others", async () => {
@@ -1492,17 +1529,36 @@ describe("pullAccount", () => {
     const result = await pullAccount(client, "1", root);
     expect(result.outcomes.map((o) => o.record.publicId)).toEqual(["GTM-AAA"]);
     expect(result.failures).toEqual([{ publicId: "GTM-BBB", error: expect.stringMatching(/no versions/) }]);
-    expect(await readdir(root)).toEqual(["GTM-AAA"]);
+    expect(await readdir(root)).toEqual(["a-com"]);
   });
 
-  it("honours a filter", async () => {
+  it("honours a filter and a custom directory mapping", async () => {
     const { client, state } = fake();
     await seedLeadVersion(client, state, "accounts/1/containers/10");
     await seedLeadVersion(client, state, "accounts/1/containers/11");
     const root = await tmp();
-    const result = await pullAccount(client, "1", root, { filter: (r) => r.publicId === "GTM-BBB" });
+    const result = await pullAccount(client, "1", root, {
+      filter: (r) => r.publicId === "GTM-BBB",
+      dirFor: (r) => `prod-${r.containerId}`,
+    });
     expect(result.outcomes.map((o) => o.record.publicId)).toEqual(["GTM-BBB"]);
-    expect(await readdir(root)).toEqual(["GTM-BBB"]);
+    expect(await readdir(root)).toEqual(["prod-11"]);
+  });
+
+  it("appends the public id when two containers share a slug", async () => {
+    const { service, state } = createFakeService({
+      accounts: [{ accountId: "1", name: "Acme" }],
+      containers: [
+        { accountId: "1", containerId: "10", publicId: "GTM-AAA", name: "Acme" },
+        { accountId: "1", containerId: "11", publicId: "GTM-BBB", name: "acme" },
+      ],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await seedLeadVersion(client, state, "accounts/1/containers/10");
+    await seedLeadVersion(client, state, "accounts/1/containers/11");
+    const root = await tmp();
+    await pullAccount(client, "1", root);
+    expect((await readdir(root)).sort()).toEqual(["acme-gtm-aaa", "acme-gtm-bbb"]);
   });
 });
 ```
@@ -1520,6 +1576,8 @@ Append to `packages/gtm-apply/src/snapshot/dir.ts` (add `import { listContainers
 export interface PullAccountOptions {
   /** Keep only the containers this returns true for; default every container in the account. */
   filter?: (ref: ContainerRef) => boolean;
+  /** Directory name under outDir for a container; default containerSlug, de-duplicated. */
+  dirFor?: (ref: ContainerRef) => string;
 }
 
 export interface PullAccountResult {
@@ -1529,8 +1587,18 @@ export interface PullAccountResult {
   failures: { publicId: string; error: string }[];
 }
 
+/** Default directory names: the slug, with the public id appended wherever two refs would share one. */
+function defaultDirs(refs: readonly ContainerRef[]): string[] {
+  const slugs = refs.map((ref) => containerSlug(ref.name, ref.publicId));
+  const counts = new Map<string, number>();
+  for (const slug of slugs) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+  return slugs.map((slug, i) =>
+    (counts.get(slug) ?? 0) > 1 ? `${slug}-${refs[i].publicId.toLowerCase()}` : slug
+  );
+}
+
 /**
- * Pull every container of an account into `<outDir>/<publicId>/`. A container
+ * Pull every container of an account into `<outDir>/<slug>/`. A container
  * that cannot be pulled (no versions yet, a permission error) is reported and
  * does not stop the others.
  */
@@ -1541,8 +1609,9 @@ export async function pullAccount(
   options: PullAccountOptions = {}
 ): Promise<PullAccountResult> {
   const refs = (await listContainers(client, accountId)).filter(options.filter ?? (() => true));
+  const dirs = options.dirFor ? refs.map(options.dirFor) : defaultDirs(refs);
   const settled = await Promise.allSettled(
-    refs.map((ref) => pullContainer(client, { container: ref.publicId }, join(outDir, ref.publicId)))
+    refs.map((ref, i) => pullContainer(client, { container: ref.publicId }, join(outDir, dirs[i])))
   );
   const result: PullAccountResult = { outcomes: [], failures: [] };
   settled.forEach((s, i) => {
@@ -1632,8 +1701,8 @@ Add to `describe("runCli", …)`:
       (l) => lines.push(l)
     );
     expect(code).toBe(1);
-    expect(await readdir(root)).toEqual(["GTM-AAA"]);
-    expect(lines[0]).toBe(`GTM-AAA: wrote ${join(root, "GTM-AAA")}`);
+    expect(await readdir(root)).toEqual(["a-com"]);
+    expect(lines[0]).toBe(`GTM-AAA: wrote ${join(root, "a-com")}`);
     expect(lines[1]).toMatch(/^GTM-BBB: pull failed: .*no versions/);
   });
 
@@ -1677,7 +1746,7 @@ Add to `USAGE` after the snapshot lines:
   gtm-apply pull --container GTM-XXXXXXX --out <dir> [--live | --version <id> | --workspace <name>]
       (writes <dir>/spec.json, snapshot.json and container.json)
   gtm-apply pull --account <id> --out <dir>
-      (one <dir>/<publicId>/ per container; exits 1 if any container failed, after trying them all)
+      (one <dir>/<slug>/ per container, slug from the container name; exits 1 if any container failed, after trying them all)
 ```
 
 Add the case before `apply`:
@@ -1743,10 +1812,12 @@ The planner compares an array of uniquely keyed items (parameters, map entries) 
 ### Pull: a container as a directory
 
 ```bash
-gtm-apply pull --container GTM-XXXXXXX --out gtm/containers/GTM-XXXXXXX
-gtm-apply pull --account 6012345678 --out gtm/containers        # one <publicId>/ per container
+gtm-apply pull --container GTM-XXXXXXX --out gtm/containers/acme-com
+gtm-apply pull --account 6012345678 --out gtm/containers        # one <slug>/ per container
 gtm-apply snapshot --account 6012345678 --out snapshots         # one <publicId>.json per container
 ```
+
+With `--account`, each container's directory is named by a slug of its name (`acme.com` becomes `acme-com`; the lowercased public id is appended when two containers share a slug, or used alone when the name is empty), because directories are for people and a public id tells a reviewer nothing. `containerSlug(name, publicId)` computes it, and `pullAccount` takes a `dirFor` option for a repo that keeps its own mapping.
 
 `pull` writes three files: `spec.json`, the apply-able part in canonical form; `snapshot.json`, everything the API exposes; and `container.json`, the container's identity and what was read (the version id and name, the workspace, the serving environment) with no timestamp, so an unchanged container rewrites it byte for byte. A container whose spec cannot be normalized (a trigger group, a custom template tag until templates are supported) still gets the other two files, an existing `spec.json` is left alone, and the command exits 1 after every container was attempted. From code: `pullContainer(client, source, dir)`, `pullAccount(client, accountId, outDir, { filter })`, `pullSnapshots(client, sources)`, `snapshotAccount(client, accountId)` and `gtm.snapshotAccount(accountId)`.
 ````

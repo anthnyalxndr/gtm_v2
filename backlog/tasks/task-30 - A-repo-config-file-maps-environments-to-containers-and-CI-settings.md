@@ -4,7 +4,7 @@ title: A repo config file maps environments to containers and CI settings
 status: To Do
 assignee: []
 created_date: '2026-09-17 15:57'
-updated_date: '2026-09-23 21:29'
+updated_date: '2026-09-24 05:31'
 labels:
   - gtm-apply
   - gtm-as-code
@@ -36,4 +36,6 @@ Every command takes --container and --workspace flags. A repo managing container
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-09-23: the account repo that gtm init (TASK-36) scaffolds writes this config file with the account id and one entry per managed container (gtm/containers/<publicId>/), and the gtm loop commands (TASK-37) read it. Shape proposed in docs/superpowers/specs/2026-09-23-gtm-as-code-package-design.md, section 'Repo config file'.
+
+2026-09-24: the account repo keys config entries by a human slug (directory gtm/containers/<slug>/), each entry carrying publicId and optional env and dir; see the spec's 'Repo config file' and 'Directories are named by a slug' sections.
 <!-- SECTION:NOTES:END -->

@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-23 21:28'
+updated_date: '2026-09-24 05:31'
 labels:
   - gtm-as-code
 milestone: m-0
@@ -28,10 +29,10 @@ It prompts for OAuth when no token exists and lists the account's containers so 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 pnpm dlx @anthnyalxndr/gtm-as-code init acme-gtm --account <id> --all on an empty path produces a git repo with one import commit, a config file listing the account and every managed container, and gtm/containers/<publicId>/ holding spec.json, snapshot.json and container.json for each
-- [ ] #2 init refuses to run on a non-empty directory and on a path inside an existing git work tree, naming the reason
-- [ ] #3 Without --all, init lists the account's containers and asks which to manage; in a non-interactive terminal it exits 1 and names --all and --container as the options
-- [ ] #4 Scaffold files come from the package's templates/ directory; a test renders the scaffold into a temp directory against the fake service and checks the file set, that no credential or token file is written, and that .gitignore excludes them
-- [ ] #5 pnpm verify passes inside a generated repo, exercised by a test that links the workspace packages into the scaffold
-- [ ] #6 The package has a README, the root README lists it, and it builds and tests with pnpm -r build and pnpm -r test
+- [ ] #1 init refuses to run on a non-empty directory and on a path inside an existing git work tree, naming the reason
+- [ ] #2 Without --all, init lists the account's containers and asks which to manage; in a non-interactive terminal it exits 1 and names --all and --container as the options
+- [ ] #3 Scaffold files come from the package's templates/ directory; a test renders the scaffold into a temp directory against the fake service and checks the file set, that no credential or token file is written, and that .gitignore excludes them
+- [ ] #4 pnpm verify passes inside a generated repo, exercised by a test that links the workspace packages into the scaffold
+- [ ] #5 The package has a README, the root README lists it, and it builds and tests with pnpm -r build and pnpm -r test
+- [ ] #6 pnpm dlx @anthnyalxndr/gtm-as-code init acme-gtm --account <id> --all on an empty path produces a git repo with one import commit, a config file keyed by slug that maps every managed container to its public id, and gtm/containers/<slug>/ holding spec.json, snapshot.json and container.json for each, with the slug from containerSlug
 <!-- AC:END -->
