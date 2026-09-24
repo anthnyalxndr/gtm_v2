@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHitInfo, parameterEntries, HIT_PARAM_NAMES } from './hits'
+import { buildHitInfo, dedupeTransportDuplicates, parameterEntries, HIT_PARAM_NAMES } from './hits'
 
 const ctx = { messageIndex: 5, eventId: 4, groupId: 'g1' }
 const ga4 = {
@@ -67,5 +67,29 @@ describe('buildHitInfo', () => {
   it('skips a record with no usable url', () => {
     expect(buildHitInfo({ target: 'G-1' }, ctx)).toBeUndefined()
     expect(buildHitInfo({ url: 'not a url', target: 'G-1' }, ctx)).toBeUndefined()
+  })
+})
+
+describe('dedupeTransportDuplicates', () => {
+  const url = 'https://pagead2.googlesyndication.com/ccm/collect?tid=AW-9&en=page_view'
+  it('keeps the first of a measurement sent under two transport formats', () => {
+    const records = [
+      { url: `${url}&fmt=8`, target: ['AW-9'] },
+      { url: `${url}&fmt=3`, target: ['AW-9'] },
+    ]
+    expect(dedupeTransportDuplicates(records)).toEqual([records[0]])
+  })
+  it('keeps hits that differ in anything but the format', () => {
+    const records = [
+      { url: `${url}&fmt=8`, target: ['AW-9'] },
+      { url: `${url.replace('page_view', 'conversion')}&fmt=3`, target: ['AW-9'] },
+    ]
+    expect(dedupeTransportDuplicates(records)).toHaveLength(2)
+  })
+  it('ignores parameter order and keeps records it cannot key', () => {
+    const a = { url: 'https://x.test/c?b=2&a=1&fmt=8' }
+    const b = { url: 'https://x.test/c?a=1&b=2&fmt=3' }
+    expect(dedupeTransportDuplicates([a, b])).toEqual([a])
+    expect(dedupeTransportDuplicates([{ target: 'x' }, { target: 'y' }])).toHaveLength(2)
   })
 })

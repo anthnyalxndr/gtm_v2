@@ -1,13 +1,13 @@
 import type { RawSession } from '../report/parse-records'
 import type { RawRecord } from '../session/debug-queue'
 import { toJsLiteral } from './js-literal'
-import { buildHitInfo, type HitContext } from './hits'
+import { buildHitInfo, dedupeTransportDuplicates, type HitContext } from './hits'
 import { eventTitle, tagTemplate, variableTemplate } from './templates'
 
 /** A `data` entry per hit the runtime reported for this message, or nothing when there are none. */
 function hitEntries(records: RawRecord[], ctx: HitContext): AnyRecord[] {
-  const hitInfo = records
-    .map((r) => buildHitInfo(r as unknown as AnyRecord, ctx))
+  const hitInfo = dedupeTransportDuplicates(records as unknown as AnyRecord[])
+    .map((r) => buildHitInfo(r, ctx))
     .filter((h): h is AnyRecord => h !== undefined)
   return hitInfo.length ? [{ eventId: ctx.eventId, priorityId: 1, hitInfo }] : []
 }

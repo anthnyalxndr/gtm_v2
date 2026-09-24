@@ -137,3 +137,41 @@ export function buildHitInfo(record: AnyRecord, ctx: HitContext): AnyRecord | un
     firedMessageKey: key,
   }
 }
+
+/**
+ * The Ads consent endpoint `/ccm/collect` is sent twice, once with `fmt=8` and once with
+ * `fmt=3`, and both requests really do leave the browser (seen on the wire, 2026-09-23). A
+ * native export shows one of them: for the page-view session compared in task-22 it kept the
+ * `fmt=8` record, which the runtime reported first. So the export collapses a measurement
+ * delivered by two transports into one entry.
+ *
+ * Only the export collapses them. The `SessionReport` still lists both network requests,
+ * because both were made.
+ *
+ * Provisional, task-22: one session is thin evidence for "keep the first" over "drop fmt=3".
+ */
+export function dedupeTransportDuplicates(records: AnyRecord[]): AnyRecord[] {
+  const seen = new Set<string>()
+  const out: AnyRecord[] = []
+  for (const r of records) {
+    const key = transportAgnosticKey(r)
+    if (key !== undefined && seen.has(key)) continue
+    if (key !== undefined) seen.add(key)
+    out.push(r)
+  }
+  return out
+}
+
+/** Everything identifying about a hit except the transport format. */
+function transportAgnosticKey(record: AnyRecord): string | undefined {
+  if (typeof record.url !== 'string') return undefined
+  try {
+    const u = new URL(record.url)
+    u.searchParams.delete('fmt')
+    u.searchParams.sort()
+    const body = typeof record.postBody === 'string' ? record.postBody : ''
+    return `${u.origin}${u.pathname}?${u.searchParams.toString()}|${body}`
+  } catch {
+    return undefined
+  }
+}

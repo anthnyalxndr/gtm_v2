@@ -81,13 +81,21 @@ messages against the native 13, and the three extra kinds are why.
 capture time and put `gtm.dom` at 3. Ordering feeds `abstractModel`, which accumulates dataLayer
 state, so some of those 104 differences are this rather than a separate problem.
 
-**Two differences in the hits themselves, both understood.** A native hit carries `dr`
-(Page Referrer) and ours does not, because a native preview is opened from
-tagassistant.google.com while a headless run navigates straight to the page. That is worth
-knowing beyond the export: a referrer-based trigger would behave differently in a native
-preview than for a real visitor. And the Ads endpoint reported two hits to us, differing only
-in `fmt` (8 and 3), where the native export shows one; both are records the runtime made, so
-both are kept until there is reason to drop one.
+**The hits now match the native export**: the same two, on the same container and message,
+with the same titles, subtitles, types and destinations. Two things were learned getting
+there.
+
+The Ads consent endpoint `/ccm/collect` is sent twice, once with `fmt=8` and once with
+`fmt=3`, and both requests really do leave the browser. A native export shows one, the `fmt=8`
+record, which the runtime reported first. So the export collapses a measurement delivered by
+two transports, and this tool now does the same. Only the export collapses them: the
+`SessionReport` still lists all nine network requests, because all nine were made. Checking
+which of the two the native kept, rather than picking one, is what settled it.
+
+A native hit carries `dr` (Page Referrer) and ours does not, because a native preview opens
+the page from tagassistant.google.com while a headless run navigates straight to it. That is
+an accepted difference, and it matters beyond the export: a referrer-based trigger behaves
+differently under a native preview than for a real visitor.
 
 **Not yet examined:** `consentData` (the native lists seven consent types to our four, and its
 entries carry `default` and `quiet` flags we do not write), `tagInfo` and `tagsFired`
