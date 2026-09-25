@@ -499,3 +499,79 @@ interface AnyVendorBlock {
   paramMaps: Record<string, unknown>
   environmentLinkType?: number
 }
+
+describe('consent state on a message (task-22.3)', () => {
+  const base = raw as unknown as RawSession
+  const withConsent = (entry: Record<string, boolean>, granted = true): Record<string, unknown> => {
+    const types = [
+      'ad_storage',
+      'analytics_storage',
+      'ad_user_data',
+      'ad_personalization',
+      'functionality_storage',
+      'personalization_storage',
+      'security_storage',
+    ]
+    return {
+      fullConsentList: Object.fromEntries(
+        types.map((t) => [t, { consentEntry: entry, isConsentGranted: granted }]),
+      ),
+      usedContainerConsent: false,
+      wasSetLate: false,
+    }
+  }
+  const exportWith = (consentData: Record<string, unknown>) => {
+    const ev = base.records.find((r) => r.messageType === 'EVENT_STARTED')!
+    const doc = buildTagAssistantExport(
+      { ...base, records: base.records.map((r) => (r === ev ? { ...r, consentData } : r)) },
+      opts,
+    ) as unknown as { data: { containers: { messages: Record<string, unknown>[] }[] } }
+    const m = doc.data.containers[0]!.messages.find((x) => x.eventId === ev.key!.eventId)!
+    return m.consentData as {
+      consentList: { type: string; status: string }[]
+      consentStatus: Record<string, boolean>
+      fullConsentList: Record<string, unknown>
+    }
+  }
+
+  it('passes the feed consent list through and lists every type it reports', () => {
+    const cd = exportWith(withConsent({ implicit: true, default: true, quiet: false }))
+    expect(cd.consentList).toHaveLength(7)
+    expect(cd.consentList[0]).toEqual({ type: 'ad_storage', status: 'granted' })
+    expect(cd.fullConsentList.ad_storage).toEqual({
+      consentEntry: { implicit: true, default: true, quiet: false },
+      isConsentGranted: true,
+    })
+  })
+
+  it('reports fewer types when the feed reports fewer, rather than inventing them', () => {
+    const cd = exportWith({
+      fullConsentList: { ad_storage: { consentEntry: { implicit: true }, isConsentGranted: true } },
+      wasSetLate: false,
+    })
+    expect(cd.consentList.map((c) => c.type)).toEqual(['ad_storage'])
+    expect(cd.consentStatus).toMatchObject({ default: false, update: false })
+  })
+
+  it('derives the default and update flags from the entries, since the feed has no update field', () => {
+    expect(
+      exportWith(withConsent({ implicit: true, default: true, quiet: false })).consentStatus,
+    ).toMatchObject({ default: true, update: false })
+    expect(
+      exportWith(withConsent({ implicit: false, default: true, update: true })).consentStatus,
+    ).toMatchObject({ default: true, update: true })
+  })
+
+  it('marks a denied type denied and never claims TCF, which the feed does not report', () => {
+    const cd = exportWith(withConsent({ implicit: true, default: true }, false))
+    expect(cd.consentList.every((c) => c.status === 'denied')).toBe(true)
+    expect(cd.consentStatus.tcf).toBe(false)
+  })
+
+  it('gives a tag that fired the same consent state as its message, which is what tagsFired shows', () => {
+    const tagConsent = (fired.tagInfo as Record<string, unknown>[])[0]!.consentData
+    expect(tagConsent).toEqual(fired.consentData)
+    const tf = container.tagsFired as Record<string, unknown[]>
+    expect(tf['GA4 - form_submit']![0]).toBe(fired)
+  })
+})

@@ -243,3 +243,35 @@ tag's INIT record `parentTargetReference.ctid`. The same record's sibling field 
 comes from `developer_id.<id>: true` keys of a gtag `set` command; the ids also reach the
 dataLayer and a native export does not list the ones that only appear there. Both now match the
 native file exactly.
+
+## Consent state, and what the comparator was not measuring (2026-09-25)
+
+The seven consent types and the `default` and `quiet` flags are already in the debug feed, in
+each record's `consentData.fullConsentList`. The export passes that object through unchanged,
+and it equals the source record on all 46 messages of the captured contact session. GTM reports
+four types carrying only `implicit` until it has seen a consent command, then seven carrying
+`default` and `quiet`. Nothing needs inventing.
+
+`consentStatus` is different. The feed has no `update` field at all, and Tag Assistant derives
+both flags from the entries: `default` is true when any type's `consentEntry.default` is true,
+`update` likewise. Checked both ways. The derived `default` agrees with the feed's own
+`defaultConsent` on all 412 records of the session, and the rule reproduces the native export's
+`default` and `update` on all 67 of its messages. The feed never reports TCF, so `tcf` is
+always false. With this, `update` is true on the same seven messages as the native export,
+where before it was false everywhere.
+
+### The comparison numbers were shape only
+
+`compareExports` takes a `compareValues` option that is off by default, and the numbers quoted
+above it were counting structure: a key present on one side, a type mismatch, an array of a
+different length. A field holding the wrong value was not counted. Passing `--values` to
+`pnpm compare` turns it on. For the contact flow the two numbers are now 633 differences in
+shape and 2195 with values included. Both matter, and the shape number alone was hiding, among
+other things, that `consentStatus.update` was never true.
+
+The remaining consent difference against the native file is `wasSetLate`, true on 35 of our
+messages and false on all of the native ones. That is the feed's own value, true on 378 of our
+412 records. In the headless run the site's consent default command arrives after GTM has
+already raised its first events, so consent genuinely was set late. It is the same class of
+difference as the extra `user_engagement`: two recordings of a live site, not two renderings of
+one session.
