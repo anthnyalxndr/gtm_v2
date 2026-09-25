@@ -6,6 +6,7 @@
  * Shapes here were read from a native page-view export of GTM-5KNSPW9K (2026-09-23). Fields
  * whose meaning is not settled are marked; task-22 should confirm them against more exports.
  */
+import { describeParameter, dictionaryFor, type HitDictionary } from './hit-descriptors'
 
 type AnyRecord = Record<string, unknown>
 
@@ -14,36 +15,6 @@ type AnyRecord = Record<string, unknown>
  * keeps its raw key, which is what a native export does: `dma`, `frm`, `gcd`, `ibt`, `ngs`,
  * `pscdl` and `rcb` all appear unchanged there.
  */
-export const HIT_PARAM_NAMES: Readonly<Record<string, string>> = {
-  v: 'Protocol Version',
-  tid: 'Measurement ID',
-  cid: 'Client ID',
-  en: 'Event Name',
-  dl: 'Page Location',
-  dr: 'Page Referrer',
-  dt: 'Page Title',
-  ul: 'Language',
-  sr: 'Screen Resolution',
-  sid: 'Session ID',
-  sct: 'Session Count',
-  seg: 'Session Engaged',
-  _ss: 'Session Start',
-  _fv: 'First Visit',
-  _nsi: 'New to Site',
-  _p: 'Random Page ID',
-  _s: 'Request Number',
-  _dbg: 'Debug View',
-  gcs: 'Cookie Consent State',
-  dma_cps: 'Google Services Consent State',
-  npa: 'Non-personalized Ads',
-  tag_exp: 'Tag Experiments',
-  _et: 'Engagement Time',
-  _eu: 'Event Usage',
-  sst: 'Session Start Time',
-  ep: 'Event Parameter',
-  up: 'User Property',
-}
-
 /** GA4 event names Tag Assistant titles rather than showing raw. */
 const HIT_TITLES: Readonly<Record<string, string>> = {
   page_view: 'Page View',
@@ -81,20 +52,26 @@ const subtitleFor = (host: string, path: string): { subtitle: string; type: numb
     ? { subtitle: 'Google Analytics Hit', type: 2 }
     : { subtitle: 'Google Ads Event', type: 3 }
 
-export function parameterEntries(url: URL, postBody?: string): AnyRecord[] {
+/**
+ * Every parameter of a hit, from the query string and from a POST body if there is one. A
+ * parameter Tag Assistant's dictionary covers carries a descriptor; one it does not carries
+ * none, which a native export shows for 38 of the parameters in the captured contact flow.
+ */
+export function parameterEntries(
+  url: URL,
+  dictionary: HitDictionary,
+  postBody?: string,
+): AnyRecord[] {
   const pairs: [string, string][] = [...url.searchParams]
   if (postBody) {
     for (const line of postBody.split('\n')) {
       for (const [k, v] of new URLSearchParams(line)) pairs.push([k, v])
     }
   }
-  return pairs.map(([name, value]) => ({
-    name,
-    value,
-    // A native export gives every parameter a descriptor; the display name falls back to the
-    // key itself. `type` is 1 for `v` and 0 for the rest in the one export seen, so 0 here.
-    descriptor: { shortName: name, type: 0, displayName: HIT_PARAM_NAMES[name] ?? name },
-  }))
+  return pairs.map(([name, value]) => {
+    const descriptor = describeParameter(dictionary, name)
+    return descriptor ? { name, value, descriptor } : { name, value }
+  })
 }
 
 /** Build one `hitInfo` entry from a runtime GTAG_HIT record. Returns undefined if unusable. */
@@ -128,6 +105,7 @@ export function buildHitInfo(record: AnyRecord, ctx: HitContext): AnyRecord | un
     baseUrl: `${url.origin}${url.pathname}`,
     parameters: parameterEntries(
       url,
+      dictionaryFor(`${url.origin}${url.pathname}`, type),
       typeof record.postBody === 'string' ? record.postBody : undefined,
     ),
     destination,

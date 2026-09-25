@@ -275,3 +275,39 @@ messages and false on all of the native ones. That is the feed's own value, true
 already raised its first events, so consent genuinely was set late. It is the same class of
 difference as the extra `user_engagement`: two recordings of a live site, not two renderings of
 one session.
+
+## Hit parameter descriptors (2026-09-25)
+
+Unlike the template definitions, these are not fetched. Tag Assistant carries them in its own
+bundle as one array per vendor, each ending with a spread of the same eight consent
+descriptors:
+
+| Variable in `new_debug_app_compiled.js` | Vendor                                | Entries |
+| --------------------------------------- | ------------------------------------- | ------- |
+| `RWb`                                   | Google Ads                            | 47      |
+| `XWb`                                   | Universal Analytics                   | 144     |
+| `bXb`                                   | GA4                                   | 65      |
+| `iXb`                                   | Floodlight, DV360                     | 13      |
+| `W$`                                    | consent, spread into each of the four | 8       |
+
+Each array is split into a map of exact short names and a list of entries carrying a
+`shortNameRegExp`, which is how `ep.form_id` gets the "Event Parameter" descriptor. Lookup is
+exact first, then the first matching pattern, then nothing: a parameter no entry covers gets no
+`descriptor` field at all, which the native contact export shows for 38 of its parameters. A
+`RegExp` serialises to `{}`, so that is what `shortNameRegExp` looks like in the file.
+
+Which array applies is decided by the endpoint rather than the vendor. The Ads `ccm/collect`
+endpoint carries GA4's parameter names, so a hit whose subtitle reads "Google Ads Event" is
+described from the GA4 list: "Event Name" with a capital N, and `dt` as "Page Title", neither of
+which the Ads list holds at all. Applying that rule reproduces all 719 parameter descriptors in
+the native contact export exactly, including which parameters have none.
+
+### Measuring it needed two comparator changes
+
+Hit parameters are now aligned by name. Without that, one extra parameter shifted every later
+one and turned a single difference into a run of 301. And the values that belong to one visit
+are ignored, the way the volatile keys already were: the client and session ids, the random page
+id, engagement time, screen resolution, user agent, cache busters. What is left is two
+parameters present in one recording and not the other, `_gaz` and `gdid`.
+
+The contact flow now reads 571 differences in shape and 1498 with values, from 633 and 2195.

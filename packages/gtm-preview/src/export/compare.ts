@@ -33,6 +33,32 @@ export const VOLATILE_KEYS: ReadonlySet<string> = new Set([
   'uniqueEventId',
 ])
 
+/**
+ * Hit parameters whose value belongs to one visit: identifiers the runtime mints, the
+ * browser and screen the session ran in, cache busters and elapsed times. Their presence and
+ * their descriptor are still compared, only the value is ignored.
+ */
+export const VOLATILE_HIT_PARAMS: ReadonlySet<string> = new Set([
+  'cid',
+  'sid',
+  'auid',
+  'gdid',
+  '_p',
+  '_et',
+  'sr',
+  'uafvl',
+  'gtm',
+  'tag_exp',
+  'rcb',
+  'rnd',
+  'tft',
+  'tfd',
+  'random',
+  'z',
+])
+
+const VOLATILE_HIT_VALUE = /\.hitInfo\[[^\]]*\]\.parameters\[([^\]]*)\]\.value$/
+
 /** Query parameters GTM adds per session, which make otherwise equal URLs differ. */
 const VOLATILE_PARAMS = ['gtm_debug', 'gtm_auth', 'gtm_preview', '_dbg']
 
@@ -135,6 +161,8 @@ export function compareExports(
     }
     if (!options.compareValues) return
     if (key !== undefined && VOLATILE_KEYS.has(key)) return
+    const hitParam = VOLATILE_HIT_VALUE.exec(path)
+    if (hitParam && VOLATILE_HIT_PARAMS.has(hitParam[1]!)) return
     const na = typeof a === 'string' ? normaliseUrl(a) : a
     const nb = typeof b === 'string' ? normaliseUrl(b) : b
     if (na !== nb) out.push({ path, kind: 'value', native: a, ours: b })
@@ -188,4 +216,12 @@ export const EXPORT_ALIGNMENT: Record<string, KeyFn> = {
   '$.data.containers[].groups': (_el, i) => `group${i}`,
   '$.data.containers[].messages[].tagInfo': (el) => String((el as { name?: string }).name),
   '$.data.containers[].messages[].macroInfo': (el) => String((el as { name?: string }).name),
+  '$.data.containers[].messages[].data[].hitInfo': (el) => {
+    const h = el as { title?: string; baseUrl?: string }
+    return `${h.title ?? ''} ${h.baseUrl ?? ''}`
+  },
+  // Without this one extra parameter shifts every later one, turning a single difference into
+  // a run of them.
+  '$.data.containers[].messages[].data[].hitInfo[].parameters': (el) =>
+    String((el as { name?: string }).name),
 }

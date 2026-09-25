@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildHitInfo, dedupeTransportDuplicates, parameterEntries, HIT_PARAM_NAMES } from './hits'
+import { buildHitInfo, dedupeTransportDuplicates, parameterEntries } from './hits'
 
 const ctx = { messageIndex: 5, eventId: 4, groupId: 'g1' }
 const ga4 = {
@@ -12,20 +12,40 @@ const ads = {
 }
 
 describe('parameterEntries', () => {
-  it('gives every parameter a descriptor, falling back to the raw key', () => {
-    const p = parameterEntries(new URL(ga4.url))
+  it('describes a parameter the dictionary covers and leaves the rest bare', () => {
+    const p = parameterEntries(new URL(ga4.url), 'ga4')
     expect(p[0]).toEqual({
       name: 'v',
       value: '2',
-      descriptor: { shortName: 'v', type: 0, displayName: 'Protocol Version' },
+      descriptor: { shortName: 'v', type: 1, displayName: 'Protocol Version' },
     })
-    expect(p.find((x) => (x as { name: string }).name === 'dma')).toMatchObject({
-      descriptor: { displayName: 'dma' },
+    // A native export writes no descriptor at all for a parameter it does not know.
+    expect(p.find((x) => (x as { name: string }).name === 'dma')).toEqual({
+      name: 'dma',
+      value: '0',
     })
-    expect(HIT_PARAM_NAMES.cid).toBe('Client ID')
   })
+
+  it('matches a parameter family by its pattern, as ep.<name> is', () => {
+    const p = parameterEntries(new URL('https://x.test/g/collect?ep.form_id=contact'), 'ga4')
+    expect(p[0]).toEqual({
+      name: 'ep.form_id',
+      value: 'contact',
+      descriptor: {
+        shortName: 'ep.',
+        shortNameRegExp: {},
+        type: 0,
+        displayName: 'Event Parameter',
+      },
+    })
+  })
+
   it('reads a batched post body as more parameters', () => {
-    const p = parameterEntries(new URL('https://x.test/g/collect?v=2'), 'en=scroll&epn.percent=90')
+    const p = parameterEntries(
+      new URL('https://x.test/g/collect?v=2'),
+      'ga4',
+      'en=scroll&epn.percent=90',
+    )
     expect(p.map((x) => (x as { name: string }).name)).toEqual(['v', 'en', 'epn.percent'])
   })
 })
