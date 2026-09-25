@@ -439,3 +439,63 @@ describe('gtag commands and non-event pushes as messages (task-22.1)', () => {
     expect(messages).toHaveLength(8 + 4)
   })
 })
+
+describe('template definitions drive the parameter split (task-22.2)', () => {
+  const tag = (fired.tagInfo as Record<string, unknown>[])[0]!
+  const named = (ps: unknown) =>
+    (ps as { key: string; name: string }[]).map((p) => `${p.key}=${p.name}`)
+
+  it('puts a declared parameter in params under the template display name', () => {
+    expect(named(tag.params)).toEqual([
+      'vtp_eventName=Event Name',
+      'vtp_measurementIdOverride=Measurement ID',
+    ])
+  })
+
+  it('puts an undeclared parameter in internalParams with no name', () => {
+    expect(named(tag.internalParams)).toEqual([
+      'vtp_enableUserProperties=',
+      'vtp_enableEuid=',
+      'vtp_migratedToV2=',
+      'vtp_demoV2=',
+      'tag_id=',
+    ])
+  })
+
+  it('leaves the keys that name the template out of both lists', () => {
+    const all = [...(tag.params as { key: string }[]), ...(tag.internalParams as { key: string }[])]
+    expect(all.map((p) => p.key)).not.toContain('function')
+    expect(all.map((p) => p.key)).not.toContain('original_vendor_template_id')
+  })
+
+  it('takes the tag type and thumbnail from the definition', () => {
+    expect(tag).toMatchObject({
+      type: 'Google Analytics: GA4 Event',
+      thumbnail: 'thumbnail-ga.svg',
+    })
+  })
+
+  it('applies the same split to variables in macroInfo', () => {
+    const v = (fired.macroInfo as Record<string, unknown>[]).find((x) => x.name === 'Page URL')!
+    expect(v.variableType).toBe('URL')
+    expect(named(v.params)).toEqual(['vtp_component=Component Type'])
+    expect(named(v.internalParams)).toEqual([
+      'vtp_enableMultiQueryKeys=',
+      'vtp_enableIgnoreEmptyQueryParam=',
+    ])
+  })
+
+  it('writes the definitions and their derived paramMaps for the templates used', () => {
+    const block = Object.values(container.vendorTemplates as Record<string, AnyVendorBlock>)[0]!
+    expect(Object.keys(block.vendorTemplateTypes).sort()).toEqual(['c', 'e', 'f', 'gaawe', 'u'])
+    expect(Object.keys(block.paramMaps).sort()).toEqual(['c', 'e', 'f', 'gaawe', 'u'])
+    expect(block.vendorTemplateTypes.gaawe!.publicId).toBe('gaawe')
+    expect(block.environmentLinkType).toBe(4)
+  })
+})
+
+interface AnyVendorBlock {
+  vendorTemplateTypes: Record<string, { publicId: string }>
+  paramMaps: Record<string, unknown>
+  environmentLinkType?: number
+}

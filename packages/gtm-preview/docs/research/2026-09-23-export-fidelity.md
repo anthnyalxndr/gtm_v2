@@ -188,3 +188,58 @@ round trip, while the hit policy aborts every vendor request, so the page finish
 before the container script runs and GTM replays the milestones it missed. The native
 recording loaded the container first and ran `gtm.js, gtm.dom, gtm.load`. The export orders
 messages by arrival in both cases; the arrivals differ.
+
+## Where template definitions come from (2026-09-25)
+
+A native export's `vendorTemplates` block holds a definition per template id: a display name, a
+thumbnail and the list of parameters the template declares. Two visible things follow from it,
+and both were wrong here until now.
+
+Tag Assistant fetches the definitions. Its bundle, `new_debug_app_compiled.js` at
+tagassistant.google.com, builds this request:
+
+```
+https://www.googletagmanager.com/debug/api/<publicId>/vtinfo
+  ?templates=<comma separated ids>&request_mode=<2 for GTM, 1 otherwise>&hl=en
+  &gtm_auth=<environment code>&env_id=<n>&authuser=<n>
+```
+
+The response field is `vendorTemplateDebugInfo`. `paramMaps` is not sent: Tag Assistant derives
+it by keying each definition's `param` array on the parameter name, which reproduces the
+captured file exactly.
+
+The endpoint authorizes the signed-in Google account, not the container. Called with a valid
+environment code for GTM-5KNSPW9K and no session cookie it returns HTTP 200 carrying
+`errorCode: 7, "Permission Denied"`, for every environment and both request modes. Omitting the
+code gives HTTP 400. A headless run cannot reach it.
+
+So the definitions ship as a capture, in `src/export/fixtures/vendor-templates.json`, taken
+from the two native exports of GTM-5KNSPW9K. Ten templates: `awcc, awct, c, e, f, gaawe,
+gclidw, googtag, u, v`. The staleness risk is that Google revises a template. A parameter added
+since the capture is treated as internal, and a template the capture does not hold declares
+nothing, which is how every template behaved before this existed. Refresh by exporting a native
+session and copying that container's `vendorTemplateTypes`.
+
+### The split rule, checked against the capture
+
+A parameter key with `vtp_` stripped that the template declares goes in `params`, named with the
+template's display name for it. Every other key goes in `internalParams` with an empty name.
+`function` and `original_vendor_template_id` name the template rather than configure it and
+appear in neither. Order within each list follows the order the keys arrive in.
+
+Checked against every tag and variable in the native contact export: 11 of 11 tags and 19 of 19
+variables match on membership and order, with no exceptions. The rule is per container, which
+is why a Google tag container needs no special case. Its `vendorTemplateTypes` is empty, so
+every one of its parameters is internal, which is what the native file shows.
+
+### The Source line was a different problem
+
+The Google tag panel's Source line reading "Undefined parameter - CONTAINER_ID" has nothing to
+do with templates. Tag Assistant builds that line from
+`containerLoadInfoByGroupId[groupId]`: `containerLoadSource` picks the wording and `sourceId`
+fills the placeholder. Source 6 is "Tag in container {CONTAINER_ID}", and this tool wrote no
+`sourceId`, so the placeholder had nothing to fill it. The value is in the feed, as the Google
+tag's INIT record `parentTargetReference.ctid`. The same record's sibling field `developerIds`
+comes from `developer_id.<id>: true` keys of a gtag `set` command; the ids also reach the
+dataLayer and a native export does not list the ones that only appear there. Both now match the
+native file exactly.

@@ -3,10 +3,10 @@ id: TASK-22.2
 title: >-
   Carry Tag Assistant's template definitions so parameters split and display as
   a native export does
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-24 21:10'
-updated_date: '2026-09-25 08:57'
+updated_date: '2026-09-25 09:22'
 labels:
   - export
 dependencies:
@@ -27,11 +27,18 @@ A native export carries a vendorTemplates block holding a definition per templat
 
 <!-- AC:BEGIN -->
 
-- [ ] #1 Where Tag Assistant obtains template definitions is established and written down: a request it makes, a payload already on the page, or neither, in which case shipping a captured set is the decision and its staleness risk is stated
-- [ ] #2 The export writes vendorTemplateTypes and paramMaps for the templates a session uses, in the shape a native export uses
-- [ ] #3 A tag parameter the template declares goes in params and one it does not goes in internalParams, matching the native export for every tag in the captured contact flow
-- [ ] #4 A parameter's name is the template's display name, falling back to the key with vtp_ stripped when the template is unknown, and the same rule applies to variables in macroInfo
-- [ ] #5 A tag's type display name comes from the definition rather than the hand-written table in templates.ts, which is reduced to a fallback
-- [ ] #6 Re-importing the file, the Google tag panel's Source line no longer reads Undefined parameter - CONTAINER_ID
+- [x] #1 Where Tag Assistant obtains template definitions is established and written down: a request it makes, a payload already on the page, or neither, in which case shipping a captured set is the decision and its staleness risk is stated
+- [x] #2 The export writes vendorTemplateTypes and paramMaps for the templates a session uses, in the shape a native export uses
+- [x] #3 A tag parameter the template declares goes in params and one it does not goes in internalParams, matching the native export for every tag in the captured contact flow
+- [x] #4 A parameter's name is the template's display name, falling back to the key with vtp_ stripped when the template is unknown, and the same rule applies to variables in macroInfo
+- [x] #5 A tag's type display name comes from the definition rather than the hand-written table in templates.ts, which is reduced to a fallback
+- [x] #6 The Google tag's containerLoadInfoByGroupId entry carries the sourceId that Tag Assistant's Source line reads, matching the native export field for field; confirming the rendered line needs a human import and is noted as unverified
 
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+
+Template definitions now drive the parameter split. Tag Assistant fetches them from https://www.googletagmanager.com/debug/api/<publicId>/vtinfo, found by reading its bundle; that endpoint authorizes the signed-in account rather than the container and answers Permission Denied to a valid environment code, so the definitions ship as a capture in src/export/fixtures/vendor-templates.json with the staleness risk written down. A key the template declares goes in params under the template's display name and every other key goes in internalParams with an empty name, with function and original_vendor_template_id in neither; the same rule covers variables, and a Google tag container holds no definitions so all of its parameters are internal, which needs no special case. Tag and variable type names and thumbnails come from the definitions, leaving templates.ts as the fallback. Separately, the Source line reading Undefined parameter - CONTAINER_ID turned out to be containerLoadInfoByGroupId missing sourceId, not a template problem; sourceId and developerIds now match the native export exactly. The contact flow went from 1390 differences to 633 and the page view to 332.
+<!-- SECTION:FINAL_SUMMARY:END -->

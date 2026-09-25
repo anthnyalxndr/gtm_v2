@@ -3,6 +3,7 @@ import type { RawRecord } from '../session/debug-queue'
 import { toJsLiteral } from './js-literal'
 import { buildHitInfo, dedupeTransportDuplicates, type HitContext } from './hits'
 import { eventTitle, tagTemplate, variableTemplate } from './templates'
+import { TemplateSet } from './vendor-templates'
 
 /**
  * What a native export calls an in-page gtag command. `set` becomes `gtag.set` titled Set,
@@ -63,35 +64,30 @@ interface ParamPair {
   value: [string, string]
 }
 
-/** Template parameters arrive as [template, resolved] pairs; render both as literals. */
-function paramPairs(data: unknown, skip: Set<string>): ParamPair[] {
-  const out: ParamPair[] = []
+/**
+ * Split a tag's or a variable's parameters the way a native export does. A key the template
+ * declares goes in `params` under the template's display name for it; every other key goes in
+ * `internalParams` with an empty name. `function` and `original_vendor_template_id` name the
+ * template rather than configure it, and appear in neither. Values arrive as
+ * [template, resolved] pairs; both are rendered as literals.
+ */
+function splitParams(
+  data: unknown,
+  templates: TemplateSet,
+  templateId: string,
+): { params: ParamPair[]; internalParams: ParamPair[] } {
+  const params: ParamPair[] = []
+  const internalParams: ParamPair[] = []
   for (const [key, v] of Object.entries(obj(data))) {
-    if (skip.has(key)) continue
+    if (key === 'function' || key === 'original_vendor_template_id') continue
     const pair = Array.isArray(v) && v.length === 2 ? v : [v, v]
-    out.push({
-      key,
-      name: key.replace(/^vtp_/, ''),
-      value: [toJsLiteral(pair[0], true), toJsLiteral(pair[1], true)],
-    })
+    const value: [string, string] = [toJsLiteral(pair[0], true), toJsLiteral(pair[1], true)]
+    const declared = templates.paramName(templateId, key)
+    if (declared === undefined) internalParams.push({ key, name: '', value })
+    else params.push({ key, name: declared, value })
   }
-  return out
+  return { params, internalParams }
 }
-
-const INTERNAL_TAG_KEYS = new Set([
-  'function',
-  'tag_id',
-  'metadata',
-  'once_per_event',
-  'once_per_load',
-  'setup_tags',
-  'teardown_tags',
-  'unlimited',
-  'live_only',
-  'vtp_gtmTagId',
-  'priority',
-  'consent',
-])
 
 function consentData(record: RawRecord | undefined): AnyRecord {
   const cd = obj(record?.consentData)
@@ -146,7 +142,7 @@ export const LISTENER_TAG_TYPES: ReadonlySet<string> = new Set([
   'jel',
 ])
 
-function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
+function buildTagInfo(started: RawRecord, recs: RawRecord[], templates: TemplateSet): AnyRecord[] {
   const startedByName = new Map<string, RawRecord>()
   const statusByName = new Map<string, string>()
   for (const r of recs) {
@@ -164,26 +160,22 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
     const templateId = str(obj(info.metadata).type) || str(obj(info.tagData).function)
     const template = tagTemplate(templateId)
     const tagData = obj(info.tagData)
+    const { params, internalParams } = splitParams(tagData, templates, templateId)
     const entry: AnyRecord = {
       index,
       name,
       displayName: name,
       publicId: templateId,
-      type: template.name,
+      type: templates.displayName(templateId) ?? template.name,
       vtType: 1,
-      params: paramPairs(tagData, INTERNAL_TAG_KEYS),
-      internalParams: paramPairs(
-        Object.fromEntries(
-          Object.entries(tagData).filter(([k]) => INTERNAL_TAG_KEYS.has(k) && k !== 'function'),
-        ),
-        new Set(),
-      ),
+      params,
+      internalParams,
       nominatedTags: [] as number[],
       setupTags: [],
       teardownTags: [],
       consentData: { consentList: [] },
       isHidden: false,
-      thumbnail: template.thumbnail,
+      thumbnail: templates.thumbnail(templateId) ?? template.thumbnail,
       disabledInGoogleMode: false,
     }
     const fired = startedByName.get(name)
@@ -201,24 +193,60 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[]): AnyRecord[] {
   return entries.filter((e) => !str(e.name, '').startsWith(IMPLICIT_TAG_PREFIX))
 }
 
-function buildMacroInfo(dataLayer: RawRecord | undefined): AnyRecord[] {
+function buildMacroInfo(dataLayer: RawRecord | undefined, templates: TemplateSet): AnyRecord[] {
   return arr(dataLayer?.macroInfo).map((m) => {
     const info = obj(m)
     const templateId = str(info.type) || str(obj(info.macroData).function)
     const resolved = info.resolvedValue
+    const { params, internalParams } = splitParams(info.macroData, templates, templateId)
     return {
       name: str(info.name),
       variablePublicId: templateId,
-      variableType: variableTemplate(templateId).name,
+      variableType: templates.displayName(templateId) ?? variableTemplate(templateId).name,
       returnType: resolved === null ? 'null' : typeof resolved,
-      params: paramPairs(info.macroData, new Set(['function'])),
-      internalParams: [],
+      params,
+      internalParams,
       rawResolvedValue: resolved,
       resolvedValue: toJsLiteral(resolved, true),
       debugMetadata: {},
       isHidden: false,
     }
   })
+}
+
+/**
+ * The developer ids a container declares, which a native export lists on a Google tag's load
+ * info. They arrive as `developer_id.<id>: true` keys of a gtag `set` command; the same keys
+ * also reach the dataLayer, and a native export does not list the ones that only appear there.
+ */
+function developerIds(records: RawRecord[]): string[] {
+  const ids = new Set<string>()
+  for (const r of records) {
+    if (r.messageType !== 'GTAG_COMMAND') continue
+    for (const [key, value] of Object.entries(obj(r.commandData))) {
+      const [prefix, id] = key.split('.')
+      if (prefix === 'developer_id' && id && value === true) ids.add(id)
+    }
+  }
+  return [...ids]
+}
+
+/** Every tag and variable template id a container's records refer to. */
+function usedTemplateIds(records: RawRecord[]): Set<string> {
+  const ids = new Set<string>()
+  for (const r of records) {
+    for (const t of arr(r.tagInfo)) {
+      const info = obj(t)
+      const id = str(obj(info.metadata).type) || str(obj(info.tagData).function)
+      if (id) ids.add(id)
+    }
+    for (const m of arr(r.macroInfo)) {
+      const info = obj(m)
+      const id = str(info.type) || str(obj(info.macroData).function)
+      if (id) ids.add(id)
+    }
+  }
+  return ids
 }
 
 /** One entry of `data.containers`: everything one container (GTM or a Google tag) reported. */
@@ -237,6 +265,9 @@ function buildContainer(
   const rawProduct = str(first?.containerProduct ?? init?.containerProduct, 'GTM')
   const product = rawProduct === 'OGT' ? 'GTAG' : rawProduct
   const isGtm = product === 'GTM'
+  // Only the GTM container carries template definitions. A native export gives a Google tag
+  // container an empty set, so every one of its parameters is internal.
+  const templates = new TemplateSet(isGtm ? usedTemplateIds(records) : [])
   // A native export names the environment as Tag Manager does and labels a workspace preview
   // QUICK_PREVIEW rather than an environment number. Only the GTM container belongs to the environment being previewed. A Google tag carries
   // its own protocol version and an empty environment name, and it has no link type at all
@@ -346,7 +377,7 @@ function buildContainer(
     // 2026-08-26) does list five `_Product-Owned Activity Tag` entries for its Google tag, so
     // this either changed in Tag Assistant or depends on something not yet identified. The
     // two recent exports win for now because the aim is to match Tag Assistant as it is.
-    const tagInfo = isGtm ? buildTagInfo(started, recs) : []
+    const tagInfo = isGtm ? buildTagInfo(started, recs, templates) : []
     const message = dataLayer?.message ?? { event: eventName, 'gtm.uniqueEventId': eventId }
     const abstractModel = dataLayer?.abstractModel ?? {
       event: eventName,
@@ -377,7 +408,7 @@ function buildContainer(
           message,
           messageString: toJsLiteral(message),
           abstractModelString: toJsLiteral(abstractModel),
-          macroInfo: buildMacroInfo(dataLayer),
+          macroInfo: buildMacroInfo(dataLayer, templates),
           abstractModel,
         },
         firedTagNames: tagInfo
@@ -420,7 +451,7 @@ function buildContainer(
                 message: push.message,
                 messageString: toJsLiteral(push.message),
                 abstractModelString: toJsLiteral(push.abstractModel),
-                macroInfo: buildMacroInfo(push),
+                macroInfo: buildMacroInfo(push, templates),
                 abstractModel: push.abstractModel,
               }
             : {}),
@@ -446,7 +477,7 @@ function buildContainer(
           message: r.message,
           messageString: toJsLiteral(r.message),
           abstractModelString: toJsLiteral(r.abstractModel),
-          macroInfo: buildMacroInfo(r),
+          macroInfo: buildMacroInfo(r, templates),
           abstractModel: r.abstractModel,
         },
         firedTagNames: [],
@@ -500,10 +531,16 @@ function buildContainer(
       groupId,
       emoji: '🔷',
     }
+    // Tag Assistant's Source line reads sourceId: without it a Google tag loaded by a
+    // container shows "Undefined parameter - CONTAINER_ID" instead of naming the container.
+    const parent = str(obj(init?.parentTargetReference).ctid)
+    const devIds = isGtm ? [] : developerIds(records)
     containerLoadInfoByGroupId[groupId] = {
       targetId: publicId,
       containerLoadSource: num(init?.containerLoadSource) ?? 0,
+      ...(parent ? { sourceId: parent } : {}),
       gtg: obj(init?.gtg),
+      ...(devIds.length ? { developerIds: devIds } : {}),
     }
   }
 
@@ -552,9 +589,9 @@ function buildContainer(
       [environmentName]: {
         containerName,
         environmentName,
-        environmentLinkType: 4,
-        vendorTemplateTypes: {},
-        paramMaps: {},
+        ...(isGtm ? { environmentLinkType: 4 } : {}),
+        vendorTemplateTypes: templates.vendorTemplateTypes,
+        paramMaps: templates.paramMaps,
       },
     },
     pageSummaries,
