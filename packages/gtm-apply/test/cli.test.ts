@@ -42,6 +42,8 @@ describe("parseCliArgs", () => {
       containers: ["GTM-ABC123"],
       account: undefined,
       out: undefined,
+      env: undefined,
+      config: undefined,
     });
   });
 
@@ -156,6 +158,92 @@ describe("runCli", () => {
     await expect(runCli(parseCliArgs(["pull", "--out", "x"]), client)).rejects.toThrow(
       /--container or --account/
     );
+  });
+
+  it("apply --env resolves the container, spec and workspace from the repo config", async () => {
+    const { client, state } = fresh();
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const config = join(dir, "gtm.config.json");
+    await writeFile(
+      config,
+      JSON.stringify({
+        containers: { "acme-com": { publicId: "GTM-ABC123", env: "prod", spec: fixturePath } },
+        defaults: { workspace: "${env}-${slug}-${commit}" },
+      })
+    );
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["apply", "--env", "prod", "--config", config, "--dry-run"]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    expect(lines[0].split("\n")[0]).toMatch(
+      /^Container GTM-ABC123 \(acme\.com\), workspace "prod-acme-com-\w+"$/
+    );
+    expect(lines.join("\n")).toContain('[+] tag "Ads - Lead"');
+    expect(state.calls.some((c) => c.endsWith(".create"))).toBe(false);
+  });
+
+  it("explicit flags win over the repo config, and an unknown env names the file", async () => {
+    const { client } = fresh();
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const config = join(dir, "gtm.config.json");
+    await writeFile(
+      config,
+      JSON.stringify({
+        containers: { "acme-com": { publicId: "GTM-NOPE", env: "prod", spec: "/nowhere.json" } },
+      })
+    );
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs([
+        "apply",
+        "--env",
+        "prod",
+        "--config",
+        config,
+        "--container",
+        "GTM-ABC123",
+        "--spec",
+        fixturePath,
+        "--workspace",
+        "mine",
+        "--dry-run",
+      ]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    expect(lines[0]).toContain('Container GTM-ABC123 (acme.com), workspace "mine"');
+    await expect(
+      runCli(parseCliArgs(["apply", "--env", "qa", "--config", config, "--dry-run"]), client)
+    ).rejects.toThrow(/gtm\.config\.json: containers: no container with env or slug "qa"/);
+  });
+
+  it("pull --env writes into the container directory from the repo config", async () => {
+    const { client, state } = fresh();
+    await seedVersion(client, state, "accounts/1/containers/10", "Tag A");
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const config = join(dir, "gtm.config.json");
+    await writeFile(
+      config,
+      JSON.stringify({ containers: { "acme-com": { publicId: "GTM-ABC123", env: "prod" } } })
+    );
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["pull", "--env", "prod", "--config", config]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    const target = join(dir, "gtm", "containers", "acme-com");
+    expect((await readdir(target)).sort()).toEqual([
+      "container.json",
+      "snapshot.json",
+      "spec.json",
+    ]);
+    expect(lines).toEqual([`GTM-ABC123: wrote ${target}`]);
   });
 
   it("snapshot of several containers refuses without --out", async () => {

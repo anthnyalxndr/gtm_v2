@@ -169,7 +169,19 @@ export type {
   ApplySpecOptions,
   ApplySpecOutcome,
 } from "./spec/execute.js";
-export { parseCliArgs, runCli, USAGE } from "./cli.js";
+export { parseCliArgs, runCli, withRepoConfig, USAGE } from "./cli.js";
+export {
+  CONFIG_FILE_NAMES,
+  DEFAULT_WORKSPACE_TEMPLATE,
+  findConfigFile,
+  loadRepoConfig,
+  parseRepoConfig,
+  resolveEnv,
+  renderWorkspace,
+  gitShortSha,
+  RepoConfigError,
+} from "./config.js";
+export type { RepoConfig, ContainerEntry, RepoConfigDefaults, WorkspaceVars } from "./config.js";
 export type { CliArgs, CliCommand } from "./cli.js";
 export {
   defineTrackingPlan,

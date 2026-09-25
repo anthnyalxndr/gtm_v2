@@ -293,6 +293,35 @@ gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --plan plan.ts --
 
 A content package holds the library: its pull script reads the template container with `GtmSnapshot`, lints it, and writes the snapshot as a `const` TypeScript module with `libraryModuleSource`, so recipe and constant names are literal types wherever the package is imported. See `packages/gtm-web-recipes`.
 
+## Repo config file
+
+A repo that manages containers keeps one `gtm.config.json` (or a `gtm.config.ts`, `.js` or `.mjs` module whose default export is the same object) beside its `gtm/` directory. Entries are keyed by a human slug, which is also the container's directory under `gtm/containers/`; `env` names the environment, and at most one entry may carry each env name.
+
+```json
+{
+  "account": { "id": "6012345678", "name": "Acme" },
+  "containers": {
+    "acme-com": { "publicId": "GTM-ABC1234", "env": "prod" },
+    "acme-com-staging": { "publicId": "GTM-STG5678", "env": "staging" },
+    "sst-acme-com": { "publicId": "GTM-SRV9999", "dir": "gtm/containers/server", "spec": "gtm/containers/server/spec.json" }
+  },
+  "defaults": { "workspace": "${env}-${commit}", "prune": false, "policy": {} }
+}
+```
+
+`dir` defaults to `gtm/containers/<slug>` and `spec` to `<dir>/spec.json`, both relative to the config file. `defaults.workspace` is the workspace name `apply` uses when `--workspace` is absent; `${slug}`, `${env}`, `${commit}` (the short hash of HEAD, or `nogit`) and `${date}` are filled in, and the default template is `${slug}-${commit}`. `prune` and `policy` are reserved for the prune mode and policy rules and are validated but not read yet.
+
+With `--env <name>`, a command resolves its container from the entry whose `env` is that name, or the entry keyed by that slug: `--container` for every command, plus `--spec` and `--workspace` for `apply` and `--out` for `pull`. An explicit flag always wins. `--config <file>` points at a config elsewhere than the working directory.
+
+```bash
+gtm-apply apply --env staging --dry-run       # container, spec and workspace from the config
+gtm-apply apply --env prod --publish
+gtm-apply pull --env prod                     # into gtm/containers/acme-com
+gtm-apply export --env staging
+```
+
+A missing or invalid file fails before any API call with the file and field named, for example `gtm.config.json: containers.acme-com.publicId: must be a container public id like GTM-XXXXXXX`. From code: `loadRepoConfig(path?, cwd?)`, `parseRepoConfig(raw, file)`, `resolveEnv(config, name)`, `renderWorkspace(template, vars)`.
+
 ## Ad hoc work: use gtm-cli
 
 For discovery, inspection, and one-off edits, use owntag's [gtm-cli](https://github.com/owntag/gtm-cli) (`npm i -g @owntag/gtm-cli`). It covers per-resource commands with JSON output and needs no spec. gtm-apply is for the repeatable path: reconciling a container against a spec by name, with dry run and version handling. The reasoning is recorded in `backlog/decisions/`.
