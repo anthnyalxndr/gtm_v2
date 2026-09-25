@@ -113,6 +113,63 @@ describe('a Google tag container alongside the GTM container', () => {
       ['G-TEST1', 'GTAG', 1, 'GTE'],
     ])
   })
+
+  it('names the container that loaded the Google tag, and its developer ids', () => {
+    const base = withGoogleTag()
+    const ogt = base.records.find(
+      (r) => r.containerProduct === 'OGT' && r.messageType === 'EVENT_STARTED',
+    )!
+    const extra: RawRecord[] = [
+      {
+        capturedAt: ogt.capturedAt - 1,
+        messageType: 'INIT',
+        containerProduct: 'OGT',
+        version: '2',
+        key: { publicId: 'G-TEST1', groupId: ogt.key!.groupId },
+        containerLoadSource: 6,
+        parentTargetReference: { ctid: 'GTM-WNX8FFXW', isDestination: false },
+        gtg: { source: 3, mPath: '' },
+      },
+      {
+        capturedAt: ogt.capturedAt,
+        messageType: 'GTAG_COMMAND',
+        containerProduct: 'OGT',
+        version: '2',
+        key: { publicId: 'G-TEST1', groupId: ogt.key!.groupId, eventId: 4 },
+        inPageCommand: false,
+        commandType: 'set',
+        // Only a command's ids count; the same keys reach the dataLayer and are not listed.
+        commandData: { 'developer_id.dTEST': true, 'developer_id.dOFF': false },
+      },
+    ]
+    const doc = buildTagAssistantExport(
+      { ...base, records: [...base.records, ...extra] },
+      { containerId: 'GTM-WNX8FFXW', environment: 2, startUrl: 'http://127.0.0.1:4173/' },
+    ) as unknown as {
+      data: {
+        containers: {
+          publicId: string
+          containerLoadInfoByGroupId: Record<string, Record<string, unknown>>
+          vendorTemplates: Record<string, { vendorTemplateTypes: object; paramMaps: object }>
+        }[]
+      }
+    }
+    const gtag = doc.data.containers.find((c) => c.publicId === 'G-TEST1')!
+    expect(Object.values(gtag.containerLoadInfoByGroupId)[0]).toMatchObject({
+      targetId: 'G-TEST1',
+      containerLoadSource: 6,
+      sourceId: 'GTM-WNX8FFXW',
+      developerIds: ['dTEST'],
+    })
+    // A Google tag container carries no template definitions, so nothing of its own is named.
+    const block = Object.values(gtag.vendorTemplates)[0]!
+    expect(block.vendorTemplateTypes).toEqual({})
+    expect(block.paramMaps).toEqual({})
+    expect(block).not.toHaveProperty('environmentLinkType')
+    const gtm = doc.data.containers.find((c) => c.publicId === 'GTM-WNX8FFXW')!
+    expect(Object.values(gtm.containerLoadInfoByGroupId)[0]).not.toHaveProperty('sourceId')
+    expect(Object.values(gtm.containerLoadInfoByGroupId)[0]).not.toHaveProperty('developerIds')
+  })
 })
 
 describe('hitSignature', () => {

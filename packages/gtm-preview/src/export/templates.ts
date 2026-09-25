@@ -2,6 +2,10 @@
  * Display names and thumbnails Tag Assistant shows for GTM's built-in templates, keyed by
  * the template id the debug feed reports (`metadata.type` for tags, `type` for variables).
  * Anything not listed falls back to the id itself.
+ *
+ * These are a fallback. The export prefers the captured template definitions in
+ * `vendor-templates.ts`, which carry the same names plus the declared parameter list, and
+ * reaches this table only for a template the capture does not hold.
  */
 export interface TemplateInfo {
   name: string
