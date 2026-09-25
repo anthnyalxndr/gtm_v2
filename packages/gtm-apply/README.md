@@ -99,9 +99,11 @@ gtm-apply snapshot --container GTM-XXXXXXX                  # latest version
 gtm-apply snapshot --container GTM-XXXXXXX --live           # published version
 gtm-apply snapshot --container GTM-XXXXXXX --version 42
 gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
+gtm-apply snapshot --account 6012345678 --out snapshots      # one <publicId>.json per container
+gtm-apply snapshot --container GTM-A --container GTM-B --out snapshots
 ```
 
-From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `GtmSnapshot` (below) adds the recipe index on top of it.
+From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `pullSnapshots(client, sources)` pulls several containers concurrently within the client's throttle and returns them in source order; `snapshotAccount(client, accountId)` lists an account's containers (`listContainers` in gtm-client) and pulls the latest version of each. `Gtm.snapshotAccount(accountId)` does the same and memoizes each container like a single `snapshot()` call. `GtmSnapshot` (below) adds the recipe index on top of it.
 
 ### Canonical form
 

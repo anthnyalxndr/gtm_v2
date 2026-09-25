@@ -1,4 +1,6 @@
 import { parseArgs } from "node:util";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer } from "@anthnyalxndr/gtm-client";
 import { loadSpecFile } from "./spec/load.js";
@@ -9,6 +11,8 @@ import { formatIssue, validateSpec } from "./spec/validate.js";
 import { executePlan } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
 import { pullSnapshot } from "./snapshot/pull.js";
+import { pullSnapshots, snapshotAccount } from "./snapshot/account.js";
+import type { SnapshotSource } from "./snapshot/types.js";
 import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
 import { applyPlan, compilePlan, type TrackingPlan } from "./plan/tracking-plan.js";
 import { formatIssue as formatSpecIssue } from "./spec/validate.js";
@@ -18,6 +22,10 @@ export type CliCommand = "apply" | "normalize" | "export" | "snapshot";
 export interface CliArgs {
   command: CliCommand;
   container?: string;
+  /** Every --container given, in order; `container` is the first. */
+  containers: string[];
+  account?: string;
+  out?: string;
   workspace?: string;
   spec?: string;
   file?: string;
@@ -40,14 +48,18 @@ export const USAGE = `Usage:
   gtm-apply export --container GTM-XXXXXXX [--live | --workspace <name>]
       (default: the latest version, published or not)
   gtm-apply snapshot --container GTM-XXXXXXX [--live | --version <id> | --workspace <name>]
-      (everything the API exposes for the container, as returned by the API)`;
+      (everything the API exposes for the container, as returned by the API)
+  gtm-apply snapshot (--container GTM-A --container GTM-B | --account <id>) --out <dir>
+      (one <publicId>.json per container)`;
 
 export function parseCliArgs(argv: readonly string[]): CliArgs {
   const { values, positionals } = parseArgs({
     args: [...argv],
     allowPositionals: true,
     options: {
-      container: { type: "string" },
+      container: { type: "string", multiple: true },
+      account: { type: "string" },
+      out: { type: "string" },
       workspace: { type: "string" },
       spec: { type: "string" },
       "dry-run": { type: "boolean", default: false },
@@ -66,7 +78,10 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
   }
   return {
     command: command as CliCommand,
-    container: values.container,
+    container: values.container?.[0],
+    containers: values.container ?? [],
+    account: values.account,
+    out: values.out,
     workspace: values.workspace,
     spec: values.spec,
     file: positionals[1],
@@ -78,6 +93,15 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     plan: values.plan,
     library: values.library,
     writeSpec: values["write-spec"],
+  };
+}
+
+/** The SnapshotSource the flags describe for one container. */
+function sourceFromArgs(args: CliArgs, container: string): SnapshotSource {
+  return {
+    container,
+    ...(args.workspace ? { workspace: args.workspace } : {}),
+    ...(args.live ? { version: "live" } : args.version ? { version: args.version } : {}),
   };
 }
 
@@ -138,13 +162,32 @@ export async function runCli(
       return 0;
     }
     case "snapshot": {
+      const many = Boolean(args.account) || args.containers.length > 1;
+      if (many) {
+        if (!args.out) {
+          throw new Error(`snapshot of several containers needs --out <dir>.\n${USAGE}`);
+        }
+        await client.init();
+        const snapshots = args.account
+          ? await snapshotAccount(client, args.account)
+          : await pullSnapshots(
+              client,
+              args.containers.map((c) => sourceFromArgs(args, c))
+            );
+        await mkdir(args.out, { recursive: true });
+        for (const snapshot of snapshots) {
+          const file = join(
+            args.out,
+            `${snapshot.container.publicId ?? snapshot.source.container}.json`
+          );
+          await writeFile(file, stringifySnapshot(snapshot));
+          out(`Wrote ${file}`);
+        }
+        return 0;
+      }
       if (!args.container) throw new Error(`snapshot needs --container.\n${USAGE}`);
       await client.init();
-      const snapshot = await pullSnapshot(client, {
-        container: args.container,
-        ...(args.workspace ? { workspace: args.workspace } : {}),
-        ...(args.live ? { version: "live" } : args.version ? { version: args.version } : {}),
-      });
+      const snapshot = await pullSnapshot(client, sourceFromArgs(args, args.container));
       out(stringifySnapshot(snapshot).trimEnd());
       return 0;
     }
