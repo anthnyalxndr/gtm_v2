@@ -4,12 +4,17 @@ title: Entities can be renamed in place from the spec
 status: To Do
 assignee: []
 created_date: '2026-09-17 15:57'
+updated_date: '2026-09-25 10:20'
 labels:
   - gtm-apply
   - gtm-as-code
 milestone: m-0
 dependencies:
   - TASK-23
+references:
+  - >-
+    backlog/decisions/decision-12 -
+    Renames-are-declared-in-the-spec-with-a-one-shot-renameFrom-field-names-stay-identity-and-no-state-file-is-introduced-amends-decision-2.md
 documentation:
   - backlog/docs/doc-1 - GTM-as-code-plan.md
 priority: high
@@ -31,3 +36,9 @@ Implements the identity decision so that changing an entity's name in the spec p
 - [ ] #5 Unit tests cover rename of each entity type the decision supports, reference updates, and the type change
 - [ ] #6 README documents how identity works and what a rename looks like in the spec
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-25: decision-12 (proposed) chooses a one-shot renameFrom field in the spec, no state file; implement its planner rules, reference resolution with warnings, the "Old" -> "New" plan line, and verify live whether each kind accepts a type change on update.
+<!-- SECTION:NOTES:END -->
