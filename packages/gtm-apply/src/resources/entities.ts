@@ -35,18 +35,35 @@ interface Collection<T extends Named> {
   update(params: { path: string; fingerprint?: string; requestBody: T }): Promise<{ data: T }>;
 }
 
+/** A map by `key` when every item is an object with a distinct string `key`; null otherwise. */
+function keyed(items: readonly unknown[]): Map<string, unknown> | null {
+  const map = new Map<string, unknown>();
+  for (const item of items) {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) return null;
+    const key = (item as { key?: unknown }).key;
+    if (typeof key !== "string" || map.has(key)) return null;
+    map.set(key, item);
+  }
+  return map;
+}
+
 /**
  * True when every key in `desired` deep-equals the same key in `existing`.
  * Keys only present on `existing` (server fields, UI defaults) are ignored.
+ * An array whose items all carry a distinct string `key` (Tag Manager
+ * parameters and map entries) is compared by key, so order does not matter;
+ * every other array is compared positionally, because there order is meaning.
  */
 export function matches(existing: unknown, desired: unknown): boolean {
   if (typeof desired !== "object" || desired === null) return existing === desired;
   if (Array.isArray(desired)) {
-    return (
-      Array.isArray(existing) &&
-      existing.length === desired.length &&
-      desired.every((d, i) => matches(existing[i], d))
-    );
+    if (!Array.isArray(existing) || existing.length !== desired.length) return false;
+    const want = keyed(desired);
+    const have = want ? keyed(existing) : null;
+    if (want && have) {
+      return [...want].every(([key, item]) => have.has(key) && matches(have.get(key), item));
+    }
+    return desired.every((d, i) => matches(existing[i], d));
   }
   if (typeof existing !== "object" || existing === null) return false;
   const e = existing as Record<string, unknown>;

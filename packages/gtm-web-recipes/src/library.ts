@@ -14,6 +14,7 @@ export const data = {
       path: "accounts/1/containers/10",
     },
     containerType: "web",
+    liveVersionId: null,
     environments: [],
     destinations: [],
     workspace: null,
@@ -25,6 +26,7 @@ export const data = {
       numClients: "0",
     },
     environment: null,
+    published: false,
     folder: [],
     variable: [
       {
