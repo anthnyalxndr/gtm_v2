@@ -99,9 +99,26 @@ gtm-apply snapshot --container GTM-XXXXXXX                  # latest version
 gtm-apply snapshot --container GTM-XXXXXXX --live           # published version
 gtm-apply snapshot --container GTM-XXXXXXX --version 42
 gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
+gtm-apply snapshot --account 6012345678 --out snapshots      # one <publicId>.json per container
+gtm-apply snapshot --container GTM-A --container GTM-B --out snapshots
 ```
 
-From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `GtmSnapshot` (below) adds the recipe index on top of it.
+From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `pullSnapshots(client, sources)` pulls several containers concurrently within the client's throttle and returns them in source order; `snapshotAccount(client, accountId)` lists an account's containers (`listContainers` in gtm-client) and pulls the latest version of each. `Gtm.snapshotAccount(accountId)` does the same and memoizes each container like a single `snapshot()` call. `GtmSnapshot` (below) adds the recipe index on top of it.
+
+### Canonical form
+
+`normalize`, `export` and `snapshot` write canonical text: sections in a fixed order, entities sorted by name, `firingTriggerName`, `blockingTriggerName` and `builtInVariable` sorted, `parameter` and `map` arrays sorted by key, object keys written `name`, `type`, `parentFolderName`, `notes` first and the rest alphabetically, two-space JSON with a trailing newline. A `list` parameter keeps its item order, because there order is meaning. The same content always produces the same bytes, so a committed spec diffs only when the container changed. From code, `stringifySpec(spec)` and `stringifySnapshot(snapshot)` do the same; `normalizeExport` and `GtmSnapshot` keep the order the API returned, so `select()` still returns entities in library order.
+
+The planner compares an array of uniquely keyed items (parameters, map entries) by key, so a canonical spec reconciles against a container whose parameters are stored in another order without planning an update.
+
+### Pull: a container as a directory
+
+```bash
+gtm-apply pull --container GTM-XXXXXXX --out gtm/containers/acme-com
+gtm-apply pull --account 6012345678 --out gtm/containers        # one <slug>/ per container
+```
+
+`pull` writes three files: `spec.json`, the apply-able part in canonical form; `snapshot.json`, everything the API exposes; and `container.json`, the container's identity and what was read (the version id and name, the workspace, the serving environment) with no timestamp, so an unchanged container rewrites it byte for byte. With `--account`, each container's directory is named by a slug of its name (`acme.com` becomes `acme-com`; the lowercased public id is appended when two containers share a slug, or used alone when the name is empty), because directories are for people and a public id tells a reviewer nothing. A container whose spec cannot be normalized (a trigger group, a custom template tag until templates are supported) still gets the other two files, an existing `spec.json` is left alone, and the command exits 1 after every container was attempted. From code: `containerSlug(name, publicId)`, `pullContainer(client, source, dir)` and `pullAccount(client, accountId, outDir, { filter, dirFor })`.
 
 ### Container types
 

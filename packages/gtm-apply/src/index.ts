@@ -72,6 +72,24 @@ export {
 export type { SpecIssue } from "./spec/validate.js";
 export { loadSpecFile } from "./spec/load.js";
 export { pullSnapshot, snapshotToSpec, containerTypeOf } from "./snapshot/pull.js";
+export { canonicalSnapshot, stringifySnapshot } from "./snapshot/canonical.js";
+export { pullSnapshots, snapshotAccount } from "./snapshot/account.js";
+export {
+  SPEC_FILE,
+  SNAPSHOT_FILE,
+  RECORD_FILE,
+  containerSlug,
+  containerRecord,
+  writeContainerDir,
+  pullContainer,
+  pullAccount,
+} from "./snapshot/dir.js";
+export type {
+  ContainerRecord,
+  PullOutcome,
+  PullAccountOptions,
+  PullAccountResult,
+} from "./snapshot/dir.js";
 export { GtmSnapshot, indexRecipes, DEFAULT_DESTINATION_FAMILIES } from "./library/gtm-snapshot.js";
 export type {
   Recipe,
@@ -127,6 +145,7 @@ export {
   referencedVariableNames,
 } from "./spec/catalog.js";
 export { normalizeExport, NormalizeError, ENUM_KEYS } from "./spec/normalize.js";
+export { canonicalSpec, canonicalValue, stringifySpec, compareStrings } from "./spec/canonical.js";
 export {
   emptyState,
   toApiVariable,
