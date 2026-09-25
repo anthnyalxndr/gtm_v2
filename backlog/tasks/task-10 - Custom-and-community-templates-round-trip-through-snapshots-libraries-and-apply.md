@@ -6,11 +6,16 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-11 15:27'
+updated_date: '2026-09-17 16:10'
 labels:
   - sdk
   - templates
+  - gtm-as-code
+milestone: m-0
 dependencies:
   - TASK-8
+documentation:
+  - backlog/docs/doc-1 - GTM-as-code-plan.md
 priority: high
 ordinal: 10000
 ---
