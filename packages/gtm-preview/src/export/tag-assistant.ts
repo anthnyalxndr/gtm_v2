@@ -85,6 +85,26 @@ interface ParamPair {
 }
 
 /**
+ * How wide a parameter value may be before a native export breaks it across lines. Inferred
+ * from the structured values in the two captures: one of 50 characters stays on one line and
+ * ones of 113 and 126 are broken. Nothing between 51 and 112 has been seen, so the exact
+ * threshold is a guess; 80 is the usual one.
+ */
+const PARAM_LINE_WIDTH = 80
+
+/**
+ * A parameter value: on one line when it fits. When it does not, only the outer list is broken
+ * and each row stays on its own line, whatever the row is. A native export renders a resolved
+ * row, which is a plain object, exactly as it renders a template row, which is a GTM map.
+ */
+function renderParam(value: unknown): string {
+  const oneLine = toJsLiteral(value, true)
+  if (oneLine.length <= PARAM_LINE_WIDTH) return oneLine
+  if (!Array.isArray(value)) return toJsLiteral(value)
+  return `[\n${value.map((v) => `  ${toJsLiteral(v, true)}`).join(',\n')}\n]`
+}
+
+/**
  * Split a tag's or a variable's parameters the way a native export does. A key the template
  * declares goes in `params` under the template's display name for it; every other key goes in
  * `internalParams` with an empty name. `function` and `original_vendor_template_id` name the
@@ -101,9 +121,7 @@ function splitParams(
   for (const [key, v] of Object.entries(obj(data))) {
     if (key === 'function' || key === 'original_vendor_template_id') continue
     const pair = Array.isArray(v) && v.length === 2 ? v : [v, v]
-    // Not inline: a native export breaks a parameter holding a table across lines, and only
-    // the map rows inside it stay on one line.
-    const value: [string, string] = [toJsLiteral(pair[0]), toJsLiteral(pair[1])]
+    const value: [string, string] = [renderParam(pair[0]), renderParam(pair[1])]
     const declared = templates.paramName(templateId, key)
     if (declared === undefined) internalParams.push({ key, name: '', value })
     else params.push({ key, name: declared, value })

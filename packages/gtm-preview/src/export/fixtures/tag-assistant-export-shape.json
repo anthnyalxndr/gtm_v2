@@ -185,5 +185,76 @@
     "environmentLinkType": "number",
     "vendorTemplateTypes": "object",
     "paramMaps": "object"
+  },
+  "messageCommand": {
+    "index": "number",
+    "navType": "string",
+    "consentData": "object",
+    "title": "string",
+    "eventName": "string",
+    "data": "array",
+    "tagInfo": "array",
+    "groupId": "string",
+    "eventId": "number",
+    "gtagCommandModel": "object",
+    "message": "object",
+    "messageString": "string",
+    "abstractModelString": "string",
+    "macroInfo": "array",
+    "abstractModel": "object"
+  },
+  "messagePlain": {
+    "index": "number",
+    "navType": "string",
+    "consentData": "object",
+    "title": "string",
+    "data": "array",
+    "tagInfo": "array",
+    "groupId": "string",
+    "message": "object",
+    "messageString": "string",
+    "abstractModelString": "string",
+    "macroInfo": "array",
+    "abstractModel": "object"
+  },
+  "hitInfo": {
+    "displayName": "string",
+    "title": "string",
+    "subtitle": "string",
+    "type": "number",
+    "baseUrl": "string",
+    "parameters": "array",
+    "destination": "string",
+    "originatedMessageIndex": "number",
+    "firedMessageIndex": "number",
+    "originatedMessageKey": "object",
+    "firedMessageKey": "object"
+  },
+  "hitParameter": {
+    "name": "string",
+    "value": "string",
+    "descriptor": "object"
+  },
+  "hitParameterBare": {
+    "name": "string",
+    "value": "string"
+  },
+  "hitParameterDescriptor": {
+    "shortName": "string",
+    "type": "number",
+    "displayName": "string"
+  },
+  "vendorTemplatesEntryGtag": {
+    "containerName": "string",
+    "environmentName": "string",
+    "vendorTemplateTypes": "object",
+    "paramMaps": "object"
+  },
+  "containerLoadInfoGtag": {
+    "targetId": "string",
+    "containerLoadSource": "number",
+    "sourceId": "string",
+    "gtg": "object",
+    "developerIds": "array"
   }
 }

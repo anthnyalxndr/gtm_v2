@@ -63,6 +63,10 @@ const VOLATILE_HIT_VALUE = /\.hitInfo\[[^\]]*\]\.parameters\[([^\]]*)\]\.value$/
 const VOLATILE_PARAMS = ['gtm_debug', 'gtm_auth', 'gtm_preview', '_dbg']
 
 export function normaliseUrl(value: string): string {
+  // Parameter values are JavaScript literals, so a URL arrives inside quotes.
+  if (value.length > 1 && value.startsWith('"') && value.endsWith('"')) {
+    return `"${normaliseUrl(value.slice(1, -1))}"`
+  }
   try {
     const u = new URL(value)
     for (const p of VOLATILE_PARAMS) u.searchParams.delete(p)

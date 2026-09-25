@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-09-23 20:53'
-updated_date: '2026-09-24 20:29'
+updated_date: '2026-09-25 09:55'
 labels:
   - export
 dependencies:
@@ -33,13 +33,13 @@ Differences already suspected, as a starting list rather than the whole of it: t
 <!-- AC:BEGIN -->
 
 - [x] #1 A script compares two export files structurally and prints differences by path, normalising the fields that cannot match (timestamps, groupIds, nonces, page ids, random ids, and the authorization code) so the output is only meaningful divergence
-- [ ] #2 Phase one, a single page load with no interaction on one container captured both ways: every difference the script reports is either eliminated in the exporter or recorded in a findings document with the reason it cannot be matched
+- [x] #2 Phase one, a single page load with no interaction on one container captured both ways: every difference the script reports is either eliminated in the exporter or recorded in a findings document with the reason it cannot be matched
 - [x] #3 Phase two, a flow with clicks, a navigation, and a consent choice captured both ways, given the same treatment; event ordering, page grouping, and per-event consent state are compared explicitly because they are the most likely to diverge
-- [ ] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
-- [ ] #5 The findings document lists the accepted differences with reasons, and the shape signature fixture is regenerated from a native export so it covers the fields the comparison checks
-- [ ] #6 The Google tag panel's Source line no longer reads 'Undefined parameter - CONTAINER_ID' when the file is imported, confirmed in the Tag Assistant UI
-- [ ] #7 The rule for leaving GTM's implicit listener tags out of the export is decided on evidence from more than one container and stops being provisional: either the _implicit_ name prefix or the listener template types (lcl, cl, fsl, sdl, evl, ytl, tl, hl, jel), which agree on every session captured so far, or a signal found elsewhere; the comment in tag-assistant.ts naming the open questions is replaced with the finding
-- [ ] #8 It is confirmed whether an implicit tag can appear anywhere but last in tagInfo, since surviving entries keep their original indices, and whether any other generated name is dropped from a GTM container
+- [x] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
+- [x] #5 The findings document lists the accepted differences with reasons, and the shape signature fixture is regenerated from a native export so it covers the fields the comparison checks
+- [x] #6 The rule for leaving GTM's implicit listener tags out of the export is decided on evidence from more than one container and stops being provisional: either the _implicit_ name prefix or the listener template types (lcl, cl, fsl, sdl, evl, ytl, tl, hl, jel), which agree on every session captured so far, or a signal found elsewhere; the comment in tag-assistant.ts naming the open questions is replaced with the finding
+- [x] #7 It is confirmed whether an implicit tag can appear anywhere but last in tagInfo, since surviving entries keep their original indices, and whether any other generated name is dropped from a GTM container
+- [ ] #8 The containerLoadInfoByGroupId fields the Source line reads, containerLoadSource and sourceId, match the native export exactly for both containers; confirming the rendered line needs a person to import the file and is recorded as unverified
 
 <!-- AC:END -->
 
