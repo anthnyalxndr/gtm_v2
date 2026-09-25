@@ -45,6 +45,17 @@ const client = new GtmClient({ service, minIntervalMs: 0 });
 // state.calls records every method invoked; state.versions holds snapshots.
 ```
 
+## Headless authentication (CI)
+
+The browser flow cannot run in CI. The client picks its credentials in this order and opens a browser only as the last resort:
+
+1. **Service account key file**: `GTM_SERVICE_ACCOUNT_KEY=/path/key.json` or `serviceAccountKeyPath`. Add the service account's email as a user of the Tag Manager account or container with the permissions the job needs (Read for plans and snapshots; Edit and Approve for apply; Publish for `--publish`).
+2. **Application Default Credentials**: `GOOGLE_APPLICATION_CREDENTIALS=/path/key.json` (or `useAdc: true`), for workload identity and other ADC setups.
+3. **Refresh token**: `GTM_REFRESH_TOKEN`, with the OAuth client id and secret from `GTM_CLIENT_ID` and `GTM_CLIENT_SECRET` or from `client_secrets.json`. Use it where a service account cannot be added as a Tag Manager user.
+4. **User OAuth**: a stored `token.json` is reused without a terminal. With no stored token and no terminal (stdin and stdout are not TTYs, or `interactive: false`), `init()` fails with a message naming the three options above instead of trying to open a browser.
+
+`selectCredentials(options, env)` returns which source would be used, for scripts that want to say so.
+
 ## Credentials file
 
 Create an OAuth client of type "Desktop app" in Google Cloud, download the JSON, and save it as `~/.config/gtm-apply/client_secrets.json`. The token is written next to it on first run.
