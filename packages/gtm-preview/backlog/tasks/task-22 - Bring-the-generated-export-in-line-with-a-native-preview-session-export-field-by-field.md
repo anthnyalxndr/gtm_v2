@@ -3,7 +3,7 @@ id: TASK-22
 title: >-
   Bring the generated export in line with a native preview session export, field
   by field
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-23 20:53'
 updated_date: '2026-09-25 09:55'
@@ -68,3 +68,10 @@ Phase two flow captured 2026-09-24: scenarios/sjpools-contact.json with flows/sj
 
 Phase two compared 2026-09-24 against a native export of the contact flow, captured through the new runbook and using the same environment so content matches. Fixed: a Google tag container carries no tagInfo or tagsFired natively (provisional, an older export of another container disagrees), and every container ends with an empty group. 1585 differences down to 1160, with every container-level count now matching except messages. The message gap is fully explained: the GTM container has 33 messages natively to our 23, and the ten missing are gtag.consent.default (2), gtag.consent.update (1), gtag.set (2) and plain dataLayer pushes rendered as (Message) (5). All are in our raw session as GTAG_COMMAND records with inPageCommand true, plus pushes with no event key; native also gives those messages a gtagCommandModel field we never write. Rendering them is the largest remaining item.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+
+The export is compared against two native captures of the same container with a normalising differ, and every class of difference is either fixed or accounted for. Fixed across six subtasks and two follow-ups: gtag commands and non-event pushes render as messages; parameters split by the template definitions Tag Assistant fetches from debug/api/<id>/vtinfo, captured because that endpoint authorizes the signed-in account rather than the container; consent default and update derive from the entries; hit parameters carry the descriptors from Tag Assistant's own dictionaries, or none where it has none; message order breaks ties on the feed's push order; tags and variables are named by Tag Assistant's four rules with no invented type names; a Google tag carries sourceId, developer ids and empty trigger names; the container is named after the site and each page after the previous one; and a structured parameter value renders with the same line breaks. The comparator gained keyless map alignment, hit parameter alignment by name, volatile hit parameter values and quoted URL normalisation, and the page shape fixture was regenerated from a native export to cover the new message kinds, hits and parameters. Page view 306 shape and 653 with values, contact flow 519 and 1129, from 1585 at the start. What remains is six classes, all consequences of comparing two recordings of a live site days apart: different event order, events one recording raised and the other did not, a different Google tag build, consent arriving at a different moment, per-visit variable values, and the two things Tag Assistant supplies that a headless run has no equivalent for. Closing them needs a native capture of the same page load as one of ours.
+<!-- SECTION:FINAL_SUMMARY:END -->
