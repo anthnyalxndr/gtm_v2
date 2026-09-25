@@ -89,9 +89,22 @@ function splitParams(
   return { params, internalParams }
 }
 
+/**
+ * The consent state a message was evaluated under. `fullConsentList` is the feed's own, passed
+ * through: GTM reports whichever consent types it knows about, four with only an `implicit`
+ * flag until a consent command has been seen and seven with `default` and `quiet` after.
+ *
+ * `consentStatus.default` and `.update` are derived from those entries rather than read from a
+ * field, which is how a native export produces them. Checked both ways: the derived `default`
+ * agrees with the feed's own `defaultConsent` on all 412 records of the captured contact
+ * session, and matches the native export on all 67 of its messages. There is no `update` field
+ * in the feed at all, so deriving it is the only way to report it. The feed never reports TCF,
+ * so `tcf` is always false.
+ */
 function consentData(record: RawRecord | undefined): AnyRecord {
   const cd = obj(record?.consentData)
   const full = obj(cd.fullConsentList)
+  const entries = Object.values(full).map((v) => obj(obj(v).consentEntry))
   const consentList = Object.entries(full).map(([type, v]) => ({
     type,
     status: obj(v).isConsentGranted === false ? 'denied' : 'granted',
@@ -99,9 +112,9 @@ function consentData(record: RawRecord | undefined): AnyRecord {
   return {
     consentList,
     consentStatus: {
-      default: cd.defaultConsent === true,
-      update: cd.updateConsent === true,
-      tcf: cd.tcf === true,
+      default: entries.some((e) => e.default === true),
+      update: entries.some((e) => e.update === true),
+      tcf: false,
       wasSetLate: cd.wasSetLate === true,
       usedContainerConsent: cd.usedContainerConsent === true,
     },
