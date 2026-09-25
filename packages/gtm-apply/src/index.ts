@@ -82,14 +82,26 @@ export type {
   GtmSnapshotOptions,
   SelectOptions,
 } from "./library/gtm-snapshot.js";
+export { notesEncoding, registerEncoding, resolveEncoding } from "./library/encoding.js";
+export type { EncodingFactory } from "./library/encoding.js";
 export {
-  notesEncoding,
-  metadataEncoding,
-  registerEncoding,
-  resolveEncoding,
+  NOTES_DELIMITER,
+  NOTED_KINDS,
+  parseNotes,
+  formatNotes,
   parseRecipeList,
-} from "./library/encoding.js";
-export type { RecipeEncoding, RecipeRoot, EncodingFactory } from "./library/encoding.js";
+  readMetadata,
+} from "./library/metadata.js";
+export type {
+  EntityMetadata,
+  PlaceholderMetadata,
+  ParsedNotes,
+  MetadataEncoding,
+  MetadataIndex,
+  MetadataError,
+  NotedEntity,
+  NotedKind,
+} from "./library/metadata.js";
 export {
   MANIFEST_VARIABLE_NAME,
   readManifest,
@@ -107,7 +119,10 @@ export type { ApiSnapshotData, ContainerType, SnapshotSource } from "./snapshot/
 export { mergeSpecs } from "./spec/merge.js";
 export {
   BUILT_IN_VARIABLES,
+  BUILT_IN_TRIGGERS,
   builtInTypeForName,
+  builtInTriggerIdForName,
+  builtInTriggerNameForId,
   upperSnakeToCamel,
   referencedVariableNames,
 } from "./spec/catalog.js";

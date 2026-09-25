@@ -54,6 +54,8 @@ A spec is a GTM container export with three changes: server fields (`accountId`,
 }
 ```
 
+GTM's built-in triggers (`All Pages`, `Initialization - All Pages`, `Consent Initialization - All Pages`) exist in every web container but are never listed as trigger resources. A tag names them in `firingTriggerName` like any trigger; the engine maps the name to Tag Manager's fixed id on apply and back to the name on export.
+
 The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-apply normalize export.json`. Or capture a container with `gtm-apply export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
 
 ### Writing a spec in TypeScript
@@ -170,7 +172,7 @@ The default workspace is never written to.
 
 ## Libraries and recipes
 
-A library is a GTM container you build in the UI and pull into a committed snapshot. Recipes are declared on the entities that fire, tags (and clients and transformations in a server container), through an encoding the library chooses; everything else a recipe needs, triggers, variables, setup tags, folders and built-ins, is discovered by following references. `GtmSnapshot` is a container pulled at one moment. `data` is the pull exactly as the API returned it (`ApiSnapshotData`: container, environments, destinations, version header, every entity collection) and never changes. On top of it sit name-keyed views per entity kind (`tags`, `triggers`, `variables`, `clients`, …), a `recipes` index with `recipe(name)`, and `select`, `lint`, `push`.
+A library is a GTM container you build in the UI and pull into a committed snapshot. Recipes are declared on the entities that fire, tags (and clients and transformations in a server container), in a metadata trailer of their notes; everything else a recipe needs, triggers, variables, setup tags, folders and built-ins, is discovered by following references. `GtmSnapshot` is a container pulled at one moment. `data` is the pull exactly as the API returned it (`ApiSnapshotData`: container, environments, destinations, version header, every entity collection) and never changes. On top of it sit name-keyed views per entity kind (`tags`, `triggers`, `variables`, `clients`, …), a `metadata` index with `metadataOf(ref)`, a `recipes` index with `recipe(name)`, and `select`, `lint`, `push`.
 
 ```ts
 const lib = await gtm.snapshot({ container: "GTM-TPLXXXX" });   // or new GtmSnapshot(client, source).init()
@@ -180,22 +182,30 @@ lib.tags.get("Ads - lead");
 const spec = lib.select(["form_submit"], { destinations: ["ga4", "googleAds"] });
 await gtm.apply({ container: "GTM-CUST", workspace: "onboarding", spec });
 
-await writeFile("library.json", JSON.stringify(lib, null, 2));            // { data, manifest, encoding, recipes }
+await writeFile("library.json", JSON.stringify(lib, null, 2));            // { data, manifest, encoding, metadata, recipes }
 const same = gtm.snapshotFrom(JSON.parse(await readFile("library.json", "utf-8")));
 ```
 
 The views are a working copy. Assign one to stage an edit: `lib.tags = tags` (a Map or an array) replaces the tags, re-indexes recipes, and changes what `spec`, `select` and `push` produce, while `data` and `toJSON()` still describe the pull. `isDirty` says whether anything is staged and `reset()` discards it. This is the seam a change report hangs off: the pull is the before, the staged state is the after.
 
-`select` returns the union of the recipes' closures in library order, strips recipe declarations from tags, leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, declarations intact, back to its own container. `lint()` reports tags naming recipes the manifest doesn't declare, recipes that reach no trigger, and dependencies naming constants outside the recipe.
+`select` returns the union of the recipes' closures in library order, hands every entity over as the customer should receive it (trailer removed, customer text kept), leaves the manifest out, and filters destination tags by family (`gaawe` is `ga4`, `awct` and `gclidw` are `googleAds`, `googtag` is `googleTag`; tags of no family are always kept). `push(client, { workspace })` applies the staged state, trailers intact, back to its own container. `lint()` reports trailers that do not parse, recipes declared on entities that cannot fire, recipes the manifest doesn't declare, recipes that reach no trigger, dependencies naming constants outside the recipe, and placeholder entries that disagree with their value.
 
-### Encodings
+### Metadata in notes
 
-An encoding is an object with a name, `recipesOf(entity)` returning the recipe names an entity declares, and an optional `strip(entity)` for declarations that must not reach a customer container. Two ship:
+Every entity with a notes field (variables, triggers, tags, clients, transformations) may end its notes with a line that is exactly `---` followed by a JSON object. The text above the line is the customer-facing note; the JSON is library metadata and never reaches a customer container. A trailer counts only when it starts with `{`, so prose containing a rule is left alone; one that starts with `{` and does not parse is a lint finding.
 
-- `notes`: a `recipes: a, b` line anywhere in the entity's notes. Notes never ship in a container, so nothing to strip. The default when a library has no manifest.
-- `metadata`: a key (default `recipes`) in a tag's Additional Tag Metadata. Metadata ships in the container and reaches tag monitors, so `select` strips it. Only tags carry metadata.
+```
+Sends the form_submit event to GA4.
+---
+{"recipes": ["form_submit"]}
+```
 
-Register your own with `registerEncoding(name, factory)`; a manifest refers to encodings by name, so the code stays in your package and never in the container.
+Known keys, both optional; unknown keys round-trip untouched:
+
+- `recipes`: the recipe names a tag, client or transformation declares (an array, or a comma separated string).
+- `placeholder`: on a constant whose library value is a placeholder (`<G-XXXXXXX>`, per the manifest's `placeholderPattern`), what a plan must supply: `kind`, `description`, `example`, and a `pattern` the supplied value must match. Lint reconciles the entry with the value both ways, so a constant an author forgot to blank never ships to a customer, and `compilePlan` puts the description and example in its error message.
+
+`GtmSnapshot` parses every trailer once into `metadata`, a record keyed by `kind:name` that the committed snapshot carries beside `recipes`; `metadataOf({ kind, name })` reads one entry. `parseNotes` and `formatNotes` are the reader and writer, for scripts that stage edits. An encoding is the object that reads a trailer and returns an entity as the customer should get it (`read`, `forCustomer`); `notes` is the built-in and the default. Register another with `registerEncoding(name, factory)`; a manifest refers to encodings by name, so the code stays in your package and never in the container.
 
 ### The manifest
 
@@ -203,7 +213,6 @@ A Constant variable named `Library - Manifest` whose value is JSON. It is never 
 
 ```json
 {
-  "encoding": { "name": "metadata", "options": { "key": "recipes" } },
   "recipes": {
     "form_submit": {
       "description": "Lead form submitted",

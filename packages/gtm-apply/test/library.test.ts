@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 import { GtmSnapshot, type GtmSnapshotData } from "../src/library/gtm-snapshot.js";
-import { metadataEncoding, notesEncoding, parseRecipeList } from "../src/library/encoding.js";
+import { formatNotes } from "../src/library/metadata.js";
 import { manifestVariable, MANIFEST_VARIABLE_NAME } from "../src/library/manifest.js";
 import { closure } from "../src/library/closure.js";
 import { applySpec } from "../src/spec/execute.js";
@@ -10,17 +10,13 @@ import { defineContainer } from "../src/spec/types.js";
 import { validateSpec } from "../src/spec/validate.js";
 import { formatIssue } from "../src/spec/validate.js";
 
-const meta = (recipes: string) => ({
-  type: "map" as const,
-  map: [{ type: "template" as const, key: "recipes", value: recipes }],
-});
+const meta = (recipes: string, text = "") => formatNotes(text, { recipes: recipes.split(", ") });
 
 /** A template container as a library: two recipes sharing a conversion linker and a constant. */
 const template = defineContainer({
   folder: [{ name: "Shared" }],
   variable: [
     manifestVariable({
-      encoding: { name: "metadata" },
       recipes: {
         form_submit: {
           description: "Lead form submitted",
@@ -86,14 +82,14 @@ const template = defineContainer({
       name: "GA4 - lead",
       type: "gaawe",
       firingTriggerName: ["Custom Event - lead"],
-      monitoringMetadata: meta("form_submit"),
+      notes: meta("form_submit", "Sends generate_lead to GA4."),
       parameter: [{ type: "template", key: "eventName", value: "generate_lead" }],
     },
     {
       name: "Ads - lead",
       type: "awct",
       firingTriggerName: ["Custom Event - lead"],
-      monitoringMetadata: meta("form_submit"),
+      notes: meta("form_submit"),
       setupTag: [{ tagName: "Conversion Linker" }],
       parameter: [
         { type: "template", key: "conversionId", value: "{{Const - Ads ID}}" },
@@ -104,16 +100,16 @@ const template = defineContainer({
       name: "Ads - call",
       type: "awct",
       firingTriggerName: ["Click - call"],
-      monitoringMetadata: meta("call_click"),
+      notes: meta("call_click"),
       parameter: [{ type: "template", key: "conversionId", value: "{{Const - Ads ID}}" }],
     },
     {
       name: "Conversion Linker",
       type: "gclidw",
       parentFolderName: "Shared",
-      monitoringMetadata: meta("form_submit, call_click"),
+      notes: meta("form_submit, call_click"),
     },
-    { name: "Unrelated", type: "html", monitoringMetadata: { type: "map" } },
+    { name: "Unrelated", type: "html", notes: "Plain note" },
   ],
 });
 
@@ -128,41 +124,6 @@ async function libraryFake() {
   await applySpec(client, { container: "GTM-TPL", workspace: "seed", spec: template });
   return { client, state };
 }
-
-describe("encodings", () => {
-  it("parse comma or whitespace separated lists", () => {
-    expect(parseRecipeList("a, b,c  d")).toEqual(["a", "b", "c", "d"]);
-    expect(parseRecipeList("")).toEqual([]);
-  });
-
-  it("notes: a recipes line anywhere in the note", () => {
-    const e = notesEncoding();
-    expect(
-      e.recipesOf({ name: "T", type: "html", notes: "Fires late.\nRecipes: a, b\nmore" })
-    ).toEqual(["a", "b"]);
-    expect(e.recipesOf({ name: "T", type: "html" })).toEqual([]);
-    expect(e.strip).toBeUndefined();
-  });
-
-  it("metadata: a key in monitoringMetadata, stripped on request", () => {
-    const e = metadataEncoding();
-    const tag = { name: "T", type: "html", monitoringMetadata: meta("a, b") };
-    expect(e.recipesOf(tag)).toEqual(["a", "b"]);
-    expect(e.strip!(tag)).toEqual({ name: "T", type: "html", monitoringMetadata: { type: "map" } });
-    const twoKeys = {
-      ...tag,
-      monitoringMetadata: {
-        type: "map" as const,
-        map: [...meta("a").map, { type: "template" as const, key: "owner", value: "me" }],
-      },
-    };
-    expect((e.strip!(twoKeys) as typeof tag).monitoringMetadata.map).toEqual([
-      { type: "template", key: "owner", value: "me" },
-    ]);
-    expect(e.recipesOf({ name: "C", type: "gaaw_client" })).toEqual([]);
-    expect(metadataEncoding("r").recipesOf(tag)).toEqual([]);
-  });
-});
 
 describe("closure", () => {
   it("follows triggers, setup tags, variables, folders and built-ins with a visited set", () => {
@@ -181,11 +142,23 @@ describe("closure", () => {
 });
 
 describe("GtmSnapshot", () => {
-  it("pulls a library and indexes recipes from tag metadata", async () => {
+  it("pulls a library and indexes recipes from notes trailers", async () => {
     const { client } = await libraryFake();
     const lib = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
-    expect(lib.encoding.name).toBe("metadata");
-    expect(lib.toJSON().encoding).toEqual({ name: "metadata" });
+    expect(lib.encoding.name).toBe("notes");
+    expect(lib.toJSON().encoding).toEqual({ name: "notes" });
+    expect(Object.keys(lib.metadata).sort()).toEqual([
+      "tag:Ads - call",
+      "tag:Ads - lead",
+      "tag:Conversion Linker",
+      "tag:GA4 - lead",
+    ]);
+    expect(lib.metadataOf({ kind: "tag", name: "Conversion Linker" })?.recipes).toEqual([
+      "form_submit",
+      "call_click",
+    ]);
+    expect(lib.metadataOf({ kind: "tag", name: "Unrelated" })).toBeUndefined();
+    expect(lib.toJSON().metadata).toEqual(lib.metadata);
     expect(lib.containerType).toBe("web");
     expect(lib.recipeNames).toEqual(["form_submit", "call_click"]);
     const form = lib.recipe("form_submit")!;
@@ -221,23 +194,35 @@ describe("GtmSnapshot", () => {
     const { client } = await libraryFake();
     const pulled = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
     const json = JSON.parse(JSON.stringify(pulled)) as GtmSnapshotData;
-    expect(Object.keys(json).sort()).toEqual(["data", "encoding", "manifest", "recipes"]);
+    expect(Object.keys(json).sort()).toEqual([
+      "data",
+      "encoding",
+      "manifest",
+      "metadata",
+      "recipes",
+    ]);
     const loaded = GtmSnapshot.fromData(json);
     expect(loaded.recipes).toEqual(pulled.recipes);
+    expect(loaded.metadata).toEqual(pulled.metadata);
     expect(loaded.spec).toEqual(pulled.spec);
-    expect(loaded.encoding.name).toBe("metadata");
+    expect(loaded.encoding.name).toBe("notes");
     expect(loaded.toJSON()).toEqual(json);
     expect(() => new GtmSnapshot(client, { container: "" })).toThrow(/container id/);
     expect(() => new GtmSnapshot(client, { container: "GTM-TPL" }).spec).toThrow(/init/);
   });
 
-  it("selects recipes, strips declarations, leaves the manifest out, and applies cleanly", async () => {
+  it("selects recipes, hands entities to the customer without trailers, leaves the manifest out, and applies cleanly", async () => {
     const { client, state } = await libraryFake();
     const lib = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
     const spec = lib.select(["form_submit"]);
     expect(validateSpec(spec)).toEqual([]);
     expect(spec.tag?.map((t) => t.name)).toEqual(["GA4 - lead", "Ads - lead", "Conversion Linker"]);
-    expect(spec.tag?.every((t) => t.monitoringMetadata?.map === undefined)).toBe(true);
+    expect(spec.tag?.map((t) => t.notes)).toEqual([
+      "Sends generate_lead to GA4.",
+      undefined,
+      undefined,
+    ]);
+    expect(lib.tags.get("GA4 - lead")?.notes).toContain("---");
     expect(spec.variable?.map((v) => v.name)).toEqual([
       "Const - Ads ID",
       "Const - Ads Label - lead",
@@ -275,6 +260,53 @@ describe("GtmSnapshot", () => {
     expect(lib.familyOf("html")).toBeUndefined();
   });
 
+  it("lints unreadable trailers, recipes on non-roots, and placeholders that disagree with their value", async () => {
+    const spec = defineContainer({
+      variable: [
+        manifestVariable({ recipes: { a: {} } }),
+        {
+          name: "Const - Path",
+          type: "c",
+          notes: formatNotes("Path of the contact page.", { placeholder: { kind: "path" } }),
+          parameter: [{ type: "template", key: "value", value: "/contact" }],
+        },
+        {
+          name: "Const - ID",
+          type: "c",
+          parameter: [{ type: "template", key: "value", value: "<id>" }],
+        },
+        {
+          name: "DLV - x",
+          type: "v",
+          notes: formatNotes("", { placeholder: { kind: "path" } }),
+          parameter: [{ type: "template", key: "name", value: "x" }],
+        },
+      ],
+      trigger: [{ name: "PV", type: "pageview", notes: meta("a") }],
+      tag: [
+        { name: "T", type: "html", notes: meta("a"), firingTriggerName: ["PV"] },
+        { name: "Broken", type: "html", notes: "Text\n---\n{nope" },
+      ],
+    });
+    const { service } = createFakeService({
+      containers: [{ accountId: "1", containerId: "10", publicId: "GTM-LINT", name: "lint" }],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await applySpec(client, { container: "GTM-LINT", workspace: "seed", spec });
+    const lib = await new GtmSnapshot(client, { container: "GTM-LINT" }).init();
+    const [first, ...rest] = lib.lint().map(formatIssue);
+    expect(first).toMatch(/^tag "Broken": notes metadata trailer is not valid JSON/);
+    expect(rest).toEqual([
+      'trigger "PV": notes declares recipes, but only tags, clients and transformations can',
+      'variable "Const - Path": value declares a placeholder but holds "/contact", which would reach customers as is',
+      'variable "Const - ID": notes holds the placeholder value "<id>" but declares no placeholder entry',
+      'variable "DLV - x": notes declares a placeholder, but only constants hold customer values',
+    ]);
+    expect(lib.metadataOf({ kind: "tag", name: "Broken" })).toBeUndefined();
+    expect(lib.select(["a"]).tag?.map((t) => t.notes)).toEqual([undefined]);
+    expect(lib.select(["a"]).variable).toBeUndefined();
+  });
+
   it("lints unknown recipe names, missing triggers, and dependencies outside the closure", async () => {
     const bad = defineContainer({
       variable: [
@@ -291,8 +323,8 @@ describe("GtmSnapshot", () => {
         }),
       ],
       tag: [
-        { name: "T1", type: "html", notes: "recipes: a" },
-        { name: "T2", type: "html", notes: "recipes: typo" },
+        { name: "T1", type: "html", notes: meta("a") },
+        { name: "T2", type: "html", notes: meta("typo") },
       ],
     });
     const { service } = createFakeService({
@@ -341,14 +373,14 @@ describe("GtmSnapshot", () => {
       workspace: "seed",
       spec: {
         trigger: [{ name: "PV", type: "pageview" }],
-        tag: [{ name: "T", type: "html", notes: "recipes: x", firingTriggerName: ["PV"] }],
+        tag: [{ name: "T", type: "html", notes: meta("x"), firingTriggerName: ["PV"] }],
       },
     });
     const lib = await new GtmSnapshot(client, { container: "GTM-NM" }).init();
     expect(lib.manifest).toBeNull();
     expect(lib.encoding.name).toBe("notes");
     expect(lib.recipe("x")?.description).toBeUndefined();
-    expect(lib.select(["x"]).tag?.[0]?.notes).toBe("recipes: x");
+    expect(lib.select(["x"]).tag?.[0]?.notes).toBeUndefined();
     expect(lib.lint()).toEqual([]);
   });
 
@@ -360,9 +392,7 @@ describe("GtmSnapshot", () => {
     expect(
       plan.ops.filter((o) => o.kind !== "workspace").every((o) => o.action === "unchanged")
     ).toBe(true);
-    expect(
-      lib.spec.tag?.find((t) => t.name === "GA4 - lead")?.monitoringMetadata?.map
-    ).toHaveLength(1);
+    expect(lib.spec.tag?.find((t) => t.name === "GA4 - lead")?.notes).toContain("---");
   });
 
   it("stages entity edits without touching the pull, and reset() discards them", async () => {
@@ -374,7 +404,7 @@ describe("GtmSnapshot", () => {
       name: "GA4 - call",
       type: "gaawe",
       firingTriggerName: ["Click - call"],
-      monitoringMetadata: meta("call_click"),
+      notes: meta("call_click"),
       parameter: [{ type: "template", key: "eventName", value: "call" }],
     });
     tags.delete("Unrelated");
@@ -436,7 +466,7 @@ describe("GtmSnapshot on a server container", () => {
       spec: {
         containerType: "server",
         client: [{ name: "GA4 Client", type: "gaaw_client" }],
-        transformation: [{ name: "Drop PII", type: "exclude_parameters", notes: "recipes: ga4" }],
+        transformation: [{ name: "Drop PII", type: "exclude_parameters", notes: meta("ga4") }],
         trigger: [
           {
             name: "GA4 events",
@@ -457,7 +487,7 @@ describe("GtmSnapshot on a server container", () => {
             name: "GA4",
             type: "sgtmgaaw",
             firingTriggerName: ["GA4 events"],
-            notes: "recipes: ga4",
+            notes: meta("ga4"),
           },
         ],
       },
@@ -470,5 +500,35 @@ describe("GtmSnapshot on a server container", () => {
     expect(spec.tag?.map((t) => t.name)).toEqual(["GA4"]);
     expect(spec.builtInVariable).toEqual(["clientName"]);
     expect(validateSpec(spec)).toEqual([]);
+  });
+});
+
+describe("built-in triggers in a library", () => {
+  it("counts a built-in trigger as reached, so a Google tag recipe lints clean and pulls back by name", async () => {
+    const { service } = createFakeService({
+      containers: [{ accountId: "1", containerId: "10", publicId: "GTM-INIT", name: "init" }],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    const spec = defineContainer({
+      variable: [manifestVariable({ recipes: { google_tag: {} } })],
+      tag: [
+        {
+          name: "Google Tag",
+          type: "googtag",
+          firingTriggerName: ["Initialization - All Pages"],
+          notes: meta("google_tag"),
+          parameter: [{ type: "template", key: "tagId", value: "G-1" }],
+        },
+      ],
+    });
+    await applySpec(client, { container: "GTM-INIT", workspace: "w", spec });
+    const lib = await new GtmSnapshot(client, { container: "GTM-INIT" }).init();
+    expect(lib.tags.get("Google Tag")?.firingTriggerName).toEqual(["Initialization - All Pages"]);
+    expect(lib.lint()).toEqual([]);
+    expect(lib.recipe("google_tag")?.entities.map((r) => `${r.kind}:${r.name}`)).toEqual([
+      "tag:Google Tag",
+      "trigger:Initialization - All Pages",
+    ]);
+    expect(lib.select(["google_tag"]).trigger).toBeUndefined();
   });
 });

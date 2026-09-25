@@ -1,4 +1,5 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
+import { BUILT_IN_TRIGGERS } from "./catalog.js";
 import type {
   ClientSpec,
   TagSpec,
@@ -30,7 +31,8 @@ export function emptyState(): ExistingState {
   return {
     folders: new Map(),
     variables: new Map(),
-    triggers: new Map(),
+    // Built-in triggers exist in every container but are never listed; a spec names them like any trigger.
+    triggers: new Map(Object.entries(BUILT_IN_TRIGGERS)),
     tags: new Map(),
     clients: new Map(),
     transformations: new Map(),

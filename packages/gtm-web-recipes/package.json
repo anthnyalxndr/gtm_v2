@@ -27,7 +27,8 @@
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "pull": "tsx scripts/pull.ts",
-    "sample": "tsx scripts/sample.ts"
+    "sample": "tsx scripts/sample.ts",
+    "push": "tsx scripts/push.ts"
   },
   "dependencies": {
     "@anthnyalxndr/gtm-apply": "workspace:^"

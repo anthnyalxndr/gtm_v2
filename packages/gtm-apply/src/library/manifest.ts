@@ -4,6 +4,9 @@ import type { ContainerSpec, VariableSpec } from "../spec/types.js";
 /** The Constant variable that carries a library's manifest. Never referenced by a tag, so never selected. */
 export const MANIFEST_VARIABLE_NAME = "Library - Manifest";
 
+/** Library values that mean "fill me in": `<AW-XXXXXXXXX>` and the like. Override in the manifest. */
+export const DEFAULT_PLACEHOLDER_PATTERN = "^<[^>]*>$";
+
 /** A resource the recipe needs on another platform, carried into the container by a constant. */
 export interface ExternalDependency {
   /** Name of the constant variable in the recipe's closure that holds the identifier. */
@@ -22,13 +25,14 @@ export interface RecipeManifestEntry {
 }
 
 export interface LibraryManifest {
+  /** The metadata encoding by registered name; "notes" (a JSON trailer in entity notes) when absent. */
   encoding?: { name: string; options?: Record<string, unknown> };
   recipes?: Record<string, RecipeManifestEntry>;
   /** Tag type to destination family, overriding or extending the defaults. */
   destinations?: Record<string, string>;
   /** Naming rules layered over DEFAULT_CONVENTIONS. Present (even empty) turns naming lint on. */
   conventions?: ConventionOverrides;
-  /** Regular expression for constant values a plan must replace; default "^<[^>]*>$". */
+  /** Regular expression for constant values a plan must replace; default DEFAULT_PLACEHOLDER_PATTERN. */
   placeholderPattern?: string;
 }
 

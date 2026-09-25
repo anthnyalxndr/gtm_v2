@@ -1,6 +1,6 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { SERVER_FIELDS } from "../resources/entities.js";
-import { upperSnakeToCamel } from "./catalog.js";
+import { BUILT_IN_TRIGGERS, upperSnakeToCamel } from "./catalog.js";
 import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
 import type {
   ClientSpec,
@@ -79,9 +79,12 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
   );
-  const triggerNames: IdMap = new Map(
-    rawTriggers.filter((t) => t.triggerId).map((t) => [String(t.triggerId), t.name ?? ""])
-  );
+  const triggerNames: IdMap = new Map([
+    ...Object.entries(BUILT_IN_TRIGGERS).map(([name, id]): [string, string] => [id, name]),
+    ...rawTriggers
+      .filter((t) => t.triggerId)
+      .map((t): [string, string] => [String(t.triggerId), t.name ?? ""]),
+  ]);
 
   const withFolder = <T extends { parentFolderId?: string | null; parentFolderName?: string }>(
     entity: T

@@ -6,12 +6,12 @@ import { defineTrackingPlan } from "@anthnyalxndr/gtm-apply";
 import { library } from "./src/index.js";
 
 export default defineTrackingPlan(library, {
-  recipes: ["form_submit", "call_click"],
-  destinations: ["ga4", "googleAds"],
+  recipes: ["google_tag", "contact_form_submit", "call_click"],
+  destinations: ["googleTag", "ga4", "googleAds"],
   constants: {
-    "Const - GA4 Measurement ID": "G-XXXXXXX",
-    "Const - Ads Conversion ID": "AW-123456789",
-    "Const - Ads Label - form_submit": "AbCdEfGhIj",
-    "Const - Ads Label - call_click": "KlMnOpQrSt",
+    "Const - GA4 Measurement ID": "G-ABC1234567",
+    "Const - Google Ads Conversion ID": "123456789",
+    "Const - Google Ads - contact_form_submit Conversion Label": "AbCdEfGhIj",
+    "Const - Google Ads - call_click Conversion Label": "KlMnOpQrSt",
   },
 });
