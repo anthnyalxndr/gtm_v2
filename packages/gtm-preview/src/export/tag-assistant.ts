@@ -2,7 +2,27 @@ import type { RawSession } from '../report/parse-records'
 import type { RawRecord } from '../session/debug-queue'
 import { toJsLiteral } from './js-literal'
 import { buildHitInfo, dedupeTransportDuplicates, type HitContext } from './hits'
-import { eventTitle, tagTemplate, variableTemplate } from './templates'
+import { eventTitle } from './templates'
+
+/**
+ * What Tag Assistant writes when the container holds no definition for a template id. It keeps
+ * no table of its own, so neither does this: a name invented here would differ from a native
+ * export in exactly the cases where the capture in vendor-templates.ts falls short.
+ */
+const UNKNOWN_TAG_TYPE = 'Unknown Tag Type'
+const UNKNOWN_VARIABLE_TYPE = 'Unknown Variable Type'
+
+/** A tag's template id. A paused tag reports `paused` and carries the real one in its data. */
+function tagTemplateId(info: AnyRecord): string {
+  const declared = str(obj(info.metadata).type) || str(obj(info.tagData).function)
+  if (declared !== 'paused') return declared
+  return str(arr(obj(info.tagData).vtp_originalTagType)[0], declared)
+}
+
+/** A variable's template id. A synthesised macro names the template it came from. */
+function variableTemplateId(info: AnyRecord): string {
+  return str(obj(info.metadata).originalType) || str(info.type) || str(obj(info.macroData).function)
+}
 import { TemplateSet } from './vendor-templates'
 
 /**
@@ -81,7 +101,9 @@ function splitParams(
   for (const [key, v] of Object.entries(obj(data))) {
     if (key === 'function' || key === 'original_vendor_template_id') continue
     const pair = Array.isArray(v) && v.length === 2 ? v : [v, v]
-    const value: [string, string] = [toJsLiteral(pair[0], true), toJsLiteral(pair[1], true)]
+    // Not inline: a native export breaks a parameter holding a table across lines, and only
+    // the map rows inside it stay on one line.
+    const value: [string, string] = [toJsLiteral(pair[0]), toJsLiteral(pair[1])]
     const declared = templates.paramName(templateId, key)
     if (declared === undefined) internalParams.push({ key, name: '', value })
     else params.push({ key, name: declared, value })
@@ -123,22 +145,20 @@ function consentData(record: RawRecord | undefined): AnyRecord {
 }
 
 /**
- * PROVISIONAL, pending task-22. GTM auto-creates listener tags named
- * `_implicit_<listener> <trigger>` for click, link click, form, scroll and similar triggers,
- * and Tag Assistant's own export leaves them out of a GTM container's `tagInfo` while leaving
- * `ruleInfo.firingTags` pointing at their indices, which then dangle.
+ * GTM auto-creates listener tags named `_implicit_<listener> <trigger>` for click, link click,
+ * form, scroll and similar triggers, and a native export leaves them out of a GTM container's
+ * `tagInfo` while leaving `ruleInfo.firingTags` pointing at their indices, which then dangle.
  *
- * The evidence is one genuine export of one container (GTM-52ZLPX7, 2026-09-23): 8 tags, no
- * underscore-prefixed names, while its Google tag container kept all five `_Product-Owned
- * Activity Tag` entries. So the rule is this prefix rather than a leading underscore.
+ * Settled on 2026-09-25 by reading Tag Assistant's own bundle. Its console tab enumerates
+ * exactly these as implicit: the six names "_implicit_Form Submit Listener", "_implicit_Click
+ * Listener", "_implicit_Link Click Listener", "_implicit_JavaScript Error Listener",
+ * "_implicit_Timer Listener" and "_implicit_History Change Listener", matched with startsWith,
+ * plus the patterns `^_implicit_Auto Event Listener \(gtm.+?\)` and `^_implicit_Trigger Group
+ * Firing Tag \(gtm.+?\)`. Every one carries this prefix, so the prefix is the same rule and
+ * covers a listener type the enumeration might not list yet.
  *
- * What that evidence cannot settle, and what task-22 should decide against more exports:
- * whether Tag Assistant filters on the name at all or on a flag the debug feed does not
- * expose (no record carries one; entries give only `name` and `metadata.type`); whether
- * filtering on the listener template types instead (`lcl`, `cl`, `fsl`, `sdl`, `evl`, `ytl`,
- * `tl`, `hl`, `jel`) is more robust, which agrees with the prefix on every session captured
- * so far; whether other generated names are dropped from GTM containers; and whether an
- * implicit tag can appear anywhere but last, which would matter because indices are kept.
+ * Corroborated by the captures: the contact-flow feed reports 111 `_implicit_` tag entries and
+ * neither native export contains the string at all.
  */
 const IMPLICIT_TAG_PREFIX = '_implicit_'
 
@@ -170,16 +190,17 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[], templates: Template
   const entries = arr(started.tagInfo).map((t, index) => {
     const info = obj(t)
     const name = str(info.name, `tag ${index}`)
-    const templateId = str(obj(info.metadata).type) || str(obj(info.tagData).function)
-    const template = tagTemplate(templateId)
     const tagData = obj(info.tagData)
+    const templateId = tagTemplateId(info)
+    // A generated tag displays under the name after its `_gen_<kind>_` prefix.
+    const generated = /^_gen_[^_]+_(.*)$/.exec(name)
     const { params, internalParams } = splitParams(tagData, templates, templateId)
     const entry: AnyRecord = {
       index,
       name,
-      displayName: name,
+      displayName: generated?.[1] ?? name,
       publicId: templateId,
-      type: templates.displayName(templateId) ?? template.name,
+      type: templates.displayName(templateId) ?? UNKNOWN_TAG_TYPE,
       vtType: 1,
       params,
       internalParams,
@@ -188,7 +209,7 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[], templates: Template
       teardownTags: [],
       consentData: { consentList: [] },
       isHidden: false,
-      thumbnail: templates.thumbnail(templateId) ?? template.thumbnail,
+      thumbnail: templates.thumbnail(templateId) ?? '',
       disabledInGoogleMode: false,
     }
     const fired = startedByName.get(name)
@@ -209,13 +230,13 @@ function buildTagInfo(started: RawRecord, recs: RawRecord[], templates: Template
 function buildMacroInfo(dataLayer: RawRecord | undefined, templates: TemplateSet): AnyRecord[] {
   return arr(dataLayer?.macroInfo).map((m) => {
     const info = obj(m)
-    const templateId = str(info.type) || str(obj(info.macroData).function)
+    const templateId = variableTemplateId(info)
     const resolved = info.resolvedValue
     const { params, internalParams } = splitParams(info.macroData, templates, templateId)
     return {
       name: str(info.name),
       variablePublicId: templateId,
-      variableType: templates.displayName(templateId) ?? variableTemplate(templateId).name,
+      variableType: templates.displayName(templateId) ?? UNKNOWN_VARIABLE_TYPE,
       returnType: resolved === null ? 'null' : typeof resolved,
       params,
       internalParams,
@@ -249,13 +270,11 @@ function usedTemplateIds(records: RawRecord[]): Set<string> {
   const ids = new Set<string>()
   for (const r of records) {
     for (const t of arr(r.tagInfo)) {
-      const info = obj(t)
-      const id = str(obj(info.metadata).type) || str(obj(info.tagData).function)
+      const id = tagTemplateId(obj(t))
       if (id) ids.add(id)
     }
     for (const m of arr(r.macroInfo)) {
-      const info = obj(m)
-      const id = str(info.type) || str(obj(info.macroData).function)
+      const id = variableTemplateId(obj(m))
       if (id) ids.add(id)
     }
   }

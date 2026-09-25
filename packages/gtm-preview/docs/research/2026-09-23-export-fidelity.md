@@ -338,3 +338,57 @@ about.
 So neither the ordering nor the model can be brought level with a separately recorded native
 file. What would settle it is a native capture taken from the same page load as one of ours,
 which needs a person with a signed-in browser driving the same flow at the same time.
+
+## How Tag Assistant names a tag or a variable (2026-09-25)
+
+Four rules, all read from `new_debug_app_compiled.js`, in the two functions that build a
+message's `tagInfo` and `macroInfo`.
+
+A tag's template id is `metadata.type`, except that a paused tag reports the literal `paused`
+and carries its real id in `tagData.vtp_originalTagType[0]`. A variable's id is
+`metadata.originalType` when the record has one and `metadata.type` otherwise, so a macro the
+runtime synthesised reports the template it came from rather than the shape it was built as.
+
+Where the container holds no definition for that id, Tag Assistant writes the literal
+`Unknown Tag Type` or `Unknown Variable Type`. It keeps no table of its own, so the
+hand-written type names in `templates.ts` are gone. Keeping them would have made the output
+differ from a native export in exactly the cases where the capture falls short, which is the
+opposite of useful. The event-title map in that file stays; Tag Assistant has one of those too.
+
+A tag's `displayName` is not its name: a name matching `^_gen_[^_]+_(.*)$` displays as the
+captured group, while `name` keeps the whole string.
+
+The variable rule costs 57 differences against the captured native file, which reports `c`
+where we now report `gtsnpt`. That is a build difference, not a rule difference. Our feed
+carries `metadata.originalType` on 96 macro entries and `original_vendor_template_id` on 90 of
+the same ones; neither string appears anywhere in either native export, so the Google tag build
+in the native recording did not emit them, and with no `originalType` Tag Assistant's own rule
+yields `c` as well.
+
+### The implicit tag filter, settled
+
+Tag Assistant's console tab enumerates the implicit listeners exactly: six names matched with
+`startsWith`, plus two patterns.
+
+```
+_implicit_Form Submit Listener      _implicit_JavaScript Error Listener
+_implicit_Click Listener            _implicit_Timer Listener
+_implicit_Link Click Listener       _implicit_History Change Listener
+^_implicit_Auto Event Listener \(gtm.+?\)
+^_implicit_Trigger Group Firing Tag \(gtm.+?\)
+```
+
+Every one carries the `_implicit_` prefix, so filtering on the prefix is the same rule and
+also covers a listener type the enumeration has not caught up with. The captures agree: the
+contact-flow feed reports 111 `_implicit_` tag entries and neither native export contains the
+string at all. The placeholder comment is replaced with this.
+
+### A GTM map is an object
+
+A structured template parameter arrives as `{type: "map", pairs: [[key, value]]}`, and this tool
+printed that literally. A native export prints the object it stands for, always on one line,
+inside a parameter value that is otherwise broken across lines. `vtp_eventSettingsTable` now
+matches the native file character for character.
+
+The contact flow reads 519 differences in shape and 1253 with values, from 571 and 1498. The
+page view reads 770 with values.
