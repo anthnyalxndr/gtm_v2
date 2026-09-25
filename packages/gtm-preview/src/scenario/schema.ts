@@ -24,20 +24,29 @@ export const StepSchema = z.discriminatedUnion('kind', [
 ])
 export type Step = z.infer<typeof StepSchema>
 
+const ContainerSchema = z.object({
+  id: z.string().regex(/^GTM-[A-Z0-9]{5,10}$/, 'must look like GTM-XXXXXXX'),
+  /** Environment number, or a name such as Live, Latest, or a custom environment. */
+  environment: z.union([z.number().int().positive(), z.string().min(1)]),
+  /**
+   * Environment variable holding the authorization code. When omitted the code is
+   * resolved through the Tag Manager API (gtm-client) and cached per user.
+   */
+  authCodeEnv: z.string().min(1).optional(),
+})
+export type ContainerSpec = z.infer<typeof ContainerSchema>
+
 export const ScenarioSchema = z
   .object({
     name: z.string().min(1),
     startUrl: z.string().url(),
-    container: z.object({
-      id: z.string().regex(/^GTM-[A-Z0-9]{5,10}$/, 'must look like GTM-XXXXXXX'),
-      /** Environment number, or a name such as Live, Latest, or a custom environment. */
-      environment: z.union([z.number().int().positive(), z.string().min(1)]),
-      /**
-       * Environment variable holding the authorization code. When omitted the code is
-       * resolved through the Tag Manager API (gtm-client) and cached per user.
-       */
-      authCodeEnv: z.string().min(1).optional(),
-    }),
+    container: ContainerSchema,
+    /**
+     * Further GTM containers on the page to instrument. Each gets its own environment code and
+     * debug build, and its events and hits stay under its own id in the report. The first
+     * container stays the one the summary counts describe.
+     */
+    alsoInstrument: z.array(ContainerSchema).default([]),
     hits: HitPolicySchema.default('dry'),
     settleMs: z.number().int().nonnegative().default(1500),
     steps: z.array(StepSchema).default([]),
@@ -51,19 +60,39 @@ export const ScenarioSchema = z
     message: 'use either steps or driver, not both',
     path: ['driver'],
   })
+  .refine(
+    (s) => {
+      const ids = [s.container.id, ...s.alsoInstrument.map((c) => c.id)]
+      return new Set(ids).size === ids.length
+    },
+    { message: 'each container may be named once', path: ['alsoInstrument'] },
+  )
 export type Scenario = z.infer<typeof ScenarioSchema>
 
 /** A scenario read from disk, with the code taken from the environment when it names one. */
 export type LoadedScenario = Scenario & {
   authCode?: string
+  /** Codes read from the environment, per container id, for the containers that name one. */
+  authCodes?: Record<string, string>
   /** Absolute path of the driver module when the scenario names one. */
   driverPath?: string
 }
 
 /** A scenario the runner can execute: code present, environment numeric. */
+/** One container the run instruments: its code resolved and its environment a number. */
+export interface InstrumentedContainer {
+  id: string
+  environment: number
+  authCode: string
+  /** Named only when the code came from the environment, for the error message. */
+  authCodeEnv?: string
+}
+
 export type RunnableScenario = Omit<LoadedScenario, 'authCode' | 'container'> & {
   authCode: string
   container: Scenario['container'] & { environment: number }
+  /** Every container to instrument, the scenario's own first. */
+  containers: InstrumentedContainer[]
   codeSource: 'env' | 'cache' | 'api'
   /** The environment's name and type in Tag Manager, when the API supplied the code. */
   environmentName?: string
@@ -89,20 +118,22 @@ export function resolveScenario(
   env: Record<string, string | undefined>,
   scenarioDir = process.cwd(),
 ): LoadedScenario {
-  const loaded: LoadedScenario = { ...scenario }
-  if (scenario.container.authCodeEnv) {
-    const authCode = env[scenario.container.authCodeEnv]
+  const loaded: LoadedScenario = { ...scenario, authCodes: {} }
+  for (const spec of [scenario.container, ...scenario.alsoInstrument]) {
+    if (!spec.authCodeEnv) continue
+    const authCode = env[spec.authCodeEnv]
     if (!authCode) {
       throw new ScenarioError(
-        `environment variable ${scenario.container.authCodeEnv} is not set (it must hold the GTM environment authorization code)`,
+        `environment variable ${spec.authCodeEnv} is not set (it must hold the GTM environment authorization code for ${spec.id})`,
       )
     }
-    if (typeof scenario.container.environment !== 'number') {
+    if (typeof spec.environment !== 'number') {
       throw new ScenarioError(
-        'container.environment must be a number when authCodeEnv is used; names need the API',
+        `${spec.id}: environment must be a number when authCodeEnv is used; names need the API`,
       )
     }
-    loaded.authCode = authCode
+    loaded.authCodes![spec.id] = authCode
+    if (spec.id === scenario.container.id) loaded.authCode = authCode
   }
   if (scenario.driver) {
     loaded.driverPath = isAbsolute(scenario.driver)
@@ -136,10 +167,22 @@ export function runnableFromEnv(scenario: LoadedScenario): RunnableScenario {
   if (!scenario.authCode || typeof scenario.container.environment !== 'number') {
     throw new ScenarioError('scenario has no authorization code from the environment')
   }
+  const missing = scenario.alsoInstrument.filter((c) => !scenario.authCodes?.[c.id])
+  if (missing.length) {
+    throw new ScenarioError(
+      `no authorization code from the environment for ${missing.map((c) => c.id).join(', ')}; give each container an authCodeEnv or drop authCodeEnv so the API resolves them all`,
+    )
+  }
   return {
     ...scenario,
     authCode: scenario.authCode,
     container: { ...scenario.container, environment: scenario.container.environment },
+    containers: [scenario.container, ...scenario.alsoInstrument].map((spec) => ({
+      id: spec.id,
+      environment: spec.environment as number,
+      authCode: scenario.authCodes![spec.id]!,
+      authCodeEnv: spec.authCodeEnv,
+    })),
     codeSource: 'env',
   }
 }

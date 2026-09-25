@@ -11,7 +11,7 @@ import {
 } from './debug-queue'
 import { decideHit, parseHit } from './hit-policy'
 import {
-  isContainerRequest,
+  containerRequestId,
   isGoogleTagRequest,
   redactAuthCode,
   toDebugBuildUrl,
@@ -68,7 +68,11 @@ export async function runSession(
     const errors: string[] = []
     const records: RawRecord[] = []
     const dataLayer: RawDataLayerPush[] = []
-    let containerStatus: number | undefined
+    // Every container the scenario names, by id, and the status each request came back with.
+    const instrumented = new Map(scenario.containers.map((c) => [c.id, c]))
+    const statusById = new Map<string, number>()
+    const unnamed = new Set<string>()
+    const primary = scenario.container.id
 
     // Records stream to Node as they happen so a navigation cannot lose them.
     await page.exposeBinding(EMIT_BINDING, (_source, item: EmittedItem) => {
@@ -90,17 +94,30 @@ export async function runSession(
     )
 
     // The site's snippet asks for the plain container; hand it the environment's debug build.
+    // A container the scenario does not name loads its production build, which reports
+    // nothing, so it is called out rather than left to look like a container with no tags.
     await page.route(
-      (url) => isContainerRequest(url.toString(), scenario.container.id),
+      (url) => containerRequestId(url.toString()) !== undefined,
       async (route) => {
+        const id = containerRequestId(route.request().url())!
+        const container = instrumented.get(id)
+        if (!container) {
+          if (!unnamed.has(id)) {
+            unnamed.add(id)
+            errors.push(
+              `container ${id} is on the page but the scenario does not name it, so it loaded its production build and reported nothing; add it to alsoInstrument to see its tags`,
+            )
+          }
+          return route.continue()
+        }
         const target = toDebugBuildUrl(route.request().url(), {
-          authCode: scenario.authCode,
-          environment: scenario.container.environment,
+          authCode: container.authCode,
+          environment: container.environment,
         })
         const response = await route.fetch({ url: target })
-        containerStatus = response.status()
+        statusById.set(id, response.status())
         if (response.status() !== 200) {
-          errors.push(`container request returned HTTP ${response.status()}`)
+          errors.push(`container ${id} request returned HTTP ${response.status()}`)
         }
         await route.fulfill({ response })
       },
@@ -137,15 +154,21 @@ export async function runSession(
     // Load the driver before the browser does anything so a bad module fails fast.
     const driver = scenario.driverPath ? await loadDriver(scenario.driverPath) : undefined
     const failIfContainerRejected = () => {
-      if (containerStatus !== undefined && containerStatus !== 200) {
+      for (const container of scenario.containers) {
+        const status = statusById.get(container.id)
+        if (status === undefined || status === 200) continue
         throw new ContainerLoadError(
-          `container ${scenario.container.id} env-${scenario.container.environment} returned HTTP ${containerStatus}; check the authorization code${scenario.container.authCodeEnv ? ` in ${scenario.container.authCodeEnv}` : ''}`,
+          `container ${container.id} env-${container.environment} returned HTTP ${status}; check the authorization code${container.authCodeEnv ? ` in ${container.authCodeEnv}` : ''}`,
         )
       }
     }
     const redactSession = (): RawSession => {
-      if (containerStatus === undefined)
-        errors.push('the page never requested the container script')
+      for (const container of scenario.containers) {
+        if (statusById.has(container.id)) continue
+        errors.push(
+          `the page never requested container ${container.id}; the scenario expected ${scenario.containers.map((c) => c.id).join(', ')} at ${scenario.startUrl}`,
+        )
+      }
       // Only the debug build emits per-event records. It pauses on CONTAINER_STARTING only when the
       // page carries a debug signal; without one it runs straight through and still emits.
       const debugBuildLoaded = records.some((r) => r.messageType === 'EVENT_STARTED')
@@ -156,7 +179,7 @@ export async function runSession(
     }
     const waitForContainerStatus = async (timeoutMs = 5000) => {
       const until = Date.now() + timeoutMs
-      while (containerStatus === undefined && Date.now() < until) await page.waitForTimeout(50)
+      while (!statusById.has(primary) && Date.now() < until) await page.waitForTimeout(50)
     }
 
     log(`opening ${scenario.startUrl}`)
