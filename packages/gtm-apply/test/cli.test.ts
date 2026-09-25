@@ -67,6 +67,24 @@ describe("runCli", () => {
     expect(spec.tag[0].firingTriggerName).toEqual(["Custom Event - lead", "Form Submit - contact"]);
   });
 
+  it("normalize prints canonical output and is idempotent on it", async () => {
+    const { client } = fresh();
+    const first: string[] = [];
+    expect(
+      await runCli(parseCliArgs(["normalize", fixturePath]), client, (l) => first.push(l))
+    ).toBe(0);
+    const spec = JSON.parse(first.join("\n"));
+    expect(spec.builtInVariable).toEqual(["formId", "pagePath"]);
+    expect(Object.keys(spec.tag[0]).slice(0, 2)).toEqual(["name", "type"]);
+
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const again = join(dir, "spec.json");
+    await writeFile(again, first.join("\n") + "\n");
+    const second: string[] = [];
+    expect(await runCli(parseCliArgs(["normalize", again]), client, (l) => second.push(l))).toBe(0);
+    expect(second.join("\n")).toBe(first.join("\n"));
+  });
+
   it("apply --dry-run prints the plan and writes nothing", async () => {
     const { client, state } = fresh();
     const lines: string[] = [];

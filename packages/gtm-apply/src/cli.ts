@@ -3,6 +3,8 @@ import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer } from "@anthnyalxndr/gtm-client";
 import { loadSpecFile } from "./spec/load.js";
 import { normalizeExport } from "./spec/normalize.js";
+import { stringifySpec } from "./spec/canonical.js";
+import { stringifySnapshot } from "./snapshot/canonical.js";
 import { formatIssue, validateSpec } from "./spec/validate.js";
 import { executePlan } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
@@ -88,7 +90,7 @@ export async function runCli(
   switch (args.command) {
     case "normalize": {
       if (!args.file) throw new Error(`normalize needs a file argument.\n${USAGE}`);
-      out(JSON.stringify(normalizeExport(await loadSpecFile(args.file)), null, 2));
+      out(stringifySpec(normalizeExport(await loadSpecFile(args.file))).trimEnd());
       return 0;
     }
     case "export": {
@@ -132,7 +134,7 @@ export async function runCli(
         );
         source = version.data;
       }
-      out(JSON.stringify(normalizeExport(source), null, 2));
+      out(stringifySpec(normalizeExport(source)).trimEnd());
       return 0;
     }
     case "snapshot": {
@@ -143,7 +145,7 @@ export async function runCli(
         ...(args.workspace ? { workspace: args.workspace } : {}),
         ...(args.live ? { version: "live" } : args.version ? { version: args.version } : {}),
       });
-      out(JSON.stringify(snapshot, null, 2));
+      out(stringifySnapshot(snapshot).trimEnd());
       return 0;
     }
     case "apply": {
