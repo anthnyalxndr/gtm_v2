@@ -103,6 +103,12 @@ gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
 
 From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `GtmSnapshot` (below) adds the recipe index on top of it.
 
+### Canonical form
+
+`normalize`, `export` and `snapshot` write canonical text: sections in a fixed order, entities sorted by name, `firingTriggerName`, `blockingTriggerName` and `builtInVariable` sorted, `parameter` and `map` arrays sorted by key, object keys written `name`, `type`, `parentFolderName`, `notes` first and the rest alphabetically, two-space JSON with a trailing newline. A `list` parameter keeps its item order, because there order is meaning. The same content always produces the same bytes, so a committed spec diffs only when the container changed. From code, `stringifySpec(spec)` and `stringifySnapshot(snapshot)` do the same; `normalizeExport` and `GtmSnapshot` keep the order the API returned, so `select()` still returns entities in library order.
+
+The planner compares an array of uniquely keyed items (parameters, map entries) by key, so a canonical spec reconciles against a container whose parameters are stored in another order without planning an update.
+
 ### Container types
 
 A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates and gtag configs are carried in snapshots but not yet applied.
