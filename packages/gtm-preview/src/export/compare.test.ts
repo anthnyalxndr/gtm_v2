@@ -5,6 +5,7 @@ import {
   normaliseUrl,
   EXPORT_ALIGNMENT,
   EXPORT_KEYLESS_MAPS,
+  VOLATILE_HIT_PARAMS,
 } from './compare'
 
 describe('normaliseUrl', () => {
@@ -149,5 +150,71 @@ describe('maps keyed by a per-session identifier (task-22.6)', () => {
     const a = { data: { other: { '111': 1 } } }
     const b = { data: { other: { '222': 1 } } }
     expect(compareExports(a, b, opts).map((d) => d.kind)).toEqual(['missing', 'extra'])
+  })
+})
+
+describe('hit parameters (task-22.4)', () => {
+  const doc = (cid: string, en: string) => ({
+    data: {
+      containers: [
+        {
+          publicId: 'GTM-X',
+          messages: [
+            {
+              eventName: 'page_view',
+              data: [
+                {
+                  hitInfo: [
+                    {
+                      title: 'Page View',
+                      baseUrl: 'https://a.test/g/collect',
+                      parameters: [
+                        { name: 'cid', value: cid },
+                        { name: 'en', value: en },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  })
+  const opts = {
+    alignBy: EXPORT_ALIGNMENT,
+    alignKeyless: EXPORT_KEYLESS_MAPS,
+    compareValues: true,
+  }
+
+  it('ignores the value of a parameter that belongs to one visit', () => {
+    expect(compareExports(doc('111', 'page_view'), doc('222', 'page_view'), opts)).toEqual([])
+    expect(VOLATILE_HIT_PARAMS.has('cid')).toBe(true)
+  })
+
+  it('still reports a parameter whose value means something', () => {
+    const diffs = compareExports(doc('111', 'page_view'), doc('111', 'scroll'), opts)
+    expect(diffs).toEqual([
+      {
+        path: '$.data.containers[GTM-X].messages[page_view].data[0].hitInfo[Page View https://a.test/g/collect].parameters[en].value',
+        kind: 'value',
+        native: 'page_view',
+        ours: 'scroll',
+      },
+    ])
+  })
+
+  it('lines parameters up by name, so one extra does not shift the rest', () => {
+    const extra = doc('111', 'page_view')
+    extra.data.containers[0]!.messages[0]!.data[0]!.hitInfo[0]!.parameters.unshift({
+      name: 'v',
+      value: '2',
+    })
+    const diffs = compareExports(extra, doc('111', 'page_view'), opts)
+    expect(diffs.map((d) => [d.kind, d.path.split('.').pop()])).toEqual([
+      ['length', 'parameters'],
+      ['missing', 'parameters[v]'],
+    ])
   })
 })
