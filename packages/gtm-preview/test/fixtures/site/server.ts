@@ -10,15 +10,23 @@ export interface FixtureSite {
   close: () => Promise<void>
 }
 
-/** Serve the fixture pages on a free port with the container id substituted in. */
-export async function startFixtureSite(containerId = 'GTM-FIXTURE'): Promise<FixtureSite> {
+/**
+ * Serve the fixture pages on a free port with the container ids substituted in. The second id
+ * is only used by two-containers.html, which exists to exercise a page carrying more than one.
+ */
+export async function startFixtureSite(
+  containerId = 'GTM-FIXTURE',
+  secondContainerId = 'GTM-SECOND',
+): Promise<FixtureSite> {
   const server: Server = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0] ?? '/'
     const file = path === '/' ? 'index.html' : path.replace(/^\//, '')
     try {
       const html = await readFile(join(root, file), 'utf8')
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-      res.end(html.replaceAll('__GTM_ID__', containerId))
+      res.end(
+        html.replaceAll('__GTM_ID_2__', secondContainerId).replaceAll('__GTM_ID__', containerId),
+      )
     } catch {
       res.writeHead(404)
       res.end('not found')

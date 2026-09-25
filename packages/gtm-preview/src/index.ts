@@ -12,6 +12,7 @@ import {
   loadScenario,
   runnableFromEnv,
   ScenarioError,
+  type InstrumentedContainer,
   type LoadedScenario,
   type RunnableScenario,
 } from './scenario/schema'
@@ -76,6 +77,33 @@ function summarise(report: SessionReport): string {
   return lines.join('\n')
 }
 
+/** A code for each further container the scenario names, from the environment or the API. */
+async function resolveExtras(
+  loaded: LoadedScenario,
+  resolver: EnvironmentCodeResolver,
+  refresh: boolean,
+): Promise<InstrumentedContainer[]> {
+  const out: InstrumentedContainer[] = []
+  for (const spec of loaded.alsoInstrument) {
+    const fromEnv = loaded.authCodes?.[spec.id]
+    if (fromEnv && typeof spec.environment === 'number') {
+      out.push({
+        id: spec.id,
+        environment: spec.environment,
+        authCode: fromEnv,
+        authCodeEnv: spec.authCodeEnv,
+      })
+      continue
+    }
+    const code = await resolver.resolve(spec.id, spec.environment, { refresh })
+    console.error(
+      `also instrumenting ${spec.id}: environment ${code.environmentName || code.environmentId} (env-${code.environmentId}) code from ${code.source}`,
+    )
+    out.push({ id: spec.id, environment: code.environmentId, authCode: code.authCode })
+  }
+  return out
+}
+
 /** Turn a loaded scenario into a runnable one: code from the environment, or from the API. */
 async function prepare(
   loaded: LoadedScenario,
@@ -93,6 +121,10 @@ async function prepare(
       ...loaded,
       authCode: preview.authCode,
       container: { ...loaded.container, environment: preview.environmentId },
+      containers: [
+        { id: loaded.container.id, environment: preview.environmentId, authCode: preview.authCode },
+        ...(await resolveExtras(loaded, resolver, refresh)),
+      ],
       codeSource: preview.source,
       environmentName: preview.environmentName,
       environmentType: preview.environmentType ?? 'workspace',
@@ -109,6 +141,10 @@ async function prepare(
     ...loaded,
     authCode: code.authCode,
     container: { ...loaded.container, environment: code.environmentId },
+    containers: [
+      { id: loaded.container.id, environment: code.environmentId, authCode: code.authCode },
+      ...(await resolveExtras(loaded, resolver, refresh)),
+    ],
     codeSource: code.source,
     environmentName: code.environmentName,
     environmentType: code.environmentType,

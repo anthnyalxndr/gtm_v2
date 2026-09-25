@@ -165,3 +165,50 @@ describe.skipIf(!enabled)('recording a session to a driver (needs GTM_AUTH_WNX8F
     expect(names).toContain('form_submit')
   }, 120_000)
 })
+
+describe.skipIf(!enabled)(
+  'a page carrying a second GTM container (needs GTM_AUTH_WNX8FFXW)',
+  () => {
+    const OTHER = 'GTM-NOTNAMED'
+    let site: FixtureSite
+    beforeAll(async () => {
+      site = await startFixtureSite(CONTAINER, OTHER)
+    })
+    afterAll(() => site.close())
+
+    it('instruments the container the scenario names and warns about the one it does not', async () => {
+      const scenario = resolveScenario(
+        parseScenario({
+          name: 'second-container',
+          startUrl: site.baseUrl + '/two-containers.html',
+          container: { id: CONTAINER, environment: 2, authCodeEnv: AUTH_ENV },
+          settleMs: 1000,
+        }),
+        process.env,
+      )
+      const raw = await runSession(runnableFromEnv(scenario))
+      expect(raw.debugBuildLoaded).toBe(true)
+      // The named container reported; the other loaded its production build and said nothing.
+      expect(raw.errors).toEqual([
+        expect.stringContaining(`container ${OTHER} is on the page but the scenario does not name`),
+      ])
+      expect(raw.records.some((r) => r.key?.publicId === OTHER)).toBe(false)
+      expect(raw.records.some((r) => r.key?.publicId === CONTAINER)).toBe(true)
+    }, 60_000)
+
+    it('names every container it expected when none of them is on the page', async () => {
+      const scenario = resolveScenario(
+        parseScenario({
+          name: 'wrong-page',
+          startUrl: site.baseUrl + '/page2.html',
+          container: { id: 'GTM-ABSENT1', environment: 2, authCodeEnv: AUTH_ENV },
+          settleMs: 200,
+        }),
+        process.env,
+      )
+      const raw = await runSession(runnableFromEnv(scenario))
+      expect(raw.errors.join('\n')).toContain('the page never requested container GTM-ABSENT1')
+      expect(raw.errors.join('\n')).toContain(site.baseUrl + '/page2.html')
+    }, 60_000)
+  },
+)

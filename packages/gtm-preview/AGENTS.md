@@ -134,6 +134,11 @@ code is left out of the file unless `--include-auth` is passed on `run`.
 - **Events are keyed by container, load, id, and name.** Ids restart on every page load, each
   container numbers its own events, and GTM can reuse an id within a load for a different
   event name.
+- **A scenario can name more than one container.** `container` is the primary, the one the
+  summary counts describe; `alsoInstrument` lists further GTM containers on the page, each with
+  its own environment and code. A GTM container the scenario does not name loads its production
+  build and reports nothing, so the run records a warning naming its id rather than letting it
+  look like a container with no tags.
 - **Environment codes come from the API or the operator, never from scenario files.**
   Scenarios name an environment; the resolver fetches and caches its code. `authCodeEnv` is
   the escape hatch for a code handed over without API access.
