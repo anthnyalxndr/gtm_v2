@@ -131,6 +131,14 @@ describe('a Google tag container alongside the GTM container', () => {
         gtg: { source: 3, mPath: '' },
       },
       {
+        capturedAt: ogt.capturedAt + 1,
+        messageType: 'MACRO_RESOLVED',
+        containerProduct: 'OGT',
+        version: '2',
+        key: { ...ogt.key, eventId: 5, eventName: 'form_submit' },
+        ruleInfo: [{ name: 'Initialization - gtm.js endpoint', firingTags: [], predicates: [] }],
+      },
+      {
         capturedAt: ogt.capturedAt,
         messageType: 'GTAG_COMMAND',
         containerProduct: 'OGT',
@@ -149,6 +157,7 @@ describe('a Google tag container alongside the GTM container', () => {
       data: {
         containers: {
           publicId: string
+          messages: Record<string, unknown>[]
           containerLoadInfoByGroupId: Record<string, Record<string, unknown>>
           vendorTemplates: Record<string, { vendorTemplateTypes: object; paramMaps: object }>
         }[]
@@ -166,6 +175,12 @@ describe('a Google tag container alongside the GTM container', () => {
     expect(block.vendorTemplateTypes).toEqual({})
     expect(block.paramMaps).toEqual({})
     expect(block).not.toHaveProperty('environmentLinkType')
+    // A native export gives a Google tag container no trigger names, only its GTM container.
+    const gtagRules = (
+      gtag as unknown as { messages: { data?: { ruleInfo?: { name: string }[] }[] }[] }
+    ).messages.flatMap((m) => m.data?.flatMap((d) => d.ruleInfo ?? []) ?? [])
+    expect(gtagRules).toHaveLength(1)
+    expect(gtagRules[0]!.name).toBe('')
     const gtm = doc.data.containers.find((c) => c.publicId === 'GTM-WNX8FFXW')!
     expect(Object.values(gtm.containerLoadInfoByGroupId)[0]).not.toHaveProperty('sourceId')
     expect(Object.values(gtm.containerLoadInfoByGroupId)[0]).not.toHaveProperty('developerIds')

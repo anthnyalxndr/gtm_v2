@@ -281,6 +281,17 @@ function usedTemplateIds(records: RawRecord[]): Set<string> {
   return ids
 }
 
+/**
+ * The triggers evaluated for an event. A native export blanks their names on a Google tag
+ * container: it resolves a name from the container's trigger list, which it has for a GTM
+ * container and not for a Google tag. Checked across both captures, where all 124 of a Google
+ * tag's rules carry an empty name and the GTM container's carry eight real ones.
+ */
+function ruleEntries(rules: RawRecord | undefined, isGtm: boolean): AnyRecord[] {
+  const entries = arr(rules?.ruleInfo).map((r) => obj(r))
+  return isGtm ? entries : entries.map((r) => ({ ...r, name: '' }))
+}
+
 /** One entry of `data.containers`: everything one container (GTM or a Google tag) reported. */
 function buildContainer(
   records: RawRecord[],
@@ -434,7 +445,7 @@ function buildContainer(
           title: eventTitle(eventName),
           eventName,
           data: [
-            { eventId, ruleInfo: arr(rules?.ruleInfo) },
+            { eventId, ruleInfo: ruleEntries(rules, isGtm) },
             ...hitEntries(hitsByEvent.get(`${str(started.key?.groupId)}:${eventId}`) ?? [], {
               messageIndex: index,
               eventId,

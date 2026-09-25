@@ -392,3 +392,11 @@ matches the native file character for character.
 
 The contact flow reads 519 differences in shape and 1253 with values, from 571 and 1498. The
 page view reads 770 with values.
+
+### A Google tag container's triggers have no names
+
+A native export writes an empty `name` on every `ruleInfo` entry of a Google tag container,
+124 of them across the two captures, while the GTM container's carry their eight real trigger
+names. Tag Assistant resolves a name from the container's trigger list, which it has for a GTM
+container and not for a Google tag, the same reason its template set is empty there. This tool
+wrote the names the feed reports, so 56 entries differed.
