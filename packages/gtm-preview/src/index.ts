@@ -177,6 +177,8 @@ async function run(command: RunCommand): Promise<number> {
         startUrl: scenario.startUrl,
         containerId: scenario.container.id,
         environment: scenario.container.environment,
+        environmentName: scenario.environmentName,
+        environmentType: scenario.environmentType,
         hitPolicy: scenario.hits,
         capturedAt: new Date().toISOString(),
       },
@@ -191,7 +193,6 @@ async function run(command: RunCommand): Promise<number> {
       authCode: scenario.authCode,
       includeAuth: command.includeAuth,
       startUrl: scenario.startUrl,
-      containerName: scenario.name,
       environmentName: scenario.environmentName,
       environmentType: scenario.environmentType,
     })
@@ -219,7 +220,8 @@ async function exportCommand(
     containerId: saved.meta.containerId,
     environment: saved.meta.environment,
     startUrl: saved.meta.startUrl,
-    containerName: saved.meta.scenario,
+    environmentName: saved.meta.environmentName,
+    environmentType: saved.meta.environmentType,
   })
   await writeJson(out, doc)
   console.log(`Tag Assistant import file written to ${out}`)

@@ -560,12 +560,15 @@ function buildContainer(
   })
   const pageSummaries: Record<string, AnyRecord> = {}
   const containerLoadInfoByGroupId: Record<string, AnyRecord> = {}
-  for (const groupId of groupOrder) {
+  for (const [position, groupId] of groupOrder.entries()) {
     const gi = groupInfo.get(groupId)!
+    // Where the visitor came from, which within a session is the previous page. The first page
+    // has none; a native session shows Tag Assistant's own launcher there.
+    const previous = position > 0 ? groupInfo.get(groupOrder[position - 1]!)?.url : undefined
     pageSummaries[groupId] = {
       href: gi.url,
       title: gi.title,
-      referrer: '',
+      referrer: previous ?? '',
       readyState: 'complete',
       groupId,
       emoji: '🔷',

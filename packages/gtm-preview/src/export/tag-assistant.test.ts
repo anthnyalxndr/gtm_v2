@@ -662,3 +662,47 @@ describe('naming tags and variables (task-23)', () => {
     expect(tags.map((t) => [t.index, t.name])).toEqual([[0, 'GA4 Event']])
   })
 })
+
+describe('naming the container and the pages (task-24)', () => {
+  it('names the container after the site, not after the scenario', () => {
+    // A native export names the container as Tag Manager does, which for these sites is the
+    // host. Without API access the host is the best guess; the scenario name never is.
+    expect(container.tagName).toBe('127.0.0.1:4173')
+  })
+
+  it('names the environment as Tag Manager does when the caller knows it', () => {
+    const named = buildTagAssistantExport(raw as unknown as RawSession, {
+      ...opts,
+      environmentName: 'Preview Environment 3 2026-06-13 153837',
+      environmentType: 'workspace',
+    }) as unknown as { data: { containers: Record<string, unknown>[] } }
+    const c = named.data.containers[0]!
+    expect(c.environmentName).toBe('Preview Environment 3 2026-06-13 153837')
+    // A workspace preview is labelled QUICK_PREVIEW rather than an environment number.
+    expect(c.version).toBe('QUICK_PREVIEW')
+    expect(Object.keys(c.vendorTemplates as object)).toEqual([
+      'Preview Environment 3 2026-06-13 153837',
+    ])
+  })
+
+  it('gives each page the previous page as its referrer, and the first page none', () => {
+    const base = raw as unknown as RawSession
+    const second = base.records.map((r) => ({
+      ...r,
+      capturedAt: r.capturedAt + 60_000,
+      pageUrl: 'http://127.0.0.1:4173/page2.html',
+      key: r.key ? { ...r.key, groupId: 'group-two' } : r.key,
+    }))
+    const doc = buildTagAssistantExport(
+      { ...base, records: [...base.records, ...second] },
+      opts,
+    ) as unknown as {
+      data: { containers: { pageSummaries: Record<string, { href: string; referrer: string }> }[] }
+    }
+    const pages = Object.values(doc.data.containers[0]!.pageSummaries)
+    expect(pages.map((p) => [p.href, p.referrer])).toEqual([
+      ['http://127.0.0.1:4173/', ''],
+      ['http://127.0.0.1:4173/page2.html', 'http://127.0.0.1:4173/'],
+    ])
+  })
+})
