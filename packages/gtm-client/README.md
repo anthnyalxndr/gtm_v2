@@ -11,7 +11,7 @@ pnpm add @anthnyalxndr/gtm-client
 - **OAuth once, everywhere.** Client secrets and the token live in `~/.config/gtm-apply/` (override with `GTM_APPLY_CONFIG_DIR`, or pass paths to the constructor). First run opens a browser and stores the token; every later run on the machine reuses it. A revoked token produces an error that names the file to delete.
 - **Throttle and retry.** `client.call(fn)` serializes requests with a minimum gap and retries 429 and 5xx with backoff. Every helper goes through it.
 - **The raw service.** `client.service` is the generated `tagmanager_v2.Tagmanager` instance for anything not wrapped.
-- **Typed helpers.** `listAccounts`, `resolveContainer` (find a container by its `GTM-XXXXXXX` public id across every account you can see), `createContainer`.
+- **Typed helpers.** `listAccounts`, `listContainers` (every container of one account), `resolveContainer` (find a container by its `GTM-XXXXXXX` public id across every account you can see), `createContainer`.
 - **A fake for tests.** `@anthnyalxndr/gtm-client/testing` exports `createFakeService`, an in-memory implementation of the API surface with workspace, version, and fingerprint semantics, so code built on the client can be tested without credentials.
 
 ## Usage

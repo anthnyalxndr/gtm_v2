@@ -1,4 +1,4 @@
-import { GtmClient, type GtmClientOptions } from "@anthnyalxndr/gtm-client";
+import { GtmClient, listContainers, type GtmClientOptions } from "@anthnyalxndr/gtm-client";
 import {
   GtmSnapshot,
   type ConstantNameOf,
@@ -51,6 +51,15 @@ export class Gtm {
     const snapshot = await new GtmSnapshot(this.client, source, snapshotOptions).init();
     this.#cache.set(key, snapshot);
     return snapshot;
+  }
+
+  /** Pull every container of an account. Each one is memoized like a single snapshot() call. */
+  async snapshotAccount(
+    accountId: string,
+    options: SnapshotCallOptions = {}
+  ): Promise<GtmSnapshot[]> {
+    const refs = await listContainers(this.client, accountId);
+    return Promise.all(refs.map((ref) => this.snapshot({ container: ref.publicId }, options)));
   }
 
   /** Load a committed snapshot. Recipe and constant names are literal types for a const literal. */
