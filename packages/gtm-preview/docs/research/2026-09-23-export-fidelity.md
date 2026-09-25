@@ -156,3 +156,35 @@ visible, since a person reading the timeline is missing ten entries.
 | 79    | `macroInfo`                                                                                         |
 | 64    | `consentData`                                                                                       |
 | 19    | `vendorTemplates`                                                                                   |
+
+## The two recordings are different sessions (2026-09-25)
+
+Once the ten missing message kinds were written, the GTM container held 34 messages against
+the native export's 33. The extra one is a `user_engagement` event. The Google tag container
+has a matching surplus: one extra `gtm.init_consent`.
+
+Neither is a bug in the export. Both events are in the raw session with correct attribution:
+
+```
+  2367  GTM   GTM-5KNSPW9K  ev=19  user_engagement    ctid=GTM-5KNSPW9K
+  2374  OGT   G-9ECPFL5LDC  ev=19  user_engagement    ctid=G-9ECPFL5LDC
+```
+
+GTM's own runtime emitted `EVENT_STARTED` for `user_engagement`, so a native Tag Assistant
+reading the same feed would have shown it too. The native file was recorded by a person in a
+real browser on a different day. `user_engagement` depends on how long the page was engaged
+and when it was hidden, and a second `gtm.init_consent` on the Google tag depends on whether
+the second page arrived as a full load. Those differ between any two visits to a live site.
+
+So an exact message count against a separately recorded native file is not a criterion this
+tool can satisfy. What is checkable, and now true: every kind of message the native export
+writes is written, and no message kind appears on one side only. Counting messages of the
+same kind only measures the site's behaviour on the day.
+
+Message order differs for the same reason. In the headless run GTM numbered its own events
+`1 gtm.init_consent, 2 gtm.init, 3 gtm.dom, 4 gtm.load, 6 gtm.js`, so the DOM milestones
+arrived before `gtm.js`. The container request is rewritten to the debug build, which adds a
+round trip, while the hit policy aborts every vendor request, so the page finishes loading
+before the container script runs and GTM replays the milestones it missed. The native
+recording loaded the container first and ran `gtm.js, gtm.dom, gtm.load`. The export orders
+messages by arrival in both cases; the arrivals differ.

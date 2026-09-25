@@ -1,10 +1,10 @@
 ---
 id: TASK-21
 title: Run against a Google tag with no GTM container and no credentials
-status: To Do
+status: Deferred
 assignee: []
 created_date: '2026-09-23 20:37'
-updated_date: '2026-09-23 20:40'
+updated_date: '2026-09-25 09:04'
 labels:
   - capture
   - scenario
@@ -38,3 +38,10 @@ This mode is for pages that have no GTM container, and the implementation must e
 - [ ] #9 An integration test covers both: the fixture page with a GTM container refuses a Google-tag scenario, and passes with the flag while recording the uninstrumented container
 
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+2026-09-25: deferred at the user's request. The GTM path is where the fidelity work is happening, and a standalone Google tag mode would fork that work before the export matches a native session. Revisit once task-22's subtasks have landed.
+<!-- SECTION:NOTES:END -->

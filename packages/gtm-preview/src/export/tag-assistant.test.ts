@@ -307,3 +307,135 @@ describe('container identity fields (task-22)', () => {
     expect(c).not.toHaveProperty('environmentLinkType')
   })
 })
+
+describe('gtag commands and non-event pushes as messages (task-22.1)', () => {
+  const base = raw as unknown as RawSession
+  const ev = base.records.find((r) => r.messageType === 'EVENT_STARTED')!
+  const at = ev.capturedAt
+  const key = { ...ev.key, eventId: 40 }
+  const extra: RawRecord[] = [
+    {
+      capturedAt: at + 1,
+      messageType: 'GTAG_COMMAND',
+      containerProduct: 'GTM',
+      key,
+      inPageCommand: true,
+      commandType: 'set',
+      commandData: { 'developer_id.x': true },
+    },
+    {
+      capturedAt: at + 2,
+      messageType: 'GTAG_COMMAND',
+      containerProduct: 'GTM',
+      key,
+      inPageCommand: true,
+      commandType: 'consent',
+      commandData: { subcommand: 'default', ad_storage: 'denied' },
+    },
+    {
+      capturedAt: at + 3,
+      messageType: 'GTAG_COMMAND',
+      containerProduct: 'GTM',
+      key,
+      inPageCommand: true,
+      commandType: 'consent',
+      commandData: { subcommand: 'update', ad_storage: 'granted' },
+    },
+    // Not shown by a native export: the container's own internal calls.
+    {
+      capturedAt: at + 4,
+      messageType: 'GTAG_COMMAND',
+      containerProduct: 'GTM',
+      key,
+      inPageCommand: false,
+      commandType: 'config',
+      commandData: {},
+    },
+    {
+      capturedAt: at + 5,
+      messageType: 'GTAG_COMMAND',
+      containerProduct: 'GTM',
+      key,
+      inPageCommand: true,
+      commandType: 'get',
+      commandData: {},
+    },
+    // A dataLayer push with no event: no eventId on the record.
+    {
+      capturedAt: at + 6,
+      messageType: 'DATA_LAYER',
+      containerProduct: 'GTM',
+      key: { ...ev.key, eventId: undefined },
+      message: { ecommerce: null },
+      abstractModel: { a: 1 },
+      macroInfo: [],
+    },
+  ]
+  const doc = buildTagAssistantExport(
+    { ...base, records: [...base.records, ...extra] },
+    opts,
+  ) as unknown as {
+    data: { containers: { messages: Record<string, unknown>[] }[] }
+  }
+  const messages = doc.data.containers[0]!.messages
+  const byName = (n: string) => messages.find((m) => m.eventName === n)
+
+  it('writes a set command as gtag.set titled Set, with the command model', () => {
+    expect(byName('gtag.set')).toMatchObject({
+      navType: 'MESSAGE',
+      title: 'Set',
+      eventName: 'gtag.set',
+      eventId: 40,
+      tagInfo: [],
+      data: [],
+      gtagCommandModel: {
+        inPageCommand: true,
+        commandType: 'set',
+        commandData: { 'developer_id.x': true },
+      },
+    })
+  })
+
+  it('writes consent commands as gtag.consent.default and gtag.consent.update', () => {
+    expect(byName('gtag.consent.default')).toMatchObject({ title: 'Consent Default' })
+    expect(byName('gtag.consent.update')).toMatchObject({ title: 'Consent Update' })
+    // The reduced form a native export uses: no body, no model, no variables.
+    expect(byName('gtag.consent.default')).not.toHaveProperty('message')
+    expect(byName('gtag.consent.default')).not.toHaveProperty('abstractModel')
+    expect(byName('gtag.consent.default')).not.toHaveProperty('macroInfo')
+  })
+
+  it('writes no message for a command a native export does not show', () => {
+    expect(
+      messages.filter(
+        (m) => (m.gtagCommandModel as { commandType?: string })?.commandType === 'config',
+      ),
+    ).toEqual([])
+    expect(
+      messages.filter(
+        (m) => (m.gtagCommandModel as { commandType?: string })?.commandType === 'get',
+      ),
+    ).toEqual([])
+  })
+
+  it('writes a push with no event as a Message with no event name or id', () => {
+    const plain = messages.find((m) => m.title === 'Message')!
+    expect(plain).toMatchObject({
+      navType: 'MESSAGE',
+      title: 'Message',
+      message: { ecommerce: null },
+      tagInfo: [],
+      data: [],
+    })
+    expect(plain).not.toHaveProperty('eventName')
+    expect(plain).not.toHaveProperty('eventId')
+  })
+
+  it('numbers every message contiguously and lists them newest first', () => {
+    expect(messages.map((m) => m.index)).toEqual(
+      Array.from({ length: messages.length }, (_, i) => messages.length - i),
+    )
+    // Eight events, plus the two consent commands, the set command and the plain push.
+    expect(messages).toHaveLength(8 + 4)
+  })
+})
