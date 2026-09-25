@@ -3,7 +3,7 @@
  */
 
 import { tagmanager, tagmanager_v2 } from "@googleapis/tagmanager";
-import { OAuth2Client } from "google-auth-library";
+import { GoogleAuth, JWT, OAuth2Client, UserRefreshClient } from "google-auth-library";
 import { readFile, writeFile, access, mkdir } from "fs/promises";
 import { constants } from "fs";
 import { dirname } from "path";
@@ -38,6 +38,16 @@ interface StoredCredentials {
   expiry_date: number;
 }
 
+/** Any auth client the Tag Manager service accepts. */
+export type AuthClient = OAuth2Client | JWT | UserRefreshClient | GoogleAuth;
+
+/** Where credentials come from, chosen by selectCredentials(). */
+export type CredentialSource =
+  | { kind: "serviceAccount"; keyFile: string }
+  | { kind: "adc" }
+  | { kind: "refreshToken"; refreshToken: string; clientId?: string; clientSecret?: string }
+  | { kind: "user" };
+
 export interface GtmClientOptions {
   clientSecretsPath?: string;
   tokenPath?: string;
@@ -46,13 +56,63 @@ export interface GtmClientOptions {
   minIntervalMs?: number;
   /** Pre-built service. When set, init() performs no auth. Intended for tests. */
   service?: tagmanager_v2.Tagmanager;
+  /** Path of a service account key file. Also read from GTM_SERVICE_ACCOUNT_KEY. */
+  serviceAccountKeyPath?: string;
+  /** Use Application Default Credentials. Also implied by GOOGLE_APPLICATION_CREDENTIALS. */
+  useAdc?: boolean;
+  /** An OAuth refresh token. Also read from GTM_REFRESH_TOKEN. */
+  refreshToken?: string;
+  /** OAuth client id and secret for the refresh token; default GTM_CLIENT_ID and GTM_CLIENT_SECRET, else client_secrets.json. */
+  clientId?: string;
+  clientSecret?: string;
+  /** Whether a browser may be opened for the user OAuth flow. Default: stdin and stdout are terminals. */
+  interactive?: boolean;
+  /** Environment to read credentials from. Default process.env. Intended for tests. */
+  env?: NodeJS.ProcessEnv;
+  /** Builds the Tag Manager service from an auth client. Default: the real service. Intended for tests. */
+  createService?: (auth: AuthClient) => tagmanager_v2.Tagmanager;
 }
+
+/**
+ * Pick the credential source, in this order: a service account key file,
+ * Application Default Credentials, a refresh token, the user OAuth flow.
+ * The first three never open a browser, which is what CI needs.
+ */
+export function selectCredentials(
+  options: GtmClientOptions = {},
+  env: NodeJS.ProcessEnv = options.env ?? process.env
+): CredentialSource {
+  const keyFile = options.serviceAccountKeyPath ?? env.GTM_SERVICE_ACCOUNT_KEY;
+  if (keyFile) return { kind: "serviceAccount", keyFile };
+  if (options.useAdc || env.GOOGLE_APPLICATION_CREDENTIALS) return { kind: "adc" };
+  const refreshToken = options.refreshToken ?? env.GTM_REFRESH_TOKEN;
+  if (refreshToken) {
+    return {
+      kind: "refreshToken",
+      refreshToken,
+      clientId: options.clientId ?? env.GTM_CLIENT_ID,
+      clientSecret: options.clientSecret ?? env.GTM_CLIENT_SECRET,
+    };
+  }
+  return { kind: "user" };
+}
+
+/** The message shown instead of a browser when nothing headless is configured. */
+export const HEADLESS_HELP =
+  "No credentials and no terminal to authorize in. Give the client one of: " +
+  "a service account key file (GTM_SERVICE_ACCOUNT_KEY or serviceAccountKeyPath; add its email as a Tag Manager user), " +
+  "Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS), " +
+  "or a refresh token (GTM_REFRESH_TOKEN with GTM_CLIENT_ID and GTM_CLIENT_SECRET, or client_secrets.json). " +
+  "Or run once in a terminal so the token is stored";
 
 export class GtmClient {
   private readonly clientSecretsPath: string;
   private readonly tokenPath: string;
   private readonly scopes: readonly string[];
   private readonly limiter: <T>(fn: () => Promise<T>) => Promise<T>;
+  private readonly options: GtmClientOptions;
+  private readonly interactive: boolean;
+  private readonly createService: (auth: AuthClient) => tagmanager_v2.Tagmanager;
   private api: tagmanager_v2.Tagmanager | null = null;
   private initialized = false;
   private initializationPromise: Promise<void> | null = null;
@@ -63,6 +123,9 @@ export class GtmClient {
     this.tokenPath = options.tokenPath ?? defaults.tokenPath;
     this.scopes = options.scopes ?? TAG_MANAGER_SCOPES;
     this.limiter = createLimiter(options.minIntervalMs ?? 250);
+    this.options = options;
+    this.interactive = options.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
+    this.createService = options.createService ?? ((auth) => tagmanager({ version: "v2", auth }));
     if (options.service) {
       this.api = options.service;
       this.initialized = true;
@@ -112,15 +175,41 @@ export class GtmClient {
   }
 
   private async initializeInternal(): Promise<void> {
+    const source = selectCredentials(this.options);
+    const auth = await this.authFor(source);
+    this.api = this.createService(auth);
+    this.initialized = true;
+  }
+
+  /** Build the auth client for a credential source. Only the user flow may open a browser. */
+  private async authFor(source: CredentialSource): Promise<AuthClient> {
+    switch (source.kind) {
+      case "serviceAccount":
+        return new JWT({ keyFile: source.keyFile, scopes: [...this.scopes] });
+      case "adc":
+        return new GoogleAuth({ scopes: [...this.scopes] });
+      case "refreshToken": {
+        let { clientId, clientSecret } = source;
+        if (!clientId || !clientSecret) {
+          const secrets = await this.readClientSecrets();
+          clientId = clientId ?? secrets.client_id;
+          clientSecret = clientSecret ?? secrets.client_secret;
+        }
+        return new UserRefreshClient(clientId, clientSecret, source.refreshToken);
+      }
+      case "user":
+        return this.getAuthenticatedClient();
+    }
+  }
+
+  private async readClientSecrets(): Promise<ClientSecrets["installed"]> {
     try {
       await access(this.clientSecretsPath, constants.F_OK);
     } catch {
       throw new Error(`Client secrets file not found: ${this.clientSecretsPath}`);
     }
-
-    const auth = await this.getAuthenticatedClient();
-    this.api = tagmanager({ version: "v2", auth });
-    this.initialized = true;
+    const content = await readFile(this.clientSecretsPath, "utf-8");
+    return (JSON.parse(content) as ClientSecrets).installed;
   }
 
   private getInitializedService(): tagmanager_v2.Tagmanager {
@@ -278,9 +367,7 @@ export class GtmClient {
   }
 
   private async getAuthenticatedClient(): Promise<OAuth2Client> {
-    const content = await readFile(this.clientSecretsPath, "utf-8");
-    const secrets: ClientSecrets = JSON.parse(content);
-    const { client_id, client_secret } = secrets.installed;
+    const { client_id, client_secret } = await this.readClientSecrets();
 
     const oauth2Client = new OAuth2Client(client_id, client_secret);
     const storedCredentials = await this.loadCredentials();
@@ -300,6 +387,9 @@ export class GtmClient {
       }
     }
 
+    if (!this.interactive) {
+      throw new Error(`${HEADLESS_HELP} (looked for ${this.tokenPath}).`);
+    }
     const authenticatedClient = await this.runLocalServerFlow(client_id, client_secret);
     const tokens = authenticatedClient.credentials;
     const credentialsToStore: StoredCredentials = {

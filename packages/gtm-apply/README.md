@@ -12,7 +12,7 @@ Auth, throttling, and the raw API service come from [`@anthnyalxndr/gtm-client`]
 
 ## Credentials
 
-Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `client_secrets.json.example`). On first run gtm-apply opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-apply/token.json`. That one token serves every repo on the machine. Set `GTM_APPLY_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client.
+Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `client_secrets.json.example`). On first run gtm-apply opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-apply/token.json`. That one token serves every repo on the machine. Set `GTM_APPLY_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client. In CI, set `GTM_SERVICE_ACCOUNT_KEY`, `GOOGLE_APPLICATION_CREDENTIALS` or `GTM_REFRESH_TOKEN` instead; the client never opens a browser when one of those is present, and fails with a message naming them when there is no terminal (see the [gtm-client README](../gtm-client/README.md#headless-authentication-ci)).
 
 ## Getting started
 
@@ -99,9 +99,28 @@ gtm-apply snapshot --container GTM-XXXXXXX                  # latest version
 gtm-apply snapshot --container GTM-XXXXXXX --live           # published version
 gtm-apply snapshot --container GTM-XXXXXXX --version 42
 gtm-apply snapshot --container GTM-XXXXXXX --workspace wip  # work in progress
+gtm-apply snapshot --account 6012345678 --out snapshots      # one <publicId>.json per container
+gtm-apply snapshot --container GTM-A --container GTM-B --out snapshots
 ```
 
-From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `GtmSnapshot` (below) adds the recipe index on top of it.
+A snapshot says which environment serves the version it read and whether that version is the published one. The API reports no version id on the built-in Live and Latest environments, so `environment` is resolved by type: Live for `--live`, Latest for the default source, and for `--version <id>` the custom environment whose `containerVersionId` matches, else Live or Latest when the id is theirs. `liveVersionId` is the published version's id (null when nothing is published) and `published` is true when the version read is that one, so a reader can answer "is this live" from the file alone. A workspace source has no environment and is never published.
+
+From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `pullSnapshots(client, sources)` pulls several containers concurrently within the client's throttle and returns them in source order; `snapshotAccount(client, accountId)` lists an account's containers (`listContainers` in gtm-client) and pulls the latest version of each. `Gtm.snapshotAccount(accountId)` does the same and memoizes each container like a single `snapshot()` call. `GtmSnapshot` (below) adds the recipe index on top of it.
+
+### Canonical form
+
+`normalize`, `export` and `snapshot` write canonical text: sections in a fixed order, entities sorted by name, `firingTriggerName`, `blockingTriggerName` and `builtInVariable` sorted, `parameter` and `map` arrays sorted by key, object keys written `name`, `type`, `parentFolderName`, `notes` first and the rest alphabetically, two-space JSON with a trailing newline. A `list` parameter keeps its item order, because there order is meaning. The same content always produces the same bytes, so a committed spec diffs only when the container changed. From code, `stringifySpec(spec)` and `stringifySnapshot(snapshot)` do the same; `normalizeExport` and `GtmSnapshot` keep the order the API returned, so `select()` still returns entities in library order.
+
+The planner compares an array of uniquely keyed items (parameters, map entries) by key, so a canonical spec reconciles against a container whose parameters are stored in another order without planning an update.
+
+### Pull: a container as a directory
+
+```bash
+gtm-apply pull --container GTM-XXXXXXX --out gtm/containers/acme-com
+gtm-apply pull --account 6012345678 --out gtm/containers        # one <slug>/ per container
+```
+
+`pull` writes three files: `spec.json`, the apply-able part in canonical form; `snapshot.json`, everything the API exposes; and `container.json`, the container's identity and what was read (the version id and name, the workspace, the serving environment) with no timestamp, so an unchanged container rewrites it byte for byte. With `--account`, each container's directory is named by a slug of its name (`acme.com` becomes `acme-com`; the lowercased public id is appended when two containers share a slug, or used alone when the name is empty), because directories are for people and a public id tells a reviewer nothing. A container whose spec cannot be normalized (a trigger group, a custom template tag until templates are supported) still gets the other two files, an existing `spec.json` is left alone, and the command exits 1 after every container was attempted. From code: `containerSlug(name, publicId)`, `pullContainer(client, source, dir)` and `pullAccount(client, accountId, outDir, { filter, dirFor })`.
 
 ### Container types
 
@@ -273,6 +292,35 @@ gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --plan plan.ts --
 ```
 
 A content package holds the library: its pull script reads the template container with `GtmSnapshot`, lints it, and writes the snapshot as a `const` TypeScript module with `libraryModuleSource`, so recipe and constant names are literal types wherever the package is imported. See `packages/gtm-web-recipes`.
+
+## Repo config file
+
+A repo that manages containers keeps one `gtm.config.json` (or a `gtm.config.ts`, `.js` or `.mjs` module whose default export is the same object) beside its `gtm/` directory. Entries are keyed by a human slug, which is also the container's directory under `gtm/containers/`; `env` names the environment, and at most one entry may carry each env name.
+
+```json
+{
+  "account": { "id": "6012345678", "name": "Acme" },
+  "containers": {
+    "acme-com": { "publicId": "GTM-ABC1234", "env": "prod" },
+    "acme-com-staging": { "publicId": "GTM-STG5678", "env": "staging" },
+    "sst-acme-com": { "publicId": "GTM-SRV9999", "dir": "gtm/containers/server", "spec": "gtm/containers/server/spec.json" }
+  },
+  "defaults": { "workspace": "${env}-${commit}", "prune": false, "policy": {} }
+}
+```
+
+`dir` defaults to `gtm/containers/<slug>` and `spec` to `<dir>/spec.json`, both relative to the config file. `defaults.workspace` is the workspace name `apply` uses when `--workspace` is absent; `${slug}`, `${env}`, `${commit}` (the short hash of HEAD, or `nogit`) and `${date}` are filled in, and the default template is `${slug}-${commit}`. `prune` and `policy` are reserved for the prune mode and policy rules and are validated but not read yet.
+
+With `--env <name>`, a command resolves its container from the entry whose `env` is that name, or the entry keyed by that slug: `--container` for every command, plus `--spec` and `--workspace` for `apply` and `--out` for `pull`. An explicit flag always wins. `--config <file>` points at a config elsewhere than the working directory.
+
+```bash
+gtm-apply apply --env staging --dry-run       # container, spec and workspace from the config
+gtm-apply apply --env prod --publish
+gtm-apply pull --env prod                     # into gtm/containers/acme-com
+gtm-apply export --env staging
+```
+
+A missing or invalid file fails before any API call with the file and field named, for example `gtm.config.json: containers.acme-com.publicId: must be a container public id like GTM-XXXXXXX`. From code: `loadRepoConfig(path?, cwd?)`, `parseRepoConfig(raw, file)`, `resolveEnv(config, name)`, `renderWorkspace(template, vars)`.
 
 ## Ad hoc work: use gtm-cli
 
