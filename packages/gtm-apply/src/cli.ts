@@ -12,12 +12,13 @@ import { executePlan } from "./spec/execute.js";
 import { formatPlan, planContainerSpec } from "./spec/plan.js";
 import { pullSnapshot } from "./snapshot/pull.js";
 import { pullSnapshots, snapshotAccount } from "./snapshot/account.js";
+import { pullAccount, pullContainer } from "./snapshot/dir.js";
 import type { SnapshotSource } from "./snapshot/types.js";
 import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
 import { applyPlan, compilePlan, type TrackingPlan } from "./plan/tracking-plan.js";
 import { formatIssue as formatSpecIssue } from "./spec/validate.js";
 
-export type CliCommand = "apply" | "normalize" | "export" | "snapshot";
+export type CliCommand = "apply" | "normalize" | "export" | "snapshot" | "pull";
 
 export interface CliArgs {
   command: CliCommand;
@@ -50,7 +51,11 @@ export const USAGE = `Usage:
   gtm-apply snapshot --container GTM-XXXXXXX [--live | --version <id> | --workspace <name>]
       (everything the API exposes for the container, as returned by the API)
   gtm-apply snapshot (--container GTM-A --container GTM-B | --account <id>) --out <dir>
-      (one <publicId>.json per container)`;
+      (one <publicId>.json per container)
+  gtm-apply pull --container GTM-XXXXXXX --out <dir> [--live | --version <id> | --workspace <name>]
+      (writes <dir>/spec.json, snapshot.json and container.json)
+  gtm-apply pull --account <id> --out <dir>
+      (one <dir>/<slug>/ per container, slug from the container name; exits 1 if any container failed, after trying them all)`;
 
 export function parseCliArgs(argv: readonly string[]): CliArgs {
   const { values, positionals } = parseArgs({
@@ -73,7 +78,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     },
   });
   const command = positionals[0];
-  if (!["apply", "normalize", "export", "snapshot"].includes(command)) {
+  if (!["apply", "normalize", "export", "snapshot", "pull"].includes(command)) {
     throw new Error(USAGE);
   }
   return {
@@ -189,6 +194,32 @@ export async function runCli(
       await client.init();
       const snapshot = await pullSnapshot(client, sourceFromArgs(args, args.container));
       out(stringifySnapshot(snapshot).trimEnd());
+      return 0;
+    }
+    case "pull": {
+      if (!args.out) throw new Error(`pull needs --out <dir>.\n${USAGE}`);
+      if (!args.account && !args.container) {
+        throw new Error(`pull needs --container or --account.\n${USAGE}`);
+      }
+      await client.init();
+      if (args.account) {
+        const result = await pullAccount(client, args.account, args.out);
+        let failed = result.failures.length;
+        for (const o of result.outcomes) {
+          out(
+            `${o.record.publicId}: wrote ${o.dir}${o.specError ? ` (no spec: ${o.specError})` : ""}`
+          );
+          if (o.specError) failed++;
+        }
+        for (const f of result.failures) out(`${f.publicId}: pull failed: ${f.error}`);
+        return failed > 0 ? 1 : 0;
+      }
+      const outcome = await pullContainer(client, sourceFromArgs(args, args.container!), args.out);
+      out(`${outcome.record.publicId}: wrote ${outcome.dir}`);
+      if (outcome.specError) {
+        out(`[!] no spec written: ${outcome.specError}`);
+        return 1;
+      }
       return 0;
     }
     case "apply": {

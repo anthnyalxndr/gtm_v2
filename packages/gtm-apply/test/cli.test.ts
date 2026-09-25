@@ -61,6 +61,14 @@ describe("parseCliArgs", () => {
     expect(parseCliArgs(["snapshot", "--account", "1", "--out", "d"]).account).toBe("1");
   });
 
+  it("accepts pull", () => {
+    expect(parseCliArgs(["pull", "--account", "1", "--out", "gtm/containers"])).toMatchObject({
+      command: "pull",
+      account: "1",
+      out: "gtm/containers",
+    });
+  });
+
   it("parses normalize with a file and rejects unknown commands", () => {
     expect(parseCliArgs(["normalize", "x.json"])).toMatchObject({
       command: "normalize",
@@ -101,6 +109,53 @@ describe("runCli", () => {
       `Wrote ${join(dir, "GTM-AAA.json")}`,
       `Wrote ${join(dir, "GTM-BBB.json")}`,
     ]);
+  });
+
+  it("pull --container writes the directory and exits 0", async () => {
+    const { client, state } = fresh();
+    await seedVersion(client, state, "accounts/1/containers/10", "Tag A");
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["pull", "--container", "GTM-ABC123", "--out", dir]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    expect((await readdir(dir)).sort()).toEqual(["container.json", "snapshot.json", "spec.json"]);
+    expect(lines).toEqual([`GTM-ABC123: wrote ${dir}`]);
+  });
+
+  it("pull --account writes every container and exits 1 when one fails", async () => {
+    const { service, state } = createFakeService({
+      containers: [
+        { accountId: "1", containerId: "10", publicId: "GTM-AAA", name: "a.com" },
+        { accountId: "1", containerId: "11", publicId: "GTM-BBB", name: "b.com" },
+      ],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await seedVersion(client, state, "accounts/1/containers/10", "Tag A");
+    const root = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["pull", "--account", "1", "--out", root]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(1);
+    expect(await readdir(root)).toEqual(["a-com"]);
+    expect(lines[0]).toBe(`GTM-AAA: wrote ${join(root, "a-com")}`);
+    expect(lines[1]).toMatch(/^GTM-BBB: pull failed: .*no versions/);
+  });
+
+  it("pull refuses without --out or without a target", async () => {
+    const { client } = fresh();
+    await expect(
+      runCli(parseCliArgs(["pull", "--container", "GTM-ABC123"]), client)
+    ).rejects.toThrow(/--out/);
+    await expect(runCli(parseCliArgs(["pull", "--out", "x"]), client)).rejects.toThrow(
+      /--container or --account/
+    );
   });
 
   it("snapshot of several containers refuses without --out", async () => {

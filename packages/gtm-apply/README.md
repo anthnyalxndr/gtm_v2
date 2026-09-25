@@ -111,6 +111,15 @@ From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snap
 
 The planner compares an array of uniquely keyed items (parameters, map entries) by key, so a canonical spec reconciles against a container whose parameters are stored in another order without planning an update.
 
+### Pull: a container as a directory
+
+```bash
+gtm-apply pull --container GTM-XXXXXXX --out gtm/containers/acme-com
+gtm-apply pull --account 6012345678 --out gtm/containers        # one <slug>/ per container
+```
+
+`pull` writes three files: `spec.json`, the apply-able part in canonical form; `snapshot.json`, everything the API exposes; and `container.json`, the container's identity and what was read (the version id and name, the workspace, the serving environment) with no timestamp, so an unchanged container rewrites it byte for byte. With `--account`, each container's directory is named by a slug of its name (`acme.com` becomes `acme-com`; the lowercased public id is appended when two containers share a slug, or used alone when the name is empty), because directories are for people and a public id tells a reviewer nothing. A container whose spec cannot be normalized (a trigger group, a custom template tag until templates are supported) still gets the other two files, an existing `spec.json` is left alone, and the command exits 1 after every container was attempted. From code: `containerSlug(name, publicId)`, `pullContainer(client, source, dir)` and `pullAccount(client, accountId, outDir, { filter, dirFor })`.
+
 ### Container types
 
 A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `normalize` sets it from an export's `usageContext`. Applying a spec to a container of another type is a plan error before any write. Server containers add two sections, `client` and `transformation`, with the same rules as other entities: name is identity, `parentFolderName` names the folder, `{{Name}}` references are resolved, and the engine applies them after variables and before triggers. A `web` spec that declares clients is rejected by validation. Custom templates and gtag configs are carried in snapshots but not yet applied.
