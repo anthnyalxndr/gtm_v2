@@ -9,6 +9,9 @@ export interface SavedRawSession extends RawSession {
     startUrl: string
     containerId: string
     environment: number
+    /** What Tag Manager calls the environment, so a rebuilt export names it as the run did. */
+    environmentName?: string
+    environmentType?: string
     hitPolicy: string
     capturedAt: string
   }
