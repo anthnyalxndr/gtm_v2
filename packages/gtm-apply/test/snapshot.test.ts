@@ -17,18 +17,9 @@ function serverFake() {
       },
     ],
     environments: [
-      {
-        path: `${containerPath}/environments/1`,
-        name: "Live",
-        type: "live",
-        containerVersionId: "0",
-      },
-      {
-        path: `${containerPath}/environments/2`,
-        name: "Latest",
-        type: "latest",
-        containerVersionId: "0",
-      },
+      // The API reports no containerVersionId on the built-in Live and Latest environments.
+      { path: `${containerPath}/environments/1`, name: "Live", type: "live" },
+      { path: `${containerPath}/environments/2`, name: "Latest", type: "latest" },
     ],
     destinations: [
       { path: `${containerPath}/destinations/AW-1`, destinationId: "AW-1", name: "Ads" },
@@ -55,10 +46,7 @@ async function seedVersion(client: GtmClient, state: FakeState): Promise<string>
   await ws.gtag_config.create({ parent, requestBody: { type: "googtag" } });
   await ws.built_in_variables.create({ parent, type: ["requestPath"] });
   await ws.create_version({ path: parent, requestBody: { name: "v1" } });
-  const versionId = state.versions[state.versions.length - 1].versionId;
-  // Point the environments at the new version, as Tag Manager does for Latest and Live.
-  for (const e of state.environments) e.containerVersionId = versionId;
-  return versionId;
+  return state.versions[state.versions.length - 1].versionId;
 }
 
 describe("containerTypeOf", () => {
@@ -82,7 +70,9 @@ describe("pullSnapshot", () => {
     expect(snap.workspace).toBeNull();
     expect(snap.containerVersionHeader?.containerVersionId).toBe(versionId);
     expect(snap.environments.map((e) => e.name)).toEqual(["Live", "Latest"]);
-    expect(snap.environment?.name).toBe("Live");
+    expect(snap.environment?.name).toBe("Latest");
+    expect(snap.published).toBe(false);
+    expect(snap.liveVersionId).toBeNull();
     expect(snap.destinations.map((d) => d.destinationId)).toEqual(["AW-1"]);
     expect(snap.folder.map((f) => f.name)).toEqual(["Server"]);
     expect(snap.variable.map((v) => v.name)).toEqual(["Const - Ads"]);
@@ -108,6 +98,7 @@ describe("pullSnapshot", () => {
     const fromWorkspace = await pullSnapshot(client, { container: "GTM-SRV123", workspace: "wip" });
     expect(fromWorkspace.workspace?.name).toBe("wip");
     expect(fromWorkspace.environment).toBeNull();
+    expect(fromWorkspace.published).toBe(false);
     expect(fromWorkspace.containerVersionHeader).toEqual(fromVersion.containerVersionHeader);
     const names = (s: typeof fromVersion) => ({
       folder: s.folder.map((e) => e.name),
@@ -131,8 +122,53 @@ describe("pullSnapshot", () => {
     });
     const live = await pullSnapshot(client, { container: "GTM-SRV123", version: "live" });
     expect(live.containerVersionHeader?.containerVersionId).toBe(v1);
+    expect(live.environment?.name).toBe("Live");
+    expect(live.published).toBe(true);
+    expect(live.liveVersionId).toBe(v1);
     const byId = await pullSnapshot(client, { container: "GTM-SRV123", version: v1 });
     expect(byId.tag.map((t) => t.name)).toEqual(["GA4"]);
+    expect(byId.environment?.name).toBe("Live");
+    expect(byId.published).toBe(true);
+  });
+
+  it("resolves the serving environment by type, and custom environments by version id", async () => {
+    const { client, state } = serverFake();
+    const v1 = await seedVersion(client, state);
+    await client.service.accounts.containers.versions.publish({
+      path: `${containerPath}/versions/${v1}`,
+    });
+    const v2 = await seedVersion(client, state);
+    state.environments.push({
+      path: `${containerPath}/environments/3`,
+      name: "Staging",
+      type: "user",
+      containerVersionId: v2,
+    });
+
+    // Default source: Latest, and the file says it is not the published version.
+    const latest = await pullSnapshot(client, { container: "GTM-SRV123" });
+    expect(latest.containerVersionHeader?.containerVersionId).toBe(v2);
+    expect(latest.environment?.name).toBe("Latest");
+    expect(latest.published).toBe(false);
+    expect(latest.liveVersionId).toBe(v1);
+
+    // Default source when latest is also live: Latest, published true.
+    await client.service.accounts.containers.versions.publish({
+      path: `${containerPath}/versions/${v2}`,
+    });
+    const both = await pullSnapshot(client, { container: "GTM-SRV123" });
+    expect(both.environment?.name).toBe("Latest");
+    expect(both.published).toBe(true);
+
+    // A version id matching a custom environment resolves to it, before Live or Latest.
+    const staging = await pullSnapshot(client, { container: "GTM-SRV123", version: v2 });
+    expect(staging.environment?.name).toBe("Staging");
+    expect(staging.published).toBe(true);
+
+    // A version id that is neither live, latest nor custom has no environment.
+    const old = await pullSnapshot(client, { container: "GTM-SRV123", version: v1 });
+    expect(old.environment).toBeNull();
+    expect(old.published).toBe(false);
   });
 
   it("rejects a source naming both a workspace and a version, and a missing workspace", async () => {
