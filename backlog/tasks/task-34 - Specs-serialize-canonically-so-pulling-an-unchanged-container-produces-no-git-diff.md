@@ -7,7 +7,7 @@ status: Review
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:28'
-updated_date: '2026-09-25 10:02'
+updated_date: '2026-09-25 10:44'
 labels:
   - gtm-apply
   - gtm-as-code
@@ -33,7 +33,7 @@ matches() in resources/entities.ts compares arrays positionally, so a canonical 
 <!-- AC:BEGIN -->
 - [x] #1 stringifySpec returns identical text for two specs that differ only in entity order, top-level parameter or map order, object key order, or trigger-name order, and preserves the order of items inside a list parameter
 - [x] #2 gtm-apply normalize and gtm-apply export print canonical output; normalize on its own output prints the same bytes; normalizeExport and GtmSnapshot keep the order the API returned
-- [ ] #3 A canonical spec applied to a container whose stored parameters are in a different order plans every entity as unchanged: matches compares arrays of uniquely keyed items by key and every other array positionally, and a live probe against a test container records in the notes whether Tag Manager preserves parameter order
+- [x] #3 A canonical spec applied to a container whose stored parameters are in a different order plans every entity as unchanged: matches compares arrays of uniquely keyed items by key and every other array positionally, and a live probe against a test container records in the notes whether Tag Manager preserves parameter order
 - [x] #4 gtm-apply snapshot prints a canonical snapshot: entity collections sorted by name (destinations by id, gtag configs by id), keys in a stable order, so two snapshots of an unchanged container differ only in pulledAt
 - [x] #5 Unit tests cover each sort rule, idempotence, the list-parameter exception and the by-key comparison; the gtm-apply README documents canonical form
 <!-- AC:END -->
@@ -48,10 +48,12 @@ Follow docs/superpowers/plans/2026-09-23-gtm-as-code-foundations.md tasks 1 to 4
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-09-25: canonicalSpec/stringifySpec (spec/canonical.ts) and canonicalSnapshot/stringifySnapshot (snapshot/canonical.ts); normalize, export and snapshot print canonical text; matches() compares uniquely keyed arrays by key. 144 gtm-apply tests green. AC #3 code half is done and tested; the live probe of whether Tag Manager preserves parameter order could not run: the OAuth token at ~/.config/gtm-apply/token.json was rejected (invalid_grant). The probe script is packages/gtm-apply/scripts/probe-parameter-order.ts (untracked); after re-authorizing, run pnpm --filter @anthnyalxndr/gtm-apply exec tsx scripts/probe-parameter-order.ts and record the sent/stored lines here.
+
+2026-09-25 live probe on GTM-WNX8FFXW (test container), workspace probe-order, tags created and deleted: Tag Manager does not preserve the order parameters are sent in. html tag sent supportDocumentWrite,html and stored html,supportDocumentWrite; awct tag sent currencyCode,conversionLabel,conversionId and stored currencyCode,conversionId,conversionLabel (the template's own field order, not alphabetical). Keys the template does not declare (zeta, alpha on an html tag) are dropped on write. So parameter order carries no meaning, sorting by key in canonical form is safe, and the by-key comparison in matches() is required, not optional. Probe script deleted.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Added spec/canonical.ts (compareStrings, canonicalValue, canonicalSpec, stringifySpec) and snapshot/canonical.ts (canonicalSnapshot, stringifySnapshot), applied at the CLI's normalize, export and snapshot print sites; normalizeExport and GtmSnapshot keep API order. matches() now compares arrays of uniquely keyed items by key so a canonical spec never plans a spurious update. README documents canonical form. Verified with pnpm verify: 19 + 144 + 6 tests green. Left open: the live probe of Tag Manager's parameter order (AC #3 second half) needs a fresh OAuth token; script and command are in the notes.
+Added spec/canonical.ts (compareStrings, canonicalValue, canonicalSpec, stringifySpec) and snapshot/canonical.ts (canonicalSnapshot, stringifySnapshot), applied at the CLI's normalize, export and snapshot print sites; normalizeExport and GtmSnapshot keep API order. matches() compares arrays of uniquely keyed items by key, which a live probe showed is required: Tag Manager stores parameters in its template's own order and drops undeclared keys. README documents canonical form. pnpm verify green: 19 + 144 + 6 tests.
 <!-- SECTION:FINAL_SUMMARY:END -->
