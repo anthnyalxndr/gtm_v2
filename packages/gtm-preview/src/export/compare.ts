@@ -59,6 +59,11 @@ export type KeyFn = (element: unknown, index: number) => string
 export interface CompareOptions {
   /** Path (with array indices replaced by `[]`) to a function keying that array's elements. */
   alignBy?: Record<string, KeyFn>
+  /**
+   * Paths whose object keys carry no meaning across sessions, such as a map keyed by group id.
+   * Their entries are compared in order instead of by key.
+   */
+  alignKeyless?: string[]
   /** Paths to skip entirely. */
   ignore?: string[]
   /** Compare values, not just shape. Off by default: shape first, then values. */
@@ -74,6 +79,7 @@ export function compareExports(
 ): Difference[] {
   const out: Difference[] = []
   const ignore = new Set(options.ignore ?? [])
+  const keyless = new Set(options.alignKeyless ?? [])
 
   const walk = (a: unknown, b: unknown, path: string, key?: string): void => {
     if (ignore.has(generalise(path))) return
@@ -109,6 +115,15 @@ export function compareExports(
       return
     }
     if (isObject(a) && isObject(b)) {
+      if (keyless.has(generalise(path))) {
+        const av = Object.values(a)
+        const bv = Object.values(b)
+        if (av.length !== bv.length)
+          out.push({ path, kind: 'length', native: av.length, ours: bv.length })
+        for (let i = 0; i < Math.min(av.length, bv.length); i += 1)
+          walk(av[i], bv[i], `${path}[${i}]`)
+        return
+      }
       for (const k of Object.keys(a)) {
         if (!(k in b)) out.push({ path: `${path}.${k}`, kind: 'missing', native: typeOf(a[k]) })
         else walk(a[k], b[k], `${path}.${k}`, k)
@@ -152,6 +167,18 @@ export function formatDifferences(diffs: Difference[]): string {
 }
 
 /** The alignment a Tag Assistant export needs: messages and containers by identity, not position. */
+/**
+ * Maps whose keys are per-session identifiers: a group id restarts with every run, and the
+ * environment name naming a `vendorTemplates` entry is whatever Tag Manager called the
+ * environment. Comparing those keys reports every entry as missing on one side and extra on
+ * the other, which hides the real differences inside them.
+ */
+export const EXPORT_KEYLESS_MAPS: string[] = [
+  '$.data.containers[].pageSummaries',
+  '$.data.containers[].containerLoadInfoByGroupId',
+  '$.data.containers[].vendorTemplates',
+]
+
 export const EXPORT_ALIGNMENT: Record<string, KeyFn> = {
   '$.data.containers': (el) => String((el as { publicId?: string }).publicId),
   '$.data.containers[].messages': (el) => {

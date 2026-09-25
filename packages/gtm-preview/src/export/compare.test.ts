@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { compareExports, formatDifferences, normaliseUrl, EXPORT_ALIGNMENT } from './compare'
+import {
+  compareExports,
+  formatDifferences,
+  normaliseUrl,
+  EXPORT_ALIGNMENT,
+  EXPORT_KEYLESS_MAPS,
+} from './compare'
 
 describe('normaliseUrl', () => {
   it('drops the per-session parameters and the www prefix', () => {
@@ -87,5 +93,61 @@ describe('formatDifferences', () => {
     const text = formatDifferences(compareExports({ a: 1 }, { b: 2 }))
     expect(text).toContain('missing   $.a')
     expect(text).toContain('extra     $.b')
+  })
+})
+
+describe('maps keyed by a per-session identifier (task-22.6)', () => {
+  /** Two exports of the same flow, differing only in the group ids that key their maps. */
+  const doc = (groupId: string, href: string) => ({
+    data: {
+      containers: [
+        {
+          publicId: 'GTM-X',
+          pageSummaries: { [groupId]: { href, groupId, readyState: 'complete' } },
+          containerLoadInfoByGroupId: { [groupId]: { targetId: 'GTM-X', containerLoadSource: 0 } },
+          vendorTemplates: { [`env-${groupId}`]: { vendorTemplateTypes: {}, paramMaps: {} } },
+        },
+      ],
+    },
+  })
+  const opts = {
+    alignBy: EXPORT_ALIGNMENT,
+    alignKeyless: EXPORT_KEYLESS_MAPS,
+    compareValues: true,
+  }
+
+  it('reports nothing when only the keys differ', () => {
+    expect(compareExports(doc('111', '/a'), doc('222', '/a'), opts)).toEqual([])
+  })
+
+  it('still reports a real difference inside an entry', () => {
+    const diffs = compareExports(doc('111', '/a'), doc('222', '/b'), opts)
+    expect(diffs).toEqual([
+      {
+        path: '$.data.containers[GTM-X].pageSummaries[0].href',
+        kind: 'value',
+        native: '/a',
+        ours: '/b',
+      },
+    ])
+  })
+
+  it('reports a map with a different number of entries', () => {
+    const two = doc('111', '/a')
+    two.data.containers[0]!.pageSummaries['999'] = {
+      href: '/b',
+      groupId: '999',
+      readyState: 'complete',
+    }
+    const diffs = compareExports(two, doc('222', '/a'), opts)
+    expect(diffs).toEqual([
+      { path: '$.data.containers[GTM-X].pageSummaries', kind: 'length', native: 2, ours: 1 },
+    ])
+  })
+
+  it('compares keys literally for a map that is not listed', () => {
+    const a = { data: { other: { '111': 1 } } }
+    const b = { data: { other: { '222': 1 } } }
+    expect(compareExports(a, b, opts).map((d) => d.kind)).toEqual(['missing', 'extra'])
   })
 })
