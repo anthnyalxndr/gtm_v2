@@ -367,13 +367,20 @@ function buildContainer(
   const messages: AnyRecord[] = []
   const tagsFired: Record<string, AnyRecord[]> = {}
 
-  /** One message to be written, with the arrival time that decides where it sits. */
+  /**
+   * One message to be written, with what decides where it sits. Tag Assistant numbers messages
+   * in the order it received them, so the first key is the time the record arrived. Records
+   * arriving in the same millisecond keep the order the feed pushed them in, which `seq`
+   * carries. An event id cannot break the tie: a command and the event it raises do not share
+   * one, and ids restart on every page load.
+   */
   interface Candidate {
     at: number
-    eventId: number
+    seq: number
     build: (index: number) => { entry: AnyRecord; firedTagNames: string[] }
   }
   const candidates: Candidate[] = []
+  const arrival = new Map<RawRecord, number>(records.map((r, i) => [r, i]))
 
   for (const key of eventKeys) {
     const recs = byEvent.get(key)!
@@ -398,7 +405,7 @@ function buildContainer(
     }
     candidates.push({
       at: started.capturedAt,
-      eventId,
+      seq: arrival.get(started) ?? 0,
       build: (index) => ({
         entry: {
           index,
@@ -442,7 +449,7 @@ function buildContainer(
       named.eventName === 'gtag.set' ? dataLayerByEvent.get(`${groupId}:${eventId}`) : undefined
     candidates.push({
       at: r.capturedAt,
-      eventId,
+      seq: arrival.get(r) ?? 0,
       build: (index) => ({
         entry: {
           index,
@@ -477,7 +484,7 @@ function buildContainer(
   for (const r of pushRecords) {
     candidates.push({
       at: r.capturedAt,
-      eventId: 0,
+      seq: arrival.get(r) ?? 0,
       build: (index) => ({
         entry: {
           index,
@@ -498,7 +505,7 @@ function buildContainer(
     })
   }
 
-  candidates.sort((a, b) => a.at - b.at || a.eventId - b.eventId)
+  candidates.sort((a, b) => a.at - b.at || a.seq - b.seq)
   candidates.forEach((c, i) => {
     const { entry, firedTagNames } = c.build(i + 1)
     messages.push(entry)

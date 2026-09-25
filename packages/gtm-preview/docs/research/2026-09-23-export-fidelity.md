@@ -311,3 +311,30 @@ id, engagement time, screen resolution, user agent, cache busters. What is left 
 parameters present in one recording and not the other, `_gaz` and `gdid`.
 
 The contact flow now reads 571 differences in shape and 1498 with values, from 633 and 2195.
+
+## Message order, and what the abstractModel follows from (2026-09-25)
+
+Both tools number messages in the order the records arrived. This one now breaks a tie on the
+feed's own push order rather than on an event id, because a gtag command and the event it
+raises do not share an id and ids restart on every page load. That changed nothing in either
+captured session, where no two records share a millisecond, but an id would have been the wrong
+key.
+
+The orders still differ, because the two feeds differ. In the headless run GTM raised
+`gtm.dom` and `gtm.load` before `gtm.js`; in the native recording it raised them after, and the
+site's consent default command ran before GTM booted rather than after. Of 33 messages in the
+contact flow, all 33 pair with one of ours by name, and 3 sit at the same position. In the page
+view, 13 of 13 pair and 1 sits at the same position.
+
+`abstractModel` follows from position, and the page view shows it message by message. Native's
+`gtm.dom` is message 12 and carries `site_id`, `developer_id`, `url`, `title`, `ecommerce`,
+`page_type`, `action`, `type` and `ucCategory`. Ours is message 3 and carries none of them,
+because nothing had pushed them yet. Every key the comparison reports as missing from one of
+our models is a key that a message sitting later in the native order had already accumulated,
+and every extra is the reverse. There is no separate abstractModel defect to fix: the model
+is right for where the message sits, and where it sits is what the two recordings disagree
+about.
+
+So neither the ordering nor the model can be brought level with a separately recorded native
+file. What would settle it is a native capture taken from the same page load as one of ours,
+which needs a person with a signed-in browser driving the same flow at the same time.
