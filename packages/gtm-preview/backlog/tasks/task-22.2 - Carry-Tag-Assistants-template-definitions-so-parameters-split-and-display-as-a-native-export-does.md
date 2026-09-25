@@ -6,11 +6,11 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-24 21:10'
-updated_date: '2026-09-24 21:10'
+updated_date: '2026-09-25 08:57'
 labels:
   - export
 dependencies:
-  - TASK-22.1
+  - TASK-13
 parent_task_id: TASK-22
 priority: high
 ordinal: 24000

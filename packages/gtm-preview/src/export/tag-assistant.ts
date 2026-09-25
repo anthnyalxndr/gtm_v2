@@ -4,6 +4,27 @@ import { toJsLiteral } from './js-literal'
 import { buildHitInfo, dedupeTransportDuplicates, type HitContext } from './hits'
 import { eventTitle, tagTemplate, variableTemplate } from './templates'
 
+/**
+ * What a native export calls an in-page gtag command. `set` becomes `gtag.set` titled Set,
+ * and a consent command becomes `gtag.consent.<subcommand>` titled Consent Default or Consent
+ * Update. Anything else produces no message.
+ */
+function commandMessageName(record: RawRecord): { eventName: string; title: string } | undefined {
+  const type = typeof record.commandType === 'string' ? record.commandType : ''
+  if (type === 'set') return { eventName: 'gtag.set', title: 'Set' }
+  if (type !== 'consent') return undefined
+  const data = record.commandData
+  const sub =
+    data &&
+    typeof data === 'object' &&
+    typeof (data as { subcommand?: unknown }).subcommand === 'string'
+      ? (data as { subcommand: string }).subcommand
+      : ''
+  if (sub !== 'default' && sub !== 'update') return undefined
+  const title = sub === 'default' ? 'Consent Default' : 'Consent Update'
+  return { eventName: `gtag.consent.${sub}`, title }
+}
+
 /** A `data` entry per hit the runtime reported for this message, or nothing when there are none. */
 function hitEntries(records: RawRecord[], ctx: HitContext): AnyRecord[] {
   const hitInfo = dedupeTransportDuplicates(records as unknown as AnyRecord[])
@@ -232,6 +253,16 @@ function buildContainer(
   // Hit records carry the event id and group but no event name, so they are collected
   // separately and attached to whichever message has that id in that container load.
   const hitsByEvent = new Map<string, RawRecord[]>()
+  // A native export also writes a message per in-page gtag command and per dataLayer push
+  // that carries no event. Commands with inPageCommand false are the container's own config
+  // and event calls, which a native export does not show.
+  const commandRecords = records.filter(
+    (r) => r.messageType === 'GTAG_COMMAND' && r.inPageCommand === true,
+  )
+  const pushRecords = records.filter(
+    (r) => r.messageType === 'DATA_LAYER' && num(r.key?.eventId) === undefined,
+  )
+  const dataLayerByEvent = new Map<string, RawRecord>()
   for (const r of records) {
     const id = num(r.key?.eventId)
     if (id === undefined) continue
@@ -241,6 +272,7 @@ function buildContainer(
       hitsByEvent.get(hk)!.push(r)
       continue
     }
+    if (r.messageType === 'DATA_LAYER') dataLayerByEvent.set(`${str(r.key?.groupId)}:${id}`, r)
     const key = `${str(r.key?.groupId)}:${id}:${str(r.key?.eventName)}`
     if (!byEvent.has(key)) byEvent.set(key, [])
     byEvent.get(key)!.push(r)
@@ -290,12 +322,19 @@ function buildContainer(
 
   const messages: AnyRecord[] = []
   const tagsFired: Record<string, AnyRecord[]> = {}
-  let index = 0
+
+  /** One message to be written, with the arrival time that decides where it sits. */
+  interface Candidate {
+    at: number
+    eventId: number
+    build: (index: number) => { entry: AnyRecord; firedTagNames: string[] }
+  }
+  const candidates: Candidate[] = []
+
   for (const key of eventKeys) {
     const recs = byEvent.get(key)!
     const started = recs.find((r) => r.messageType === 'EVENT_STARTED')!
     const eventId = num(started.key?.eventId) ?? 0
-    index += 1
     const eventName = str(started.key?.eventName)
     const rules = recs.find((r) => r.messageType === 'MACRO_RESOLVED')
     const dataLayer = recs.find((r) => r.messageType === 'DATA_LAYER')
@@ -313,37 +352,114 @@ function buildContainer(
       event: eventName,
       gtm: { uniqueEventId: eventId },
     }
-    const entry: AnyRecord = {
-      index,
-      eventNameKey: eventName,
-      navType: 'MESSAGE',
-      consentData: consentData(started),
-      title: eventTitle(eventName),
-      eventName,
-      data: [
-        { eventId, ruleInfo: arr(rules?.ruleInfo) },
-        ...hitEntries(hitsByEvent.get(`${str(started.key?.groupId)}:${eventId}`) ?? [], {
-          messageIndex: index,
-          eventId,
-          groupId: str(started.key?.groupId) ?? '',
-        }),
-      ],
-      tagInfo,
-      groupId: str(started.key?.groupId),
+    candidates.push({
+      at: started.capturedAt,
       eventId,
-      message,
-      messageString: toJsLiteral(message),
-      abstractModelString: toJsLiteral(abstractModel),
-      macroInfo: buildMacroInfo(dataLayer),
-      abstractModel,
-    }
-    messages.push(entry)
-    for (const t of tagInfo) {
-      if (typeof t.execute !== 'string') continue
-      const name = str(t.name)
-      ;(tagsFired[name] ??= []).push(entry)
-    }
+      build: (index) => ({
+        entry: {
+          index,
+          eventNameKey: eventName,
+          navType: 'MESSAGE',
+          consentData: consentData(started),
+          title: eventTitle(eventName),
+          eventName,
+          data: [
+            { eventId, ruleInfo: arr(rules?.ruleInfo) },
+            ...hitEntries(hitsByEvent.get(`${str(started.key?.groupId)}:${eventId}`) ?? [], {
+              messageIndex: index,
+              eventId,
+              groupId: str(started.key?.groupId) ?? '',
+            }),
+          ],
+          tagInfo,
+          groupId: str(started.key?.groupId),
+          eventId,
+          message,
+          messageString: toJsLiteral(message),
+          abstractModelString: toJsLiteral(abstractModel),
+          macroInfo: buildMacroInfo(dataLayer),
+          abstractModel,
+        },
+        firedTagNames: tagInfo
+          .filter((t) => typeof t.execute === 'string')
+          .map((t) => str(t.name) ?? ''),
+      }),
+    })
   }
+
+  for (const r of commandRecords) {
+    const named = commandMessageName(r)
+    if (!named) continue
+    const eventId = num(r.key?.eventId) ?? 0
+    const groupId = str(r.key?.groupId) ?? ''
+    // A `set` command is also a dataLayer push, so it carries the body and model a push has.
+    // A consent command is not, and a native export writes the reduced form for it.
+    const push =
+      named.eventName === 'gtag.set' ? dataLayerByEvent.get(`${groupId}:${eventId}`) : undefined
+    candidates.push({
+      at: r.capturedAt,
+      eventId,
+      build: (index) => ({
+        entry: {
+          index,
+          navType: 'MESSAGE',
+          consentData: consentData(r),
+          title: named.title,
+          eventName: named.eventName,
+          data: [],
+          tagInfo: [],
+          groupId,
+          eventId,
+          gtagCommandModel: {
+            inPageCommand: true,
+            commandType: str(r.commandType) ?? '',
+            commandData: r.commandData ?? {},
+          },
+          ...(push
+            ? {
+                message: push.message,
+                messageString: toJsLiteral(push.message),
+                abstractModelString: toJsLiteral(push.abstractModel),
+                macroInfo: buildMacroInfo(push),
+                abstractModel: push.abstractModel,
+              }
+            : {}),
+        },
+        firedTagNames: [],
+      }),
+    })
+  }
+
+  for (const r of pushRecords) {
+    candidates.push({
+      at: r.capturedAt,
+      eventId: 0,
+      build: (index) => ({
+        entry: {
+          index,
+          navType: 'MESSAGE',
+          consentData: consentData(r),
+          title: 'Message',
+          data: [],
+          tagInfo: [],
+          groupId: str(r.key?.groupId),
+          message: r.message,
+          messageString: toJsLiteral(r.message),
+          abstractModelString: toJsLiteral(r.abstractModel),
+          macroInfo: buildMacroInfo(r),
+          abstractModel: r.abstractModel,
+        },
+        firedTagNames: [],
+      }),
+    })
+  }
+
+  candidates.sort((a, b) => a.at - b.at || a.eventId - b.eventId)
+  candidates.forEach((c, i) => {
+    const { entry, firedTagNames } = c.build(i + 1)
+    messages.push(entry)
+    for (const name of firedTagNames) (tagsFired[name] ??= []).push(entry)
+  })
   messages.reverse()
   for (const list of Object.values(tagsFired)) list.reverse()
 
