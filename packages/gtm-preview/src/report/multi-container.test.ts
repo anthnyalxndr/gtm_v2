@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import raw from './fixtures/test-container-session.json'
 import { buildReport, hitSignature, type RawSession } from './parse-records'
 import { buildTagAssistantExport } from '../export/tag-assistant'
+import { expectShape } from '../export/shape-signature'
+import shape from '../export/fixtures/tag-assistant-export-shape.json'
 import type { RawRecord } from '../session/debug-queue'
 
 /**
@@ -228,3 +230,28 @@ function stripVersions(report: ReturnType<typeof buildReport>) {
     containers: report.containers.map((c) => ({ ...c, protocolVersion: undefined })),
   }
 }
+
+describe('the shape of a hit a native export writes', () => {
+  it('matches the key and type signature taken from a real export', () => {
+    const doc = buildTagAssistantExport(withGoogleTag(), {
+      containerId: 'GTM-WNX8FFXW',
+      environment: 2,
+      startUrl: 'http://127.0.0.1:4173/',
+    }) as unknown as {
+      data: { containers: { messages: { data?: { hitInfo?: Record<string, unknown>[] }[] }[] }[] }
+    }
+    const hits = doc.data.containers
+      .flatMap((c) => c.messages)
+      .flatMap((m) => m.data ?? [])
+      .flatMap((d) => d.hitInfo ?? [])
+    expect(hits.length).toBeGreaterThan(0)
+    for (const h of hits) {
+      expectShape(h, shape.hitInfo)
+      for (const p of h.parameters as Record<string, unknown>[]) {
+        expectShape(p, 'descriptor' in p ? shape.hitParameter : shape.hitParameterBare)
+        if (p.descriptor)
+          expectShape(p.descriptor, shape.hitParameterDescriptor, ['shortNameRegExp'])
+      }
+    }
+  })
+})

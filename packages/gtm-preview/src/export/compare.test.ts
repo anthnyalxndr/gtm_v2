@@ -9,6 +9,13 @@ import {
 } from './compare'
 
 describe('normaliseUrl', () => {
+  it('normalises a URL that arrives as a JavaScript string literal', () => {
+    expect(normaliseUrl('"https://www.sjpools.com/?gtm_debug=1790198206590"')).toBe(
+      '"https://sjpools.com/"',
+    )
+    expect(normaliseUrl('"not a url"')).toBe('"not a url"')
+  })
+
   it('drops the per-session parameters and the www prefix', () => {
     expect(normaliseUrl('https://www.sjpools.com/?gtm_debug=1790198206590')).toBe(
       'https://sjpools.com/',

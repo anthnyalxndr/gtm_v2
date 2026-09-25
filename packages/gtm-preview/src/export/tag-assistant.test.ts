@@ -3,22 +3,8 @@ import raw from '../report/fixtures/test-container-session.json'
 import type { RawSession } from '../report/parse-records'
 import type { RawRecord } from '../session/debug-queue'
 import shape from './fixtures/tag-assistant-export-shape.json'
+import { expectShape } from './shape-signature'
 import { buildTagAssistantExport, LISTENER_TAG_TYPES } from './tag-assistant'
-
-type Shape = Record<string, string>
-const typeOf = (v: unknown): string =>
-  v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v === 'object' ? 'object' : typeof v
-
-function expectShape(actual: unknown, expected: Shape, optional: string[] = []) {
-  const a = actual as Record<string, unknown>
-  for (const [key, type] of Object.entries(expected)) {
-    if (optional.includes(key) && !(key in a)) continue
-    expect(a, `missing key ${key}`).toHaveProperty(key)
-    expect(typeOf(a[key]), `type of ${key}`).toBe(type)
-  }
-  const extra = Object.keys(a).filter((k) => !(k in expected))
-  expect(extra, 'unexpected keys').toEqual([])
-}
 
 const opts = {
   containerId: 'GTM-WNX8FFXW',
@@ -48,7 +34,12 @@ describe('buildTagAssistantExport', () => {
       shape.containerDetailsContainer,
     )
     for (const m of messages) {
-      expectShape(m, shape.message)
+      const signature = m.gtagCommandModel
+        ? shape.messageCommand
+        : m.eventName
+          ? shape.message
+          : shape.messagePlain
+      expectShape(m, signature)
       expectShape(m.consentData, shape.messageConsentData)
       expectShape((m.consentData as Record<string, unknown>).consentStatus, shape.consentStatus)
       for (const t of m.tagInfo as unknown[])
@@ -704,5 +695,59 @@ describe('naming the container and the pages (task-24)', () => {
       ['http://127.0.0.1:4173/', ''],
       ['http://127.0.0.1:4173/page2.html', 'http://127.0.0.1:4173/'],
     ])
+  })
+})
+
+describe('rendering a structured parameter value (task-22)', () => {
+  const build = (v: unknown) => {
+    const base = raw as unknown as RawSession
+    const doc = buildTagAssistantExport(
+      {
+        ...base,
+        records: base.records.map((r) =>
+          r.tagInfo
+            ? {
+                ...r,
+                tagInfo: [
+                  {
+                    name: 'T',
+                    metadata: { type: 'gaawe' },
+                    tagData: { function: 'gaawe', vtp_eventSettingsTable: [v, v] },
+                  },
+                ],
+              }
+            : r,
+        ),
+      },
+      opts,
+    ) as unknown as { data: { containers: { messages: Record<string, unknown>[] }[] } }
+    const tag = doc.data.containers[0]!.messages.map(
+      (m) => (m.tagInfo as { params: { key: string; value: string[] }[] }[])[0],
+    ).find((t) => t)!
+    return tag.params.find((p) => p.key === 'vtp_eventSettingsTable')!.value[0]!
+  }
+  const row = (k: string, v: string) => ({
+    type: 'map',
+    pairs: [
+      ['parameter', k],
+      ['parameterValue', v],
+    ],
+  })
+
+  it('renders a map as the object it stands for, never as its own structure', () => {
+    expect(build({ type: 'map', pairs: [] })).toBe('{}')
+  })
+
+  it('keeps a short list on one line', () => {
+    expect(build([{ type: 'map', pairs: [['parameter', 'form_name']] }])).toBe(
+      '[{parameter: "form_name"}]',
+    )
+  })
+
+  it('breaks a long list up, leaving each row on its own line', () => {
+    expect(build([row('form_name', 'contact_form'), row('form_id', 'contactForm')])).toBe(
+      '[\n  {parameter: "form_name", parameterValue: "contact_form"},\n' +
+        '  {parameter: "form_id", parameterValue: "contactForm"}\n]',
+    )
   })
 })

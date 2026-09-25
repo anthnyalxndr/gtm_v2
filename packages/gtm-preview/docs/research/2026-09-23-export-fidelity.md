@@ -400,3 +400,48 @@ A native export writes an empty `name` on every `ruleInfo` entry of a Google tag
 names. Tag Assistant resolves a name from the container's trigger list, which it has for a GTM
 container and not for a Google tag, the same reason its template set is empty there. This tool
 wrote the names the feed reports, so 56 entries differed.
+
+## Where the comparison stands, and what is accepted (2026-09-25)
+
+| Session      | Shape | With values |
+| ------------ | ----- | ----------- |
+| Page view    | 306   | 653         |
+| Contact flow | 519   | 1129        |
+
+Everything still reported falls into one of six classes, and none of them is a rendering this
+tool can change. Each is a consequence of the two files being separate recordings of a live
+site, days apart, one in a person's signed-in browser and one headless.
+
+**The two feeds ordered events differently.** GTM raised `gtm.dom` and `gtm.load` before
+`gtm.js` in the headless run and after it natively, and the site's consent default command
+landed on the other side of GTM's boot. That moves `index`, `eventId`, `data[].eventId`,
+`messageString`, `abstractModel` and `abstractModelString` on nearly every message, and is the
+largest class by far.
+
+**Our run raised events the native one did not, and the reverse.** A `user_engagement` on the
+GTM container, a second `gtm.init_consent` on the Google tag. 55 of the contact flow's
+differences are a message present on one side only.
+
+**The Google tag build differed.** The native recording's build emitted no
+`metadata.originalType` and no `original_vendor_template_id`; ours emits both on 96 and 90 macro
+entries. Tag Assistant's rule reads the first of those as a variable's public id, so the same
+rule gives `c` there and `gtsnpt` here.
+
+**Consent arrived at a different moment.** `wasSetLate` is the feed's own value, true on 378 of
+our 412 records because the consent default command came after GTM had raised its first events.
+
+**Variables resolved to this visit's values.** `resolvedValue` and `returnType` carry the page
+URL, the clicked element and the timestamps of the run.
+
+**Tag Assistant supplies two things a headless run has no equivalent for.** The first page's
+referrer is `https://tagassistant.google.com/`, its own launcher, and the page URL it opens
+carries a `gtm_debug` timestamp. The comparator normalises the second away, including inside a
+quoted parameter value; the first stays.
+
+One difference is a gap in the captures rather than in either tool: `environmentName` reads
+`env-8` because the saved raw session predates the field that carries it, and a session
+recorded after 2026-09-25 will name it as Tag Manager does.
+
+Closing the remaining classes needs a native capture of the same page load as one of ours,
+which needs a person with a signed-in browser driving the flow at the same time. Short of that,
+what is left measures the site's behaviour on two different days.

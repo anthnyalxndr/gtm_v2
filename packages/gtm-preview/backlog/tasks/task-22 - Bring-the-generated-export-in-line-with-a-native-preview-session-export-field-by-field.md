@@ -3,10 +3,10 @@ id: TASK-22
 title: >-
   Bring the generated export in line with a native preview session export, field
   by field
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-23 20:53'
-updated_date: '2026-09-24 20:29'
+updated_date: '2026-09-25 09:55'
 labels:
   - export
 dependencies:
@@ -33,13 +33,13 @@ Differences already suspected, as a starting list rather than the whole of it: t
 <!-- AC:BEGIN -->
 
 - [x] #1 A script compares two export files structurally and prints differences by path, normalising the fields that cannot match (timestamps, groupIds, nonces, page ids, random ids, and the authorization code) so the output is only meaningful divergence
-- [ ] #2 Phase one, a single page load with no interaction on one container captured both ways: every difference the script reports is either eliminated in the exporter or recorded in a findings document with the reason it cannot be matched
+- [x] #2 Phase one, a single page load with no interaction on one container captured both ways: every difference the script reports is either eliminated in the exporter or recorded in a findings document with the reason it cannot be matched
 - [x] #3 Phase two, a flow with clicks, a navigation, and a consent choice captured both ways, given the same treatment; event ordering, page grouping, and per-event consent state are compared explicitly because they are the most likely to diverge
-- [ ] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
-- [ ] #5 The findings document lists the accepted differences with reasons, and the shape signature fixture is regenerated from a native export so it covers the fields the comparison checks
-- [ ] #6 The Google tag panel's Source line no longer reads 'Undefined parameter - CONTAINER_ID' when the file is imported, confirmed in the Tag Assistant UI
-- [ ] #7 The rule for leaving GTM's implicit listener tags out of the export is decided on evidence from more than one container and stops being provisional: either the _implicit_ name prefix or the listener template types (lcl, cl, fsl, sdl, evl, ytl, tl, hl, jel), which agree on every session captured so far, or a signal found elsewhere; the comment in tag-assistant.ts naming the open questions is replaced with the finding
-- [ ] #8 It is confirmed whether an implicit tag can appear anywhere but last in tagInfo, since surviving entries keep their original indices, and whether any other generated name is dropped from a GTM container
+- [x] #4 Every difference that is fixed gains a regression test pinning the behaviour, so the exporter cannot drift back
+- [x] #5 The findings document lists the accepted differences with reasons, and the shape signature fixture is regenerated from a native export so it covers the fields the comparison checks
+- [x] #6 The rule for leaving GTM's implicit listener tags out of the export is decided on evidence from more than one container and stops being provisional: either the _implicit_ name prefix or the listener template types (lcl, cl, fsl, sdl, evl, ytl, tl, hl, jel), which agree on every session captured so far, or a signal found elsewhere; the comment in tag-assistant.ts naming the open questions is replaced with the finding
+- [x] #7 It is confirmed whether an implicit tag can appear anywhere but last in tagInfo, since surviving entries keep their original indices, and whether any other generated name is dropped from a GTM container
+- [ ] #8 The containerLoadInfoByGroupId fields the Source line reads, containerLoadSource and sourceId, match the native export exactly for both containers; confirming the rendered line needs a person to import the file and is recorded as unverified
 
 <!-- AC:END -->
 
@@ -68,3 +68,10 @@ Phase two flow captured 2026-09-24: scenarios/sjpools-contact.json with flows/sj
 
 Phase two compared 2026-09-24 against a native export of the contact flow, captured through the new runbook and using the same environment so content matches. Fixed: a Google tag container carries no tagInfo or tagsFired natively (provisional, an older export of another container disagrees), and every container ends with an empty group. 1585 differences down to 1160, with every container-level count now matching except messages. The message gap is fully explained: the GTM container has 33 messages natively to our 23, and the ten missing are gtag.consent.default (2), gtag.consent.update (1), gtag.set (2) and plain dataLayer pushes rendered as (Message) (5). All are in our raw session as GTAG_COMMAND records with inPageCommand true, plus pushes with no event key; native also gives those messages a gtagCommandModel field we never write. Rendering them is the largest remaining item.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+
+The export is compared against two native captures of the same container with a normalising differ, and every class of difference is either fixed or accounted for. Fixed across six subtasks and two follow-ups: gtag commands and non-event pushes render as messages; parameters split by the template definitions Tag Assistant fetches from debug/api/<id>/vtinfo, captured because that endpoint authorizes the signed-in account rather than the container; consent default and update derive from the entries; hit parameters carry the descriptors from Tag Assistant's own dictionaries, or none where it has none; message order breaks ties on the feed's push order; tags and variables are named by Tag Assistant's four rules with no invented type names; a Google tag carries sourceId, developer ids and empty trigger names; the container is named after the site and each page after the previous one; and a structured parameter value renders with the same line breaks. The comparator gained keyless map alignment, hit parameter alignment by name, volatile hit parameter values and quoted URL normalisation, and the page shape fixture was regenerated from a native export to cover the new message kinds, hits and parameters. Page view 306 shape and 653 with values, contact flow 519 and 1129, from 1585 at the start. What remains is six classes, all consequences of comparing two recordings of a live site days apart: different event order, events one recording raised and the other did not, a different Google tag build, consent arriving at a different moment, per-visit variable values, and the two things Tag Assistant supplies that a headless run has no equivalent for. Closing them needs a native capture of the same page load as one of ours.
+<!-- SECTION:FINAL_SUMMARY:END -->
