@@ -103,6 +103,8 @@ gtm-apply snapshot --account 6012345678 --out snapshots      # one <publicId>.js
 gtm-apply snapshot --container GTM-A --container GTM-B --out snapshots
 ```
 
+A snapshot says which environment serves the version it read and whether that version is the published one. The API reports no version id on the built-in Live and Latest environments, so `environment` is resolved by type: Live for `--live`, Latest for the default source, and for `--version <id>` the custom environment whose `containerVersionId` matches, else Live or Latest when the id is theirs. `liveVersionId` is the published version's id (null when nothing is published) and `published` is true when the version read is that one, so a reader can answer "is this live" from the file alone. A workspace source has no environment and is never published.
+
 From code, `pullSnapshot(client, source)` returns an `ApiSnapshotData` and `snapshotToSpec(snapshot)` normalizes the apply-able part, tagged with its `containerType`. `pullSnapshots(client, sources)` pulls several containers concurrently within the client's throttle and returns them in source order; `snapshotAccount(client, accountId)` lists an account's containers (`listContainers` in gtm-client) and pulls the latest version of each. `Gtm.snapshotAccount(accountId)` does the same and memoizes each container like a single `snapshot()` call. `GtmSnapshot` (below) adds the recipe index on top of it.
 
 ### Canonical form
