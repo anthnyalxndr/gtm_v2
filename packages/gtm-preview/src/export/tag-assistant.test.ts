@@ -575,3 +575,90 @@ describe('consent state on a message (task-22.3)', () => {
     expect(tf['GA4 - form_submit']![0]).toBe(fired)
   })
 })
+
+describe('naming tags and variables (task-23)', () => {
+  const base = raw as unknown as RawSession
+  /** Every record's own tags and variables replaced, so nothing from the fixture leaks in. */
+  const build = (tagInfo: unknown[], macroInfo: unknown[]) => {
+    const doc = buildTagAssistantExport(
+      {
+        ...base,
+        records: base.records.map((r) => ({
+          ...r,
+          ...(r.tagInfo ? { tagInfo } : {}),
+          ...(r.macroInfo ? { macroInfo } : {}),
+        })),
+      },
+      opts,
+    ) as unknown as { data: { containers: { messages: Record<string, unknown>[] }[] } }
+    const messages = doc.data.containers[0]!.messages
+    const first = <T>(pick: (m: Record<string, unknown>) => T[] | undefined): T[] =>
+      messages.map(pick).find((v) => v && v.length > 0) ?? []
+    return {
+      tags: first((m) => m.tagInfo as Record<string, unknown>[] | undefined),
+      vars: first((m) => m.macroInfo as Record<string, unknown>[] | undefined),
+    }
+  }
+
+  it('takes a paused tag type from the data, and names a generated tag by its suffix', () => {
+    const { tags } = build(
+      [
+        {
+          name: '_gen_abc_GA4 Event',
+          metadata: { type: 'paused' },
+          tagData: { function: '__paused', vtp_originalTagType: ['gaawe', 'gaawe'] },
+        },
+      ],
+      [],
+    )
+    expect(tags[0]).toMatchObject({
+      name: '_gen_abc_GA4 Event',
+      displayName: 'GA4 Event',
+      publicId: 'gaawe',
+      type: 'Google Analytics: GA4 Event',
+    })
+  })
+
+  it('types a tag the container has no definition for as Unknown Tag Type', () => {
+    const { tags } = build(
+      [{ name: 'Custom HTML', metadata: { type: 'html' }, tagData: { function: 'html' } }],
+      [],
+    )
+    expect(tags[0]).toMatchObject({ publicId: 'html', type: 'Unknown Tag Type', thumbnail: '' })
+  })
+
+  it('reports a synthesised variable under the template it came from', () => {
+    const { vars } = build(
+      [],
+      [
+        {
+          name: '_is_gtag_snippet',
+          type: 'c',
+          metadata: { type: 'c', originalType: 'gtsnpt' },
+          macroData: { function: 'c', vtp_value: [true, true] },
+        },
+      ],
+    )
+    expect(vars[0]).toMatchObject({
+      variablePublicId: 'gtsnpt',
+      variableType: 'Unknown Variable Type',
+    })
+    // The template's own id names it, so its parameters cannot be declared and stay internal.
+    expect(vars[0]!.params as unknown[]).toEqual([])
+  })
+
+  it('leaves the implicit listener tags GTM creates out, keeping the other indices', () => {
+    const { tags } = build(
+      [
+        { name: 'GA4 Event', metadata: { type: 'gaawe' }, tagData: { function: 'gaawe' } },
+        {
+          name: '_implicit_Link Click Listener LC - call',
+          metadata: { type: 'lcl' },
+          tagData: { function: 'lcl' },
+        },
+      ],
+      [],
+    )
+    expect(tags.map((t) => [t.index, t.name])).toEqual([[0, 'GA4 Event']])
+  })
+})
