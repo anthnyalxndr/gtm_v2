@@ -3,11 +3,11 @@ id: TASK-17
 title: >-
   The Web Template container holds the lead-gen recipe set and gtm-web-recipes
   ships its real snapshot
-status: Review
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-11 23:11'
-updated_date: '2026-09-27 23:03'
+updated_date: '2026-09-27 23:30'
 labels:
   - recipes
   - library
@@ -44,6 +44,8 @@ The library behind @anthnyalxndr/gtm-web-recipes was still the in-code sample. D
 Merged origin/main (PR #9, decision-10) into the branch. decision-10 removed the Additional Tag Metadata encoding this task used and made the JSON-trailer-in-notes encoding the only built-in and default. Converted scripts/template.ts to declare recipes via formatNotes(text,{recipes}) and placeholders via {placeholder} on constants (this restores the bare-conversion-id format check off the manifest's 1024-char budget). Rewrote the package test and README, deleted the old sample-template.ts, fixed the built-in-trigger test in gtm-apply to use notes. pnpm verify green: 19 + 133 + 6. Pending (AC #4): the pushed container is still version 2 under the old encoding and src/library.ts is currently the offline sample; a re-push under the notes encoding + re-pull will restore the real library. Renumbered from task-12 to avoid the id collision with main's task-12.
 
 2026-09-27: The owner enabled all built-in variables in Template - Web (GTM-TPLKC7QP) in the UI. Version 3 "built-in-variables-2026-09-27" captured those 40 additions and was published. The pull then failed with Unknown recipe encoding "metadata" because the container still used the Additional Tag Metadata encoding that decision-10 removed. pnpm push re-pushed the template under the notes encoding as version 4 "recipes-2026-09-27" (the dry run showed no built-in variable removals; version 4 keeps all 47). At the owner's request version 4 was published, which departs from AC #4's no-publish wording so that live and the committed library match. pnpm pull then wrote src/library.ts from version 4 with no lint findings. pnpm verify green: 19 + 133 + 6.
+
+PR #26 merged 2026-09-27.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
