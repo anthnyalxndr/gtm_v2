@@ -3,11 +3,11 @@ id: TASK-17
 title: >-
   The Web Template container holds the lead-gen recipe set and gtm-web-recipes
   ships its real snapshot
-status: In Progress
+status: Review
 assignee:
   - '@claude'
 created_date: '2026-09-11 23:11'
-updated_date: '2026-09-11 23:11'
+updated_date: '2026-09-27 23:03'
 labels:
   - recipes
   - library
@@ -28,7 +28,7 @@ The library behind @anthnyalxndr/gtm-web-recipes was still the in-code sample. D
 - [x] #1 scripts/template.ts defines recipes google_tag, contact_form_submit, call_click, email_click and maps_click, declaring membership in notes trailers (decision-10) with a Library - Manifest of descriptions and per-recipe Google Ads conversion-action dependencies, placeholder metadata on constants, and DEFAULT_CONVENTIONS names
 - [x] #2 The spec has no Conversion Linker; the Google tag's notes say why and link to Google's documentation
 - [x] #3 Tags can fire on the built-in triggers All Pages, Initialization - All Pages and Consent Initialization - All Pages by name; pull, push, closure and lint handle them without a spec trigger
-- [ ] #4 The template is pushed to GTM-TPLKC7QP as a new workspace and version, nothing is published, and pnpm pull writes src/library.ts from the real container with no lint findings
+- [x] #4 The template is pushed to GTM-TPLKC7QP as a new workspace and version, nothing is published, and pnpm pull writes src/library.ts from the real container with no lint findings
 - [x] #5 plan.example.ts, README and tests reflect the real recipe and constant names; pnpm verify passes
 <!-- AC:END -->
 
@@ -42,4 +42,12 @@ The library behind @anthnyalxndr/gtm-web-recipes was still the in-code sample. D
 
 <!-- SECTION:NOTES:BEGIN -->
 Merged origin/main (PR #9, decision-10) into the branch. decision-10 removed the Additional Tag Metadata encoding this task used and made the JSON-trailer-in-notes encoding the only built-in and default. Converted scripts/template.ts to declare recipes via formatNotes(text,{recipes}) and placeholders via {placeholder} on constants (this restores the bare-conversion-id format check off the manifest's 1024-char budget). Rewrote the package test and README, deleted the old sample-template.ts, fixed the built-in-trigger test in gtm-apply to use notes. pnpm verify green: 19 + 133 + 6. Pending (AC #4): the pushed container is still version 2 under the old encoding and src/library.ts is currently the offline sample; a re-push under the notes encoding + re-pull will restore the real library. Renumbered from task-12 to avoid the id collision with main's task-12.
+
+2026-09-27: The owner enabled all built-in variables in Template - Web (GTM-TPLKC7QP) in the UI. Version 3 "built-in-variables-2026-09-27" captured those 40 additions and was published. The pull then failed with Unknown recipe encoding "metadata" because the container still used the Additional Tag Metadata encoding that decision-10 removed. pnpm push re-pushed the template under the notes encoding as version 4 "recipes-2026-09-27" (the dry run showed no built-in variable removals; version 4 keeps all 47). At the owner's request version 4 was published, which departs from AC #4's no-publish wording so that live and the committed library match. pnpm pull then wrote src/library.ts from version 4 with no lint findings. pnpm verify green: 19 + 133 + 6.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+gtm-web-recipes now ships the real Web Template container instead of the offline sample: src/library.ts is pulled from GTM-TPLKC7QP version 4, which carries the five lead-gen recipes in notes trailers and all 47 web built-in variables. Verified with a lint-clean pnpm pull and a green pnpm verify.
+<!-- SECTION:FINAL_SUMMARY:END -->
