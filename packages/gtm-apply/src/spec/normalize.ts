@@ -1,6 +1,6 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { SERVER_FIELDS } from "../resources/entities.js";
-import { BUILT_IN_TRIGGERS, upperSnakeToCamel } from "./catalog.js";
+import { catalogFor, upperSnakeToCamel } from "./catalog.js";
 import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
 import type {
   ClientSpec,
@@ -79,8 +79,12 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
   );
+  // Built-in trigger ids differ by container type (web and server each have an "All Pages").
+  const containerType = containerTypeFrom(cv, input);
   const triggerNames: IdMap = new Map([
-    ...Object.entries(BUILT_IN_TRIGGERS).map(([name, id]): [string, string] => [id, name]),
+    ...Object.entries(catalogFor(containerType).triggers.builtIn).map(
+      ([name, id]): [string, string] => [id, name]
+    ),
     ...rawTriggers
       .filter((t) => t.triggerId)
       .map((t): [string, string] => [String(t.triggerId), t.name ?? ""]),
@@ -137,7 +141,6 @@ export function normalizeExport(input: unknown): ContainerSpec {
     .map((t) => (UPPER_SNAKE.test(t) ? upperSnakeToCamel(t) : t)) as BuiltInVariableType[];
 
   const spec: ContainerSpec = {};
-  const containerType = containerTypeFrom(cv, input);
   if (containerType) spec.containerType = containerType;
   if (rawFolders.length) spec.folder = rawFolders.map((f) => ({ name: f.name ?? "" }));
   if (builtIns.length) spec.builtInVariable = [...new Set(builtIns)];

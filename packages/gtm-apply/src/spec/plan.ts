@@ -85,7 +85,7 @@ export async function loadExisting(
       serverKinds ? client.call(() => ws.clients.list({ parent })) : null,
       serverKinds ? client.call(() => ws.transformations.list({ parent })) : null,
     ]);
-  const state = emptyState();
+  const state = emptyState(containerType);
   state.raw.folder = folders.data.folder ?? [];
   state.raw.variable = variables.data.variable ?? [];
   state.raw.trigger = triggers.data.trigger ?? [];
@@ -119,12 +119,13 @@ function indexState(state: ExistingState): void {
  */
 export async function loadExistingFromLatestVersion(
   client: GtmClient,
-  containerPath: string
+  containerPath: string,
+  containerType: ContainerType = "web"
 ): Promise<ExistingState> {
   const api = client.service.accounts.containers;
   const header = await client.call(() => api.version_headers.latest({ parent: containerPath }));
   const versionId = header.data.containerVersionId;
-  const state = emptyState();
+  const state = emptyState(containerType);
   if (!versionId) return state;
   const version = await client.call(() =>
     api.versions.get({ path: `${containerPath}/versions/${versionId}` })
@@ -196,7 +197,7 @@ export async function planContainerSpec(
       container,
       workspacePath: null,
       spec: input,
-      existing: emptyState(),
+      existing: emptyState(containerType),
       ops,
       errors,
     };
@@ -207,7 +208,7 @@ export async function planContainerSpec(
   const workspacePath = found?.path ?? null;
   const existing = workspacePath
     ? await loadExisting(client, workspacePath, containerType)
-    : await loadExistingFromLatestVersion(client, container.path);
+    : await loadExistingFromLatestVersion(client, container.path, containerType);
 
   ops.push({
     kind: "workspace",
@@ -288,7 +289,7 @@ export async function planContainerSpec(
   ])) {
     if (name.startsWith("_")) continue;
     if (has(spec.variable, name) || existing.variables.has(name)) continue;
-    const type = builtInTypeForName(name);
+    const type = builtInTypeForName(name, containerType);
     if (type) {
       builtIns.add(type);
       continue;

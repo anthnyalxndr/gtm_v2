@@ -7,7 +7,9 @@ The shared Google Tag Manager model for the packages in this workspace. It holds
 | `ContainerType` | `"web" \| "server" \| "amp" \| "android" \| "ios"`, derived from a container's usage context. |
 | `ContainerSpec`, `TagSpec`, `TriggerSpec`, `VariableSpec`, `FolderSpec`, `ClientSpec`, `TransformationSpec`, `defineContainer` | The container spec: a container export's shape with server-owned fields removed and id references replaced by names. `defineContainer` is an identity helper that checks a spec written in TypeScript. |
 | `SpecSection`, `sectionsFor`, `SECTIONS_BY_CONTAINER_TYPE` | Which spec sections a container of each type can hold. Clients and transformations exist only in server containers. |
-| `BUILT_IN_VARIABLES`, `BUILT_IN_TRIGGERS` and their lookups | The catalog: built-in variable display names to API types, built-in trigger display names to their fixed ids. |
+| `ContainerCatalog`, `CATALOGS`, `catalogFor`, `WEB_CATALOG`, `SERVER_CATALOG` | What Tag Manager offers each container type but the API does not list: `triggers.builtIn` (built-in trigger display name to fixed id), `triggers.types` (the trigger types it accepts) and `builtInVariables` (display name to API type). Web and server are read from our own template containers; AMP and mobile are not curated yet. |
+| `builtInTypeForName`, `builtInTriggerIdForName`, `builtInTriggerNameForId` | Lookups that take an optional container type. A variable lookup without one searches every type, since names don't collide. A trigger lookup without one means web, since web and server both call their built-in trigger "All Pages". |
+| `BUILT_IN_VARIABLES`, `BUILT_IN_TRIGGERS` | Kept for existing imports: every known built-in variable name, and the web built-in triggers. |
 | Discovery types and `SCHEMAS` | Entity interfaces, string-literal unions for every enum field, and the schema table the validator in gtm-apply walks, generated from the Tag Manager API v2 Discovery document. |
 
 ```ts
