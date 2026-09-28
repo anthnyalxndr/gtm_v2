@@ -1,18 +1,24 @@
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
-import {
-  applySpec,
-  formatNotes,
-  GtmSnapshot,
-  manifestVariable,
-  type PlaceholderMetadata,
-} from "@anthnyalxndr/gtm-apply";
+import { applySpec, GtmSnapshot, manifestVariable } from "@anthnyalxndr/gtm-apply";
 import {
   defineContainer,
   type TagSpec,
   type TriggerSpec,
   type VariableSpec,
 } from "@anthnyalxndr/gtm-model";
+import {
+  adsConversionId,
+  bool,
+  condition,
+  declares,
+  dependencies,
+  input,
+  label,
+  labelConstant,
+  notNeeded,
+  tpl,
+} from "../shared.js";
 
 /**
  * The Web Template container (GTM-TPLKC7QP) as a ContainerSpec: the lead-gen
@@ -28,49 +34,12 @@ import {
  * reaches a customer container.
  */
 
-const tpl = (key: string, value: string) => ({ type: "template" as const, key, value });
-const bool = (key: string, value: boolean) => ({
-  type: "boolean" as const,
-  key,
-  value: String(value),
-});
-const notNeeded = { consentStatus: "notNeeded" as const };
-
-/** Notes for a recipe root: customer text, then the library's `recipes` trailer. */
-const declares = (text: string, recipe: string): string => formatNotes(text, { recipes: [recipe] });
-
-/** A customer input: a constant holding a placeholder, documented in its notes. */
-const input = (
-  name: string,
-  value: string,
-  text: string,
-  placeholder: PlaceholderMetadata
-): VariableSpec => ({
-  name,
-  type: "c",
-  notes: formatNotes(text, { placeholder }),
-  parameter: [tpl("value", value)],
-});
 const dataLayer = (name: string, key: string, text: string): VariableSpec => ({
   name,
   type: "v",
   notes: text,
   parameter: [tpl("name", key)],
 });
-const labelConstant = (recipe: string) => `Const - Google Ads - ${recipe} Conversion Label`;
-const label = (recipe: string): VariableSpec =>
-  input(
-    labelConstant(recipe),
-    "<label>",
-    `Conversion label of the Google Ads conversion action for ${recipe}.`,
-    { kind: "adsConversionLabel", example: "AbCdEfGhIjKlMnOp", pattern: "^[A-Za-z0-9_-]{5,}$" }
-  );
-
-const condition = (type: "equals" | "contains" | "matchRegex", arg0: string, arg1: string) => ({
-  type,
-  parameter: [tpl("arg0", arg0), tpl("arg1", arg1)],
-});
-
 const customEvent = (recipe: string, notes: string): TriggerSpec => ({
   name: `Custom Event - ${recipe}`,
   type: "customEvent",
@@ -133,22 +102,6 @@ const conversion = (
   },
 ];
 
-/**
- * The recipe's Google Ads conversion action, carried by its label constant.
- * The one external resource that is genuinely per recipe: each recipe hits a
- * distinct conversion action. The conversion id and measurement id are
- * account-wide config, documented on their own constants, not repeated here;
- * a GTM constant value is capped at 1024 characters, so the manifest stays
- * lean. The action is named "GTM - <recipe>" on Google Ads (externalNames).
- */
-const dependencies = (recipe: string) => [
-  {
-    constant: labelConstant(recipe),
-    platform: "googleAds",
-    resource: "conversionAction",
-  },
-];
-
 const linkParameters = [
   eventParameter("link_url", "{{Click URL}}"),
   eventParameter("link_text", "{{Click Text}}"),
@@ -202,12 +155,7 @@ export const template = defineContainer({
         pattern: "^https://[^/]+$",
       }
     ),
-    input(
-      "Const - Google Ads Conversion ID",
-      "<XXXXXXXXX>",
-      "The bare numeric conversion id (the digits after AW- in Google Ads). GTM stores it without the prefix; the conversion tag builds AW-<id>/<label> itself.",
-      { kind: "adsConversionId", example: "123456789", pattern: "^[0-9]+$" }
-    ),
+    adsConversionId(),
     label("contact_form_submit"),
     label("call_click"),
     label("email_click"),
