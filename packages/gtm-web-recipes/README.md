@@ -50,9 +50,19 @@ The source of truth is [`scripts/template.ts`](scripts/template.ts), a `Containe
 
 ```bash
 pnpm push --dry-run   # plan against the template container
-pnpm push             # new workspace and version on GTM-TPLKC7QP; nothing is published
+pnpm push             # new workspace and version recipes-<date> on GTM-TPLKC7QP; nothing is published
 pnpm pull             # write src/library.ts from the container
 ```
+
+`pnpm push` reads three settings: `GTM_LIBRARY` (the template container, default `GTM-TPLKC7QP`), `GTM_LIBRARY_WORKSPACE` (the workspace to push into, default `recipes-<date>`) and `GTM_LIBRARY_VERSION` (the version name, default `recipes-<date>` whatever the workspace is called).
+
+A new workspace starts from the container's latest version, so edits made by hand in another workspace and not yet versioned are not in it. To keep them, make interface edits in a named workspace and push into that workspace; the version it creates holds both:
+
+```bash
+GTM_LIBRARY_WORKSPACE="owner-edits" pnpm push
+```
+
+The Default Workspace is refused (decision-4): automation never writes where people edit by hand.
 
 `pnpm push` lints the template first and refuses on findings. `pnpm pull` lints the container the same way. Commit the regenerated `src/library.ts`; a package version pins a library snapshot. `pnpm sample` regenerates `src/library.ts` from the template through an in-memory container, for work without credentials.
 
