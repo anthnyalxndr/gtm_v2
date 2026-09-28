@@ -31,7 +31,8 @@
     "push": "tsx scripts/push.ts"
   },
   "dependencies": {
-    "@anthnyalxndr/gtm-apply": "workspace:^"
+    "@anthnyalxndr/gtm-apply": "workspace:^",
+    "@anthnyalxndr/gtm-model": "workspace:^"
   },
   "peerDependencies": {
     "@anthnyalxndr/gtm-client": "workspace:^"
