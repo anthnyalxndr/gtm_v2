@@ -16,8 +16,8 @@ import {
 
 /**
  * The Web Template container (GTM-TPLKC7QP) as a ContainerSpec: the lead-gen
- * recipe set that recurs across client work. Push it with `pnpm push`, then
- * `pnpm pull` writes the real container back into src/library.ts.
+ * recipe set that recurs across client work. Push it with `pnpm push web`, then
+ * `pnpm pull web` writes the real container back into src/web/library.ts.
  *
  * Recipes are event-centric: one trigger, a GA4 event tag and a Google Ads
  * conversion tag, sharing the Google tag and the customer's constants. A

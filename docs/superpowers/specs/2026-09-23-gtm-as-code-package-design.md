@@ -10,7 +10,7 @@ One command turns a Tag Manager account into a git repo. After that, every chang
 
 ## What exists
 
-gtm-apply plans and applies a single container from a spec in the export shape (decision-2, decision-3), pulls a snapshot of everything the API exposes (TASK-4), compiles a tracking plan against a recipe library (TASK-1), and merges spec fragments (`mergeSpecs`). gtm-client authenticates, throttles, lists accounts, and resolves a container by public id (TASK-33). gtm-web-recipes shows the pattern of a package whose `pnpm pull` regenerates a committed module from a container. Nothing yet writes files for more than one container, orders output deterministically, or scaffolds anything.
+gtm-apply plans and applies a single container from a spec in the export shape (decision-2, decision-3), pulls a snapshot of everything the API exposes (TASK-4), compiles a tracking plan against a recipe library (TASK-1), and merges spec fragments (`mergeSpecs`). gtm-client authenticates, throttles, lists accounts, and resolves a container by public id (TASK-33). gtm-recipes (renamed from gtm-web-recipes by TASK-45) shows the pattern of a package whose `pnpm pull <type>` regenerates a committed module from a container. Nothing yet writes files for more than one container, orders output deterministically, or scaffolds anything.
 
 ## The model in one paragraph
 
@@ -20,7 +20,7 @@ The repo is the authority for the entities its specs declare. Tag Manager is the
 
 ```
 acme-gtm/
-  package.json              pins @anthnyalxndr/gtm-as-code, gtm-apply, gtm-web-recipes; scripts: pull, diff, plan, apply, publish, verify
+  package.json              pins @anthnyalxndr/gtm-as-code, gtm-apply, gtm-recipes; scripts: pull, diff, plan, apply, publish, verify
   gtm.config.json           the repo config file TASK-30 defines (see below)
   gtm/
     shared/
@@ -188,4 +188,4 @@ Two implementation plans:
 
 - Does Tag Manager preserve parameter order on write? If it does, the by-key comparison in `matches()` is still correct, only less necessary. TASK-34 probes it.
 - Should `snapshot.json` be committed at all, given that it churns? This design says yes, as the audit record, because the drift job diffs `spec.json` and the noise stays out of that diff. Revisit if repos become large.
-- Should gtm-web-recipes become public before the first external account repo pins it? An account repo that uses `plan.ts` needs to install it.
+- Should gtm-recipes become public before the first external account repo pins it? An account repo that uses `plan.ts` needs to install it.

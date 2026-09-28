@@ -56,7 +56,7 @@ importers:
 
   packages/gtm-model: {}
 
-  packages/gtm-web-recipes:
+  packages/gtm-recipes:
     dependencies:
       '@anthnyalxndr/gtm-apply':
         specifier: workspace:^

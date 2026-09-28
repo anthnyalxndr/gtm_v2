@@ -20,7 +20,7 @@ Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `
 
 ```ts
 import { Gtm } from "@anthnyalxndr/gtm-apply";
-import { library } from "@anthnyalxndr/gtm-web-recipes";
+import { library } from "@anthnyalxndr/gtm-recipes/web";
 
 const gtm = await Gtm.fromConfig().init();               // OAuth from ~/.config/gtm-apply
 const spec = await gtm.export({ container: "GTM-XXXXXXX" });          // normalized spec
@@ -248,7 +248,7 @@ A customer's onboarding is a plan: which recipes to install, which destination f
 
 ```ts
 import { applyPlan, defineTrackingPlan } from "@anthnyalxndr/gtm-apply";
-import { library } from "@anthnyalxndr/gtm-web-recipes";
+import { library } from "@anthnyalxndr/gtm-recipes/web";
 
 const plan = defineTrackingPlan(library, {
   recipes: ["form_submit", "call_click"],
@@ -272,7 +272,7 @@ Or from the CLI, with a plan module and a library file or module:
 gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --plan plan.ts --library library.json --dry-run
 ```
 
-A content package holds the library: its pull script reads the template container with `GtmSnapshot`, lints it, and writes the snapshot as a `const` TypeScript module with `libraryModuleSource`, so recipe and constant names are literal types wherever the package is imported. See `packages/gtm-web-recipes`.
+A content package holds the library: its pull script reads the template container with `GtmSnapshot`, lints it, and writes the snapshot as a `const` TypeScript module with `libraryModuleSource`, so recipe and constant names are literal types wherever the package is imported. See `packages/gtm-recipes`.
 
 ## Ad hoc work: use gtm-cli
 
