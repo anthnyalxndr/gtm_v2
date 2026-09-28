@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 import { applyPlan, compilePlan, defineTrackingPlan, GtmSnapshot } from "@anthnyalxndr/gtm-apply";
-import { data, library } from "../src/index.js";
-import plan from "../plan.example.js";
+import { data, library } from "../src/web/index.js";
+import plan from "../examples/web.plan.js";
 
 const RECIPES = [
   "google_tag",
@@ -13,7 +13,7 @@ const RECIPES = [
   "maps_click",
 ] as const;
 
-describe("gtm-web-recipes", () => {
+describe("gtm-recipes web library", () => {
   it("ships the lead-gen recipe set with typed constants and a clean lint", () => {
     expect(library.recipeNames).toEqual([...RECIPES]);
     expect(library.constantNames).toEqual([

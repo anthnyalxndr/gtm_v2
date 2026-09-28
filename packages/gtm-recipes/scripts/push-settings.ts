@@ -1,3 +1,5 @@
+import { LIBRARIES, type LibraryType } from "./libraries.js";
+
 /** What `pnpm push` targets, read from the environment and the command line. */
 export interface PushSettings {
   /** Public id of the template container. */
@@ -12,20 +14,21 @@ export interface PushSettings {
 }
 
 /**
- *   GTM_LIBRARY            template container (default GTM-TPLKC7QP)
+ *   GTM_LIBRARY            template container (default: the library type's, e.g. GTM-TPLKC7QP for web)
  *   GTM_LIBRARY_WORKSPACE  workspace to push into (default recipes-<date>)
  *   GTM_LIBRARY_VERSION    version name (default recipes-<date>)
  *   GTM_LIBRARY_VERSION_DESCRIPTION  version description (default none)
  *   --dry-run              plan only
  */
 export function pushSettings(
+  type: LibraryType,
   env: Readonly<Record<string, string | undefined>>,
   argv: readonly string[],
   now: Date = new Date()
 ): PushSettings {
   const dated = `recipes-${now.toISOString().slice(0, 10)}`;
   return {
-    container: env.GTM_LIBRARY ?? "GTM-TPLKC7QP",
+    container: env.GTM_LIBRARY ?? LIBRARIES[type].publicId,
     workspace: env.GTM_LIBRARY_WORKSPACE ?? dated,
     versionName: env.GTM_LIBRARY_VERSION ?? dated,
     ...(env.GTM_LIBRARY_VERSION_DESCRIPTION

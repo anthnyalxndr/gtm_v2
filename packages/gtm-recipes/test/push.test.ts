@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
 import { pushSettings } from "../scripts/push-settings.js";
-import { templateSnapshot } from "../scripts/template.js";
+import { templateSnapshot } from "../scripts/web/template.js";
 
 const NOW = new Date("2026-09-28T12:00:00Z");
 
 describe("pushSettings", () => {
   it("names the workspace and version recipes-<date> by default", () => {
-    expect(pushSettings({}, [], NOW)).toEqual({
+    expect(pushSettings("web", {}, [], NOW)).toEqual({
       container: "GTM-TPLKC7QP",
       workspace: "recipes-2026-09-28",
       versionName: "recipes-2026-09-28",
@@ -17,7 +17,12 @@ describe("pushSettings", () => {
   });
 
   it("keeps the version name when the push targets an existing workspace", () => {
-    const s = pushSettings({ GTM_LIBRARY_WORKSPACE: "owner-edits" }, ["--dry-run"], NOW);
+    const s = pushSettings(
+      "web",
+      { GTM_LIBRARY_WORKSPACE: "owner-edits" },
+      ["web", "--dry-run"],
+      NOW
+    );
     expect(s.workspace).toBe("owner-edits");
     expect(s.versionName).toBe("recipes-2026-09-28");
     expect(s.dryRun).toBe(true);
@@ -25,6 +30,7 @@ describe("pushSettings", () => {
 
   it("takes the container and version name from their own settings", () => {
     const s = pushSettings(
+      "web",
       { GTM_LIBRARY: "GTM-OTHER", GTM_LIBRARY_VERSION: "built-ins-and-recipes" },
       [],
       NOW
@@ -34,9 +40,9 @@ describe("pushSettings", () => {
   });
 
   it("describes the version only when a description is set", () => {
-    expect(pushSettings({}, [], NOW)).not.toHaveProperty("versionDescription");
+    expect(pushSettings("web", {}, [], NOW)).not.toHaveProperty("versionDescription");
     expect(
-      pushSettings({ GTM_LIBRARY_VERSION_DESCRIPTION: "Adds the server recipes." }, [], NOW)
+      pushSettings("web", { GTM_LIBRARY_VERSION_DESCRIPTION: "Adds the server recipes." }, [], NOW)
         .versionDescription
     ).toBe("Adds the server recipes.");
   });
