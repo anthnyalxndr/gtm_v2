@@ -18,7 +18,10 @@ export async function ensureWorkspace(
   name: string
 ): Promise<WorkspaceRef> {
   if (isDefaultWorkspaceName(name)) {
-    throw new Error("Refusing to use the Default Workspace. Pass a dedicated workspace name.");
+    throw new Error(
+      "Refusing to use the Default Workspace (decision-4): people edit there by hand. " +
+        "Make interface edits in a named workspace and push into that workspace instead."
+    );
   }
   const ws = client.service.accounts.containers.workspaces;
   const listRes = await client.call(() => ws.list({ parent: containerPath }));

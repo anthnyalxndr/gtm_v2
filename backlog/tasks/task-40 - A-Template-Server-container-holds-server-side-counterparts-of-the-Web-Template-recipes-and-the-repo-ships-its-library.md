@@ -7,7 +7,7 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-09-28 17:47'
-updated_date: '2026-09-28 20:53'
+updated_date: '2026-09-28 23:45'
 labels:
   - recipes
   - server
@@ -61,6 +61,8 @@ Full plan: docs/superpowers/plans/2026-09-28-template-server.md. Awaiting owner 
 2026-09-28: Read the reference Default Workspaces read-only (server GTM-P23F82XZ ws 17, web GTM-MXK8K5KJ ws 30). Found two repo gaps: snapshotToSpec fails on the server's built-in trigger id 2147479574 (unknown to BUILT_IN_TRIGGERS), and on the web container's gallery Consent Mode template (custom templates wait on TASK-10). The recipes don't need custom templates, so only the first gap is in scope.
 
 2026-09-28: The owner created Template - Server (GTM-WMGVDZ5H, containerId 265489931) in account 6004731770 and enabled every built-in variable in its Default Workspace; no version yet. AC #5 is met. Decisions from the plan review: the per-container catalog moves to TASK-42 (built on the new gtm-model package, TASK-41), the package rename moves to TASK-45, pushing into the Default Workspace without a prior version is TASK-44, and the cross-container check is TASK-46. The plan in docs/superpowers/plans/2026-09-28-template-server.md predates this split: rewrite it for what is left (the server template, google_tag_server, push, pull, docs) and update these acceptance criteria to match before implementing.
+
+2026-09-28: Template - Server version 2 "built-in-variables-2026-09-28" (unpublished) saves the owner's 9 built-in additions; the Default Workspace moved to workspace 3. A new server container ships with a default client named GA4 (gaaw_client, FPID cookie, cookieMaxAgeInSec 63072000), so the server template's GA4 client reconciles with it by name (an update, not a second client). Push the template into a new workspace or a named one, never the Default Workspace (decision-4, reaffirmed by the owner in TASK-44).
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done
