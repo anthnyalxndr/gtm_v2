@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-27 23:22'
+updated_date: '2026-09-28 20:53'
 labels:
   - recipes
   - apply
@@ -28,3 +29,9 @@ pnpm push in packages/gtm-web-recipes names the version it creates (GTM_LIBRARY_
 - [ ] #4 A unit test asserts the create_version request body includes the description when given and omits it when not
 - [ ] #5 The push script's header comment and the gtm-web-recipes README document the new option
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-28: TASK-44 changes the same push script (workspace and version name as separate settings); do them together or TASK-44 first.
+<!-- SECTION:NOTES:END -->
