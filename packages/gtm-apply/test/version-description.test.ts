@@ -1,0 +1,38 @@
+import { describe, it, expect } from "vitest";
+import { GtmClient } from "@anthnyalxndr/gtm-client";
+import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
+import { applySpec } from "../src/spec/execute.js";
+import { defineContainer } from "../src/spec/types.js";
+
+const spec = defineContainer({
+  variable: [
+    { name: "Const - X", type: "c", parameter: [{ type: "template", key: "value", value: "x" }] },
+  ],
+});
+
+function fake() {
+  const { service, state } = createFakeService();
+  return { client: new GtmClient({ service, minIntervalMs: 0 }), state };
+}
+
+describe("version description", () => {
+  it("sends the description to create_version alongside the name", async () => {
+    const { client, state } = fake();
+    await applySpec(client, {
+      container: "GTM-ABC123",
+      workspace: "ws",
+      spec,
+      versionName: "v1",
+      versionDescription: "Adds Const - X.",
+    });
+    const v = state.versions.at(-1)!;
+    expect(v.name).toBe("v1");
+    expect(v.description).toBe("Adds Const - X.");
+  });
+
+  it("sends no description field when none is given", async () => {
+    const { client, state } = fake();
+    await applySpec(client, { container: "GTM-ABC123", workspace: "ws", spec, versionName: "v1" });
+    expect(Object.hasOwn(state.versions.at(-1)!, "description")).toBe(false);
+  });
+});

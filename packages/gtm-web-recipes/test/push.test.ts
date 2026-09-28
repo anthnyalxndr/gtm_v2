@@ -32,6 +32,14 @@ describe("pushSettings", () => {
     expect(s.container).toBe("GTM-OTHER");
     expect(s.versionName).toBe("built-ins-and-recipes");
   });
+
+  it("describes the version only when a description is set", () => {
+    expect(pushSettings({}, [], NOW)).not.toHaveProperty("versionDescription");
+    expect(
+      pushSettings({ GTM_LIBRARY_VERSION_DESCRIPTION: "Adds the server recipes." }, [], NOW)
+        .versionDescription
+    ).toBe("Adds the server recipes.");
+  });
 });
 
 describe("pushing into an existing workspace", () => {

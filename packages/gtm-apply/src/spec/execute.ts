@@ -24,6 +24,8 @@ import type { ContainerSpec } from "./types.js";
 export interface ExecuteOptions {
   publish?: boolean;
   versionName?: string;
+  /** Shown with the version in Tag Manager. Left out of the request when not given. */
+  versionDescription?: string;
 }
 
 export interface ApplyResult {
@@ -138,7 +140,15 @@ export async function executePlan(
   }
   const versionName = options.versionName ?? plan.target.workspace;
   const versionRes = await client.call(() =>
-    wsApi.create_version({ path: ws.path, requestBody: { name: versionName } })
+    wsApi.create_version({
+      path: ws.path,
+      requestBody: {
+        name: versionName,
+        ...(options.versionDescription !== undefined
+          ? { description: options.versionDescription }
+          : {}),
+      },
+    })
   );
   const versionPath = versionRes.data.containerVersion?.path ?? undefined;
   if (!versionPath) throw new Error("create_version returned no container version path");
@@ -163,6 +173,7 @@ export interface ApplySpecOptions {
   dryRun?: boolean;
   publish?: boolean;
   versionName?: string;
+  versionDescription?: string;
 }
 
 export interface ApplySpecOutcome {
@@ -185,6 +196,7 @@ export async function applySpec(
   const result = await executePlan(client, plan, {
     publish: options.publish,
     versionName: options.versionName,
+    versionDescription: options.versionDescription,
   });
   return { plan, result };
 }

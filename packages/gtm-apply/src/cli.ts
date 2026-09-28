@@ -23,6 +23,7 @@ export interface CliArgs {
   publish: boolean;
   live: boolean;
   versionName?: string;
+  versionDescription?: string;
   version?: string;
   plan?: string;
   library?: string;
@@ -30,7 +31,7 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>] [--version-description <text>]
       (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
   gtm-apply apply --container GTM-XXXXXXX --workspace <name> --plan <plan.ts> --library <library.json|module> [--write-spec <file>] [...]
       (compile a tracking plan against a library, then apply it)
@@ -52,6 +53,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       publish: { type: "boolean", default: false },
       live: { type: "boolean", default: false },
       "version-name": { type: "string" },
+      "version-description": { type: "string" },
       version: { type: "string" },
       plan: { type: "string" },
       library: { type: "string" },
@@ -72,6 +74,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     publish: values.publish ?? false,
     live: values.live ?? false,
     versionName: values["version-name"],
+    versionDescription: values["version-description"],
     version: values.version,
     plan: values.plan,
     library: values.library,
@@ -174,6 +177,7 @@ export async function runCli(
       const result = await executePlan(client, plan, {
         publish: args.publish,
         versionName: args.versionName,
+        versionDescription: args.versionDescription,
       });
       if (result.versionPath) {
         out(`Version: ${result.versionPath}${result.published ? " (published)" : ""}`);
@@ -223,6 +227,7 @@ async function applyFromPlan(
     dryRun: args.dryRun,
     publish: args.publish,
     versionName: args.versionName,
+    versionDescription: args.versionDescription,
     writeSpecTo: args.writeSpec,
   });
   out(formatPlan(outcome.plan));

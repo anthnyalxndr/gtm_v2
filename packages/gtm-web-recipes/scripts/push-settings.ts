@@ -6,6 +6,8 @@ export interface PushSettings {
   workspace: string;
   /** Name of the version the push creates, whatever the workspace is called. */
   versionName: string;
+  /** Shown with the version in Tag Manager; none when unset. */
+  versionDescription?: string;
   dryRun: boolean;
 }
 
@@ -13,6 +15,7 @@ export interface PushSettings {
  *   GTM_LIBRARY            template container (default GTM-TPLKC7QP)
  *   GTM_LIBRARY_WORKSPACE  workspace to push into (default recipes-<date>)
  *   GTM_LIBRARY_VERSION    version name (default recipes-<date>)
+ *   GTM_LIBRARY_VERSION_DESCRIPTION  version description (default none)
  *   --dry-run              plan only
  */
 export function pushSettings(
@@ -25,6 +28,9 @@ export function pushSettings(
     container: env.GTM_LIBRARY ?? "GTM-TPLKC7QP",
     workspace: env.GTM_LIBRARY_WORKSPACE ?? dated,
     versionName: env.GTM_LIBRARY_VERSION ?? dated,
+    ...(env.GTM_LIBRARY_VERSION_DESCRIPTION
+      ? { versionDescription: env.GTM_LIBRARY_VERSION_DESCRIPTION }
+      : {}),
     dryRun: argv.includes("--dry-run"),
   };
 }
