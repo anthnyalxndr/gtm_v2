@@ -3,16 +3,18 @@ id: TASK-40
 title: >-
   A Template - Server container holds server-side counterparts of the Web
   Template recipes and the repo ships its library
-status: In Progress
+status: To Do
 assignee:
   - '@claude'
 created_date: '2026-09-28 17:47'
-updated_date: '2026-09-28 18:18'
+updated_date: '2026-09-28 20:53'
 labels:
   - recipes
   - server
 dependencies:
-  - TASK-17
+  - TASK-42
+  - TASK-44
+  - TASK-45
 priority: high
 ordinal: 33000
 ---
@@ -33,7 +35,7 @@ The owner wants the plan to consider merging the recipe packages into one packag
 - [ ] #2 The plan maps each Template - Web recipe to its server-side counterpart, or says why a recipe has none, based on what GTM-P23F82XZ and GTM-MXK8K5KJ actually contain
 - [ ] #3 The plan shows how each web recipe and its server recipe fit together: what the web container sends to the tagging server, which server client claims it, and which server tags and triggers fire
 - [ ] #4 The plan decides the package layout, evaluating one combined recipes package keyed by container type against a separate server package, and states any change the web package or its consumers need
-- [ ] #5 A server container named Template - Server exists in the anthnyalxndr.com account (6004731770) beside Template - Web
+- [x] #5 A server container named Template - Server exists in the anthnyalxndr.com account (6004731770) beside Template - Web
 - [ ] #6 The server recipes are defined in code with notes-trailer metadata (decision-10), a Library - Manifest, placeholder constants for every customer value, and server naming conventions, and lint reports no findings
 - [ ] #7 The template is pushed to Template - Server as a workspace and version, and the pull writes the committed server library from it with no lint findings
 - [ ] #8 No id, domain or value from the MindScience Collective containers appears in the template or the committed library
@@ -57,4 +59,11 @@ Full plan: docs/superpowers/plans/2026-09-28-template-server.md. Awaiting owner 
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-09-28: Read the reference Default Workspaces read-only (server GTM-P23F82XZ ws 17, web GTM-MXK8K5KJ ws 30). Found two repo gaps: snapshotToSpec fails on the server's built-in trigger id 2147479574 (unknown to BUILT_IN_TRIGGERS), and on the web container's gallery Consent Mode template (custom templates wait on TASK-10). The recipes don't need custom templates, so only the first gap is in scope.
+
+2026-09-28: The owner created Template - Server (GTM-WMGVDZ5H, containerId 265489931) in account 6004731770 and enabled every built-in variable in its Default Workspace; no version yet. AC #5 is met. Decisions from the plan review: the per-container catalog moves to TASK-42 (built on the new gtm-model package, TASK-41), the package rename moves to TASK-45, pushing into the Default Workspace without a prior version is TASK-44, and the cross-container check is TASK-46. The plan in docs/superpowers/plans/2026-09-28-template-server.md predates this split: rewrite it for what is left (the server template, google_tag_server, push, pull, docs) and update these acceptance criteria to match before implementing.
 <!-- SECTION:NOTES:END -->
+
+## Definition of Done
+<!-- DOD:BEGIN -->
+- [ ] #1 Once the implementation plan exists, the acceptance criteria were reviewed against it and updated where the plan changed them
+<!-- DOD:END -->

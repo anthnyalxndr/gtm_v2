@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-11 15:27'
-updated_date: '2026-09-17 16:10'
+updated_date: '2026-09-28 20:53'
 labels:
   - sdk
   - templates
@@ -34,3 +34,9 @@ A real template container will use community templates within days, and today th
 - [ ] #4 The gtm-client fake serves templates with templateData and import_from_gallery; tests cover normalize, plan, execute, closure, and a library round trip with a custom template tag
 - [ ] #5 README removes the cvt_ limitation
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-28: PR #14 is open and now conflicts with main; it needs a rebase before merging. TASK-40's recipes do not need custom templates.
+<!-- SECTION:NOTES:END -->

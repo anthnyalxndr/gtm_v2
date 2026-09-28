@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status, 2026-09-28:** partly replaced after the owner's review. Task 1 is done (the owner created Template - Server, GTM-WMGVDZ5H). Task 2 moved to TASK-42, built on the new gtm-model package (TASK-41). Task 3 moved to TASK-45. Pushing into the Default Workspace is TASK-44, and the cross-container check is TASK-46. Rewrite this plan for Tasks 4 to 7 when TASK-40 starts.
+
 **Goal:** A "Template - Server" container holds server-side counterparts of the Template - Web recipes, and the repo ships both libraries from one recipes package keyed by container type.
 
 **Architecture:** The web container keeps sending GA4 events. With server tagging on, a Google tag carrying `server_container_url` sends them to the customer's tagging server. There a GA4 client claims each request, one GA4 tag forwards every claimed event, and one Google Ads conversion tag per recipe fires on the recipe's event name. The server template is a `ContainerSpec` in code, pushed to the container and pulled back into a committed `const` module, exactly as the web template is.
