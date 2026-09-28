@@ -3,9 +3,11 @@ id: TASK-40
 title: >-
   A Template - Server container holds server-side counterparts of the Web
   Template recipes and the repo ships its library
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-28 17:47'
+updated_date: '2026-09-28 18:18'
 labels:
   - recipes
   - server
@@ -37,3 +39,22 @@ The owner wants the plan to consider merging the recipe packages into one packag
 - [ ] #8 No id, domain or value from the MindScience Collective containers appears in the template or the committed library
 - [ ] #9 pnpm verify passes, and the README and example plan cover the server recipes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Full plan: docs/superpowers/plans/2026-09-28-template-server.md. Awaiting owner approval (AC #1) before any code or container change.
+1. Create Template - Server (server container) in account 6004731770 with the Tag Manager MCP.
+2. Key built-in triggers by container type in gtm-apply and add the server built-in trigger 2147479574, its display name read from our own container's UI.
+3. Rename packages/gtm-web-recipes to packages/gtm-recipes: libraries keyed by container type (recipes.web, recipes.server; subpaths ./web and ./server), scripts take web|server.
+4. Server template: ga4_client (GA4 client, one GA4 forwarding tag, Conversion Linker), one server Google Ads conversion tag and event trigger per conversion recipe, optional web_container_client; placeholders for every customer value.
+5. Web template gains google_tag_server (Google tag with server_container_url); the manifest declares it conflicts with google_tag and compilePlan reports a plan that selects both.
+6. Push both templates as unpublished versions, pull both libraries lint-clean, confirm no MindScience value is committed.
+7. README for both libraries; pnpm verify; move to Review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-28: Read the reference Default Workspaces read-only (server GTM-P23F82XZ ws 17, web GTM-MXK8K5KJ ws 30). Found two repo gaps: snapshotToSpec fails on the server's built-in trigger id 2147479574 (unknown to BUILT_IN_TRIGGERS), and on the web container's gallery Consent Mode template (custom templates wait on TASK-10). The recipes don't need custom templates, so only the first gap is in scope.
+<!-- SECTION:NOTES:END -->
