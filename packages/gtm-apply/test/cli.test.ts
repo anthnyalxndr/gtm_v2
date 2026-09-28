@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "url";
-import { writeFile, mkdtemp } from "fs/promises";
+import { writeFile, mkdtemp, readdir, readFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { parseCliArgs, runCli } from "../src/cli.js";
 import { createFakeService, emptyEntities } from "@anthnyalxndr/gtm-client/testing";
+import { seedVersion } from "./account.test.js";
 
 const fixturePath = fileURLToPath(new URL("./fixtures/ui-export.json", import.meta.url));
 
@@ -38,7 +39,26 @@ describe("parseCliArgs", () => {
       plan: undefined,
       library: undefined,
       writeSpec: undefined,
+      containers: ["GTM-ABC123"],
+      account: undefined,
+      out: undefined,
     });
+  });
+
+  it("collects repeated --container and reads --account and --out", () => {
+    const args = parseCliArgs([
+      "snapshot",
+      "--container",
+      "GTM-A",
+      "--container",
+      "GTM-B",
+      "--out",
+      "dir",
+    ]);
+    expect(args.container).toBe("GTM-A");
+    expect(args.containers).toEqual(["GTM-A", "GTM-B"]);
+    expect(args.out).toBe("dir");
+    expect(parseCliArgs(["snapshot", "--account", "1", "--out", "d"]).account).toBe("1");
   });
 
   it("parses normalize with a file and rejects unknown commands", () => {
@@ -56,6 +76,43 @@ function fresh() {
 }
 
 describe("runCli", () => {
+  it("snapshot --account writes one canonical file per container into --out", async () => {
+    const { service, state } = createFakeService({
+      containers: [
+        { accountId: "1", containerId: "10", publicId: "GTM-AAA", name: "a.com" },
+        { accountId: "1", containerId: "11", publicId: "GTM-BBB", name: "b.com" },
+      ],
+    });
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await seedVersion(client, state, "accounts/1/containers/10", "Tag A");
+    await seedVersion(client, state, "accounts/1/containers/11", "Tag B");
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const lines: string[] = [];
+    const code = await runCli(
+      parseCliArgs(["snapshot", "--account", "1", "--out", dir]),
+      client,
+      (l) => lines.push(l)
+    );
+    expect(code).toBe(0);
+    expect((await readdir(dir)).sort()).toEqual(["GTM-AAA.json", "GTM-BBB.json"]);
+    const b = JSON.parse(await readFile(join(dir, "GTM-BBB.json"), "utf-8"));
+    expect(b.tag[0].name).toBe("Tag B");
+    expect(lines).toEqual([
+      `Wrote ${join(dir, "GTM-AAA.json")}`,
+      `Wrote ${join(dir, "GTM-BBB.json")}`,
+    ]);
+  });
+
+  it("snapshot of several containers refuses without --out", async () => {
+    const { client } = fresh();
+    await expect(
+      runCli(parseCliArgs(["snapshot", "--container", "GTM-A", "--container", "GTM-B"]), client)
+    ).rejects.toThrow(/--out/);
+    await expect(runCli(parseCliArgs(["snapshot", "--account", "1"]), client)).rejects.toThrow(
+      /--out/
+    );
+  });
+
   it("normalize prints a normalized spec", async () => {
     const { client } = fresh();
     const lines: string[] = [];
@@ -65,6 +122,24 @@ describe("runCli", () => {
     expect(code).toBe(0);
     const spec = JSON.parse(lines.join("\n"));
     expect(spec.tag[0].firingTriggerName).toEqual(["Custom Event - lead", "Form Submit - contact"]);
+  });
+
+  it("normalize prints canonical output and is idempotent on it", async () => {
+    const { client } = fresh();
+    const first: string[] = [];
+    expect(
+      await runCli(parseCliArgs(["normalize", fixturePath]), client, (l) => first.push(l))
+    ).toBe(0);
+    const spec = JSON.parse(first.join("\n"));
+    expect(spec.builtInVariable).toEqual(["formId", "pagePath"]);
+    expect(Object.keys(spec.tag[0]).slice(0, 2)).toEqual(["name", "type"]);
+
+    const dir = await mkdtemp(join(tmpdir(), "gtm-cli-"));
+    const again = join(dir, "spec.json");
+    await writeFile(again, first.join("\n") + "\n");
+    const second: string[] = [];
+    expect(await runCli(parseCliArgs(["normalize", again]), client, (l) => second.push(l))).toBe(0);
+    expect(second.join("\n")).toBe(first.join("\n"));
   });
 
   it("apply --dry-run prints the plan and writes nothing", async () => {

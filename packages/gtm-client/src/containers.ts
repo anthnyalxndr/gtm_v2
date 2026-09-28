@@ -1,3 +1,4 @@
+import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "./client.js";
 
 export interface ContainerRef {
@@ -8,6 +9,20 @@ export interface ContainerRef {
   publicId: string;
   /** Container.usageContext, e.g. ["web"] or ["server"]. */
   usageContext: string[];
+}
+
+type Container = tagmanager_v2.Schema$Container;
+
+function toRef(c: Container, publicId: string): ContainerRef | null {
+  if (!c.accountId || !c.containerId) return null;
+  return {
+    accountId: c.accountId,
+    containerId: c.containerId,
+    path: c.path ?? `accounts/${c.accountId}/containers/${c.containerId}`,
+    name: c.name ?? "",
+    publicId,
+    usageContext: c.usageContext ?? [],
+  };
 }
 
 /** Find a container by its public id (GTM-XXXXXXX) across every account the user can see. */
@@ -31,6 +46,23 @@ export async function resolveContainer(client: GtmClient, publicId: string): Pro
     }
   }
   throw new Error(`No accessible container with public id ${publicId}`);
+}
+
+/** Every container in one account, in the API's listing order. */
+export async function listContainers(
+  client: GtmClient,
+  accountId: string
+): Promise<ContainerRef[]> {
+  const res = await client.call(() =>
+    client.service.accounts.containers.list({ parent: `accounts/${accountId}` })
+  );
+  const refs: ContainerRef[] = [];
+  for (const c of res.data.container ?? []) {
+    if (!c.publicId) continue;
+    const ref = toRef(c, c.publicId);
+    if (ref) refs.push(ref);
+  }
+  return refs;
 }
 
 /**

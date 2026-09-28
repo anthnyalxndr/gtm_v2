@@ -71,6 +71,19 @@ describe("Gtm", () => {
     expect(gtm.snapshotFrom(a.toJSON()).recipeNames).toEqual(a.recipeNames);
   });
 
+  it("snapshotAccount memoizes per container", async () => {
+    const { gtm, state } = fake();
+    await gtm.init();
+    await gtm.apply({ container: "GTM-TPL", workspace: "seed", spec: template });
+    await gtm.apply({ container: "GTM-CUST", workspace: "seed", spec: template });
+    const all = await gtm.snapshotAccount("1");
+    expect(all.map((s) => s.data.container.publicId)).toEqual(["GTM-TPL", "GTM-CUST"]);
+    const reads = state.calls.filter((c) => c === "versions.get").length;
+    const again = await gtm.snapshot({ container: "GTM-CUST" });
+    expect(again).toBe(all[1]);
+    expect(state.calls.filter((c) => c === "versions.get")).toHaveLength(reads);
+  });
+
   it("builds a client from config", () => {
     const gtm = Gtm.fromConfig({ clientSecretsPath: "/nonexistent/secrets.json" });
     expect(gtm.client).toBeInstanceOf(GtmClient);
