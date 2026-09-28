@@ -235,6 +235,32 @@ export function createFakeService(seed: FakeSeed = {}): {
             },
           };
         },
+        // The API accepts exactly one of tagId (GTM-XXXXXXX) or destinationId (e.g. AW-123).
+        lookup: async ({ tagId, destinationId }: { tagId?: string; destinationId?: string }) => {
+          state.calls.push("containers.lookup");
+          if ((tagId === undefined) === (destinationId === undefined)) {
+            throw Object.assign(new Error("set exactly one of tagId or destinationId"), {
+              code: 400,
+            });
+          }
+          const destination =
+            destinationId === undefined
+              ? undefined
+              : state.destinations.find((d) => d.destinationId === destinationId);
+          const c = state.containers.find((x) =>
+            tagId !== undefined
+              ? x.publicId === tagId
+              : x.accountId === destination?.accountId && x.containerId === destination?.containerId
+          );
+          if (!c) throw Object.assign(new Error("container not found"), { code: 404 });
+          return {
+            data: {
+              ...c,
+              usageContext: c.usageContext ?? ["web"],
+              path: `accounts/${c.accountId}/containers/${c.containerId}`,
+            },
+          };
+        },
         get: async ({ path }: { path: string }) => {
           state.calls.push("containers.get");
           const c = state.containers.find(
