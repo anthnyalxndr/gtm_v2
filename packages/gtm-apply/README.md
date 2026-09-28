@@ -78,7 +78,7 @@ gtm-apply apply --container GTM-XXXXXXX --workspace onboarding --spec spec.ts --
 
 TypeScript files are imported through Node's own type stripping, which is on by default from Node 22.18 and 23.6. On Node 22.6 to 22.17 run `node --experimental-strip-types $(which gtm-apply) …` or go through `tsx`. Type stripping handles types only: a spec module can't use enums or parameter properties.
 
-The types come from Google's [Discovery document](https://tagmanager.googleapis.com/$discovery/rest?version=v2) for the Tag Manager API v2 (Google publishes no OpenAPI spec). `pnpm gen:discovery --fetch` refreshes the committed copy under `scripts/discovery/` and regenerates `src/spec/generated/tagmanager-v2.ts`; a test fails if the two drift. Two things the document does not carry: which parameter keys a given tag or variable template (`awct`, `gaawe`, `c`) accepts, and which trigger fields belong to which trigger type. Those are still checked by the API at apply time.
+The types come from Google's [Discovery document](https://tagmanager.googleapis.com/$discovery/rest?version=v2) for the Tag Manager API v2 (Google publishes no OpenAPI spec). They live in [`@anthnyalxndr/gtm-model`](../gtm-model): `pnpm --filter @anthnyalxndr/gtm-model gen:discovery --fetch` refreshes the committed copy under that package's `scripts/discovery/` and regenerates its `src/spec/generated/tagmanager-v2.ts`; a test fails if the two drift. Two things the document does not carry: which parameter keys a given tag or variable template (`awct`, `gaawe`, `c`) accepts, and which trigger fields belong to which trigger type. Those are still checked by the API at apply time.
 
 ### Validation
 

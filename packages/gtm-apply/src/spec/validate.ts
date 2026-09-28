@@ -134,7 +134,7 @@ function checkObject(
       push(
         ctx,
         at,
-        `is not a field of ${schema}; run \`pnpm gen:discovery --fetch\` if the API added it`
+        `is not a field of ${schema}; run \`pnpm --filter @anthnyalxndr/gtm-model gen:discovery --fetch\` if the API added it`
       );
       continue;
     }

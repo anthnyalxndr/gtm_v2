@@ -2,15 +2,17 @@ import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
 import {
   applySpec,
-  defineContainer,
   formatNotes,
   GtmSnapshot,
   manifestVariable,
   type PlaceholderMetadata,
+} from "@anthnyalxndr/gtm-apply";
+import {
+  defineContainer,
   type TagSpec,
   type TriggerSpec,
   type VariableSpec,
-} from "@anthnyalxndr/gtm-apply";
+} from "@anthnyalxndr/gtm-model";
 
 /**
  * The Web Template container (GTM-TPLKC7QP) as a ContainerSpec: the lead-gen
