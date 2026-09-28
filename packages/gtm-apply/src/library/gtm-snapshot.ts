@@ -48,6 +48,8 @@ export interface Recipe {
   /** Roots plus their reference closure. */
   entities: EntityRef[];
   dependencies: ExternalDependency[];
+  /** Recipes a plan must not select together with this one; absent in libraries pulled before conflicts existed. */
+  conflicts?: string[];
 }
 
 /** What a content package commits: the API pull plus what was read and computed from it. */
@@ -471,6 +473,15 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
       if (hasTagRoot && !recipe.entities.some((r) => r.kind === "trigger")) {
         issues.push({ entity, path: "", message: "reaches no trigger, so its tags never fire" });
       }
+      for (const other of recipe.conflicts ?? []) {
+        if (!this.#recipes.some((r) => r.name === other)) {
+          issues.push({
+            entity,
+            path: "conflicts",
+            message: `names "${other}", which is not a recipe`,
+          });
+        }
+      }
       const names = new Set(recipe.entities.map(refKey));
       recipe.dependencies.forEach((dep, i) => {
         if (!names.has(refKey({ kind: "variable", name: dep.constant }))) {
@@ -591,5 +602,6 @@ export function indexRecipes(
     roots: rootRefs,
     entities: closure(spec, rootRefs),
     dependencies: manifest?.recipes?.[name]?.dependencies ?? [],
+    conflicts: manifest?.recipes?.[name]?.conflicts ?? [],
   }));
 }

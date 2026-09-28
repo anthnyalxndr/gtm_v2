@@ -123,6 +123,21 @@ export function compilePlan<R extends string, C extends string>(
     }
   }
 
+  const selected = new Set<string>(plan.recipes);
+  const reported = new Set<string>();
+  for (const name of plan.recipes) {
+    for (const other of library.recipe(name)?.conflicts ?? []) {
+      const pair = [name, other].sort().join("\u0000");
+      if (!selected.has(other) || reported.has(pair)) continue;
+      reported.add(pair);
+      issues.push({
+        entity: `recipe "${name}"`,
+        path: "",
+        message: `conflicts with "${other}"; a plan picks one of them`,
+      });
+    }
+  }
+
   for (const name of plan.recipes) {
     const recipe = library.recipe(name);
     if (!recipe) continue;
