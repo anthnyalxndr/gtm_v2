@@ -163,6 +163,11 @@ export const template = defineContainer({
         google_tag: {
           description: "Google tag on Initialization; base for every recipe.",
         },
+        google_tag_server: {
+          description:
+            "Google tag on Initialization, sent through the customer's tagging server; use instead of google_tag.",
+          conflicts: ["google_tag"],
+        },
         contact_form_submit: {
           description: "Contact form submitted (dataLayer event).",
           dependencies: dependencies("contact_form_submit"),
@@ -186,6 +191,16 @@ export const template = defineContainer({
       "<G-XXXXXXXXXX>",
       "Measurement ID of the site's GA4 web data stream (Admin > Data streams).",
       { kind: "ga4MeasurementId", example: "G-ABC123DEF4", pattern: "^G-[A-Z0-9]+$" }
+    ),
+    input(
+      "Const - Server Container URL",
+      "<https://sgtm.example.com>",
+      "Origin of the customer's server-side tagging server (the server container's tagging server URL), with no trailing slash.",
+      {
+        kind: "serverContainerUrl",
+        example: "https://sgtm.example.com",
+        pattern: "^https://[^/]+$",
+      }
     ),
     input(
       "Const - Google Ads Conversion ID",
@@ -249,6 +264,32 @@ export const template = defineContainer({
       notes: declares(
         'Loads the Google tag on every page. No Conversion Linker tag: a Google tag on every page sets the same first-party click cookies. Google\'s Conversion linker help says "If a container loads a Google tag on every page, it does not also need a conversion linker tag." https://support.google.com/tagmanager/answer/7549390. Add the Google Ads account as a destination of this Google tag in Google Ads or GA4 admin.',
         "google_tag"
+      ),
+    },
+    {
+      name: "Google Tag - Server",
+      type: "googtag",
+      firingTriggerName: ["Initialization - All Pages"],
+      consentSettings: notNeeded,
+      parameter: [
+        tpl("tagId", "{{Const - GA4 Measurement ID}}"),
+        {
+          type: "list",
+          key: "configSettingsTable",
+          list: [
+            {
+              type: "map",
+              map: [
+                tpl("parameter", "server_container_url"),
+                tpl("parameterValue", "{{Const - Server Container URL}}"),
+              ],
+            },
+          ],
+        },
+      ],
+      notes: declares(
+        "Loads the Google tag on every page and sends its hits to the customer's tagging server, where the server template's GA4 client claims them. Use it instead of the Google Tag, never with it. With server tagging, leave the googleAds destination out of the web plan: the server template's Ads - <recipe> tags record conversions, so each counts once.",
+        "google_tag_server"
       ),
     },
     ...conversion("contact_form_submit", "Custom Event - contact_form_submit", [

@@ -5,25 +5,23 @@ import { applyPlan, compilePlan, defineTrackingPlan, GtmSnapshot } from "@anthny
 import { data, library } from "../src/web/index.js";
 import plan from "../examples/web.plan.js";
 
-const RECIPES = [
-  "google_tag",
-  "contact_form_submit",
-  "call_click",
-  "email_click",
-  "maps_click",
-] as const;
+const CONVERSIONS = ["contact_form_submit", "call_click", "email_click", "maps_click"] as const;
+const RECIPES = ["google_tag", "google_tag_server", ...CONVERSIONS] as const;
 
 describe("gtm-recipes web library", () => {
   it("ships the lead-gen recipe set with typed constants and a clean lint", () => {
-    expect(library.recipeNames).toEqual([...RECIPES]);
-    expect(library.constantNames).toEqual([
-      "Const - GA4 Measurement ID",
-      "Const - Google Ads Conversion ID",
-      "Const - Google Ads - contact_form_submit Conversion Label",
-      "Const - Google Ads - call_click Conversion Label",
-      "Const - Google Ads - email_click Conversion Label",
-      "Const - Google Ads - maps_click Conversion Label",
-    ]);
+    expect([...library.recipeNames].sort()).toEqual([...RECIPES].sort());
+    expect([...library.constantNames].sort()).toEqual(
+      [
+        "Const - GA4 Measurement ID",
+        "Const - Server Container URL",
+        "Const - Google Ads Conversion ID",
+        "Const - Google Ads - contact_form_submit Conversion Label",
+        "Const - Google Ads - call_click Conversion Label",
+        "Const - Google Ads - email_click Conversion Label",
+        "Const - Google Ads - maps_click Conversion Label",
+      ].sort()
+    );
     expect(library.encoding.name).toBe("notes");
     expect(library.lint()).toEqual([]);
     expect(GtmSnapshot.fromData(data).recipes).toEqual(library.recipes);
@@ -48,7 +46,7 @@ describe("gtm-recipes web library", () => {
   });
 
   it("gives every conversion recipe a GA4 tag, an Ads tag, one trigger and its dependency", () => {
-    for (const name of RECIPES.slice(1)) {
+    for (const name of CONVERSIONS) {
       const recipe = library.recipe(name)!;
       expect(recipe.roots.map((r) => r.name)).toEqual([`GA4 - ${name}`, `Ads - ${name}`]);
       expect(recipe.entities.filter((r) => r.kind === "trigger")).toHaveLength(1);
@@ -76,6 +74,42 @@ describe("gtm-recipes web library", () => {
       "Initialization - All Pages",
       "Const - GA4 Measurement ID",
     ]);
+  });
+
+  it("offers google_tag_server, which sends to a tagging server and excludes google_tag", () => {
+    const tag = library.tags.get("Google Tag - Server")!;
+    expect(tag.type).toBe("googtag");
+    expect(tag.firingTriggerName).toEqual(["Initialization - All Pages"]);
+    expect(tag.parameter).toContainEqual({
+      type: "list",
+      key: "configSettingsTable",
+      list: [
+        {
+          type: "map",
+          map: [
+            { type: "template", key: "parameter", value: "server_container_url" },
+            {
+              type: "template",
+              key: "parameterValue",
+              value: "{{Const - Server Container URL}}",
+            },
+          ],
+        },
+      ],
+    });
+    expect(library.recipe("google_tag_server")?.conflicts).toEqual(["google_tag"]);
+    expect(
+      library.metadataOf({ kind: "variable", name: "Const - Server Container URL" })?.placeholder
+    ).toEqual({
+      kind: "serverContainerUrl",
+      example: "https://sgtm.example.com",
+      pattern: "^https://[^/]+$",
+    });
+    const both = compilePlan(
+      library,
+      defineTrackingPlan(library, { recipes: ["google_tag", "google_tag_server"] })
+    );
+    expect(both.issues.some((i) => i.message.includes("conflicts with"))).toBe(true);
   });
 
   it("type-checks plans against the library by recipe and constant name", () => {
