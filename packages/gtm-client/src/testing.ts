@@ -66,6 +66,8 @@ export interface FakeState {
     path: string;
     versionId: string;
     name?: string;
+    /** Present only when create_version was sent one. */
+    description?: string;
     snapshot: FakeEntities;
   }[];
   published: string[];
@@ -406,7 +408,7 @@ export function createFakeService(seed: FakeSeed = {}): {
             requestBody,
           }: {
             path: string;
-            requestBody: { name?: string };
+            requestBody: { name?: string; description?: string };
           }) => {
             state.calls.push("workspaces.create_version");
             const versionId = nextId();
@@ -417,6 +419,9 @@ export function createFakeService(seed: FakeSeed = {}): {
               path: versionPath,
               versionId,
               name: requestBody.name,
+              ...(requestBody.description !== undefined
+                ? { description: requestBody.description }
+                : {}),
               snapshot: {
                 folder: inWs(state.folders),
                 variable: inWs(state.variables),

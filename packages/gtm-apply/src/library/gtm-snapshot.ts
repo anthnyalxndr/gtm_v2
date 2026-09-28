@@ -520,7 +520,12 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   push(
     client: GtmClient,
     target: { container?: string; workspace: string },
-    options: { dryRun?: boolean; publish?: boolean; versionName?: string } = {}
+    options: {
+      dryRun?: boolean;
+      publish?: boolean;
+      versionName?: string;
+      versionDescription?: string;
+    } = {}
   ): Promise<ApplySpecOutcome> {
     const container = target.container ?? this.#source?.container ?? this.data.container.publicId;
     if (!container) throw new Error("push needs a target container");

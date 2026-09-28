@@ -54,7 +54,7 @@ pnpm push             # new workspace and version recipes-<date> on GTM-TPLKC7QP
 pnpm pull             # write src/library.ts from the container
 ```
 
-`pnpm push` reads three settings: `GTM_LIBRARY` (the template container, default `GTM-TPLKC7QP`), `GTM_LIBRARY_WORKSPACE` (the workspace to push into, default `recipes-<date>`) and `GTM_LIBRARY_VERSION` (the version name, default `recipes-<date>` whatever the workspace is called).
+`pnpm push` reads three settings: `GTM_LIBRARY` (the template container, default `GTM-TPLKC7QP`), `GTM_LIBRARY_WORKSPACE` (the workspace to push into, default `recipes-<date>`) and `GTM_LIBRARY_VERSION` (the version name, default `recipes-<date>` whatever the workspace is called). `GTM_LIBRARY_VERSION_DESCRIPTION` sets the description Tag Manager shows with the version; without it the version has none.
 
 A new workspace starts from the container's latest version, so edits made by hand in another workspace and not yet versioned are not in it. To keep them, make interface edits in a named workspace and push into that workspace; the version it creates holds both:
 
