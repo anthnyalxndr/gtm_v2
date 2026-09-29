@@ -160,6 +160,17 @@ Two Tag Manager behaviors shape the apply flow, both verified against the live A
 
 When nothing changed, no version is created and the workspace is left in place.
 
+### Checking a publish
+
+After `--publish`, apply reads the container's live version and fails unless it is the version it just created. `--verify <command>` then runs a command of yours through the shell and exits with that command's code, so a CI job fails when the check does. For example, audit the site with [gtm_audit](https://github.com/anthnyalxndr/gtm_audit) right after publishing:
+
+```bash
+gtm-apply apply --container GTM-XXXXXXX --workspace release --spec spec.ts --publish \
+  --verify "pnpm --dir ../gtm_audit dev audit -c config/containers/acme.yaml"
+```
+
+`--verify` needs `--publish`, and it does not run on a dry run or when nothing was published. What counts as a failure is up to the command: apply only passes its exit code on.
+
 ### Reviewing changes in a workspace
 
 `--no-version` reconciles the named workspace and stops before creating a version, so the workspace stays for review in the Tag Manager interface. The command prints the workspace's page:
