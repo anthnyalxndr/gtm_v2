@@ -3,49 +3,49 @@ id: doc-2
 title: Plan
 type: guide
 created_date: '2026-09-24 18:22'
-updated_date: '2026-09-28 20:54'
+updated_date: '2026-09-29 00:18'
 ---
-Last planning pass: 2026-09-28.
+Last planning pass: 2026-09-29.
 
 Ordering and rationale only; every line points at a task id; rewritten whole at each planning pass via `backlog doc update`, never appended; pick the top item unless it is blocked or in progress; the guidance below stays in force until the user changes it.
 
 ## Guidance
 
-Focus on the shared model and the server template the owner approved on 2026-09-28. Build the gtm-model package first, then the per-container catalog, then the push into an existing workspace, then the combined gtm-recipes package, then Template - Server. Fit TASK-43 (typed specs per container type) and TASK-39 (version description) in where they share code. TASK-46 (paired-container check) waits on TASK-30 and TASK-11. The agent implements, opens a PR and merges each task in turn. Horizon: the next seven or eight PRs.
+The agent works the list in order: implement, open a PR and merge it, then re-plan with this skill when the list is done. Work already sitting in the owner's draft PRs (#19 to #25) and decisions stay with the owner. The previous pass's focus (gtm-model and Template - Server) is finished: TASK-41, 42, 44, 39, 45, 40 and 43 landed, plus TASK-48 from a security finding.
 
 ## Next up (in order)
 
-1. **TASK-41**, per guidance. Every later item imports from the new gtm-model package, so it goes first. The draft chain #19 to #25 still waits on the owner and changes `snapshot/types.ts`, one of the files the model comes from. Keep TASK-41's edits there to the `ContainerType` line and leave re-export files at the old paths in gtm-apply, so the chain rebases with little conflict.
+1. **TASK-26.** Apply can reconcile a named workspace and stop before creating a version. The owner chose on 2026-09-28 to make interface edits in named workspaces and push into them (TASK-44), and this is the same idea for any spec: a workspace that survives for review in the Tag Manager interface. It also gives the gtm-as-code loop (TASK-37) its preview step. The acceptance criteria are specific and need no outside access.
 
-2. **TASK-42**, per guidance. It builds the per-container catalog in gtm-model and adds the server built-in trigger 2147479574. That fixes a reproduced failure: pulling the reference server container fails with "Unknown trigger id 2147479574". TASK-40 needs it for the Conversion Linker. Read the server trigger names from Template - Server (GTM-WMGVDZ5H), which the owner created for this.
+2. **TASK-22.** Custom environments are applied from the spec. The CI workflow (TASK-32) needs preview environments, and snapshots already list them. It pairs with TASK-48: its export criterion (no Live, Latest or authorization codes) now has redactSnapshotSecrets to build on.
 
-3. **TASK-44, then TASK-39.** They share plumbing: both change the recipes push script. Do them as two PRs back to back. TASK-44 first, because Template - Server's Default Workspace holds unversioned built-in variables that a push into a new workspace would leave out. TASK-39 then adds the version description to the same settings. Both land before TASK-45 moves the script, so the move carries the finished version.
+3. **TASK-21.** Google tag configs are applied from the spec. Snapshots carry gtagConfig but apply never writes it, so a container with one is only partly managed. It shares the plan, execute and normalize plumbing with TASK-22, so it follows it.
 
-4. **TASK-45**, per guidance. It renames gtm-web-recipes to gtm-recipes, with libraries keyed by container type, so TASK-40 has a place for the server library. A push dry run against GTM-TPLKC7QP that reports no changes proves the move changed nothing.
+4. **TASK-31.** Publish can be followed by a verification step: the live version id check and a user-supplied command such as a gtm_audit run. Low priority, but small and fully specified.
 
-5. **TASK-40**, per guidance. This is the goal of this pass: the server template, the web recipe google_tag_server, the push and pull of both libraries, and the README. Rewrite docs/superpowers/plans/2026-09-28-template-server.md for what is left, and update the task's acceptance criteria to match, before starting.
-
-6. **TASK-43.** It makes a container spec's type decide, at compile time, which entities and built-in trigger names it can hold. It builds on the TASK-42 catalog. It comes after TASK-40 so that the server template is one more real spec its type tests must accept.
+5. **TASK-47, the decision record only.** The manifest's 1024-character limit capped the template libraries during TASK-40. The fix moves per-recipe data out of the manifest, which amends decision-10, so the agent drafts the decision with options and hands it to the owner before any code.
 
 ## Human tasks that unblock High-priority work
 
-- The owner reviews and merges the draft chain #19 to #25 (TASK-34, TASK-19, TASK-35, TASK-18, TASK-30, TASK-23, TASK-27), in that order. TASK-35 and TASK-30 unblock TASK-36 (High). TASK-30 is also a blocker of TASK-46.
-- The owner decides TASK-23 (how a rename is told from a delete plus create), drafted in PR #24. It heads the chain TASK-24, TASK-25, TASK-28, TASK-29.
+- The owner reviews and merges the draft chain #19 to #25 (TASK-34, TASK-19, TASK-35, TASK-18, TASK-30, TASK-23, TASK-27), in that order. TASK-35 and TASK-30 unblock TASK-36 (High); TASK-30 also blocks TASK-46. The engine tasks above touch the same files (cli.ts, plan, execute), so the chain will need a rebase; the agent can do it once the owner has reviewed it. TASK-35's rebase must apply redactSnapshotSecrets (see its notes).
+- The owner decides TASK-23 (rename identity), drafted in PR #24, and later TASK-47's decision.
+- TASK-11 needs the analytics.readonly OAuth scope, which means a new consent in the browser.
+- Rotating the exposed Live and Latest authorization codes of Template - Web and Template - Server (TASK-48 notes) changes account settings, so it is the owner's call.
 
 ## Blocked High tasks
 
 - TASK-36 waits on TASK-35 and TASK-30, both in draft PRs.
-- TASK-42 and TASK-45 wait on TASK-41, and TASK-40 waits on TASK-42, TASK-44 and TASK-45. These are items 1 to 5 above.
+- TASK-46 (Medium) waits on TASK-30 and TASK-11.
 
 ## Deliberately not next
 
-- TASK-16 (High): PR #15 fixed it in substance for web containers, and TASK-42 covers the server trigger. It is a close candidate, not work.
-- TASK-10 (High): PR #14 implements it but conflicts with main. The owner decides whether to rebase it. None of this pass's recipes use a custom template.
-- TASK-46: blocked on TASK-30, TASK-11 and TASK-40.
-- TASK-11, TASK-21, TASK-22, TASK-26, TASK-31: outside this pass's focus.
+- TASK-10 (High): PR #14 implements it but conflicts with main; the owner decides whether it is rebased and merged. No current recipe uses a custom template.
+- TASK-16 (High): fixed in substance by PR #15 for web and by TASK-42 for server; a close candidate, not work.
+- TASK-11 (Low): needs the owner's OAuth consent for a new scope.
 
 ## Housekeeping to resolve at the next pass
 
 - TASK-18, TASK-19, TASK-27, TASK-30 and TASK-34 read To Do on main because their Review status lives on their unmerged PR branches.
 - PRs #13, #14 and #16 conflict with main. PR #17 adds the same toRef helper as PR #20.
-- TASK-16 can move to Done once the owner agrees PR #15 fixed it.
+- TASK-16 can move to Done once the owner agrees.
+- Template - Server's latest version is recipes-2026-09-29-copy (version 4, same entities as version 3), left by a probe that Tag Manager would not let us remove.
