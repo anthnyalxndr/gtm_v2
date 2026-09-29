@@ -223,6 +223,17 @@ export async function executePlan(
     );
     ops.push({ kind: "publish", name: versionName, action: "create" });
     published = true;
+    // Publishing returns before anything else is known; confirm the live version is ours.
+    const createdId =
+      versionRes.data.containerVersion?.containerVersionId ?? versionPath.split("/").pop();
+    const live = await client.call(() =>
+      client.service.accounts.containers.versions.live({ parent: plan.container.path })
+    );
+    if (live.data.containerVersionId !== createdId) {
+      throw new Error(
+        `Published version ${createdId}, but the live version is ${live.data.containerVersionId ?? "unknown"}`
+      );
+    }
   }
 
   return { workspacePath: ws.path, ops, versionPath, published };

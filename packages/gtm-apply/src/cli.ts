@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { parseArgs } from "node:util";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer } from "@anthnyalxndr/gtm-client";
@@ -26,6 +27,8 @@ export interface CliArgs {
   versionName?: string;
   versionDescription?: string;
   noVersion: boolean;
+  /** Shell command to run after a successful publish; its exit code becomes the result. */
+  verify?: string;
   version?: string;
   plan?: string;
   library?: string;
@@ -33,7 +36,8 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish | --no-version] [--version-name <name>] [--version-description <text>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish [--verify <command>] | --no-version] [--version-name <name>] [--version-description <text>]
+      (--verify runs <command> after a successful publish and exits with its code)
       (--no-version reconciles the workspace and keeps it for review in Tag Manager, with no version)
       (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
   gtm-apply apply --container GTM-XXXXXXX --workspace <name> --plan <plan.ts> --library <library.json|module> [--write-spec <file>] [...]
@@ -60,6 +64,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       "version-name": { type: "string" },
       "version-description": { type: "string" },
       "no-version": { type: "boolean", default: false },
+      verify: { type: "string" },
       version: { type: "string" },
       plan: { type: "string" },
       library: { type: "string" },
@@ -82,6 +87,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     versionName: values["version-name"],
     versionDescription: values["version-description"],
     noVersion: values["no-version"] ?? false,
+    verify: values.verify,
     version: values.version,
     plan: values.plan,
     library: values.library,
@@ -90,11 +96,37 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
 }
 
 /** Run a parsed command. Returns the process exit code. */
+/** Run a command through the shell, inheriting stdio, and resolve to its exit code. */
+export function runShellCommand(command: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, { shell: true, stdio: "inherit" });
+    child.on("error", reject);
+    child.on("close", (code) => resolve(code ?? 1));
+  });
+}
+
+/** After a successful publish, run --verify and pass its exit code on. */
+async function verifyAfterPublish(
+  args: CliArgs,
+  published: boolean,
+  out: (line: string) => void,
+  runCommand: (command: string) => Promise<number>
+): Promise<number> {
+  if (!args.verify || !published) return 0;
+  const code = await runCommand(args.verify);
+  out(`Verify: ${args.verify} exited with ${code}`);
+  return code;
+}
+
 export async function runCli(
   args: CliArgs,
   client: GtmClient,
-  out: (line: string) => void = console.log
+  out: (line: string) => void = console.log,
+  runCommand: (command: string) => Promise<number> = runShellCommand
 ): Promise<number> {
+  if (args.verify && !args.publish) {
+    throw new Error(`--verify needs --publish: it runs after a successful publish.\n${USAGE}`);
+  }
   switch (args.command) {
     case "normalize": {
       if (!args.file) throw new Error(`normalize needs a file argument.\n${USAGE}`);
@@ -175,7 +207,7 @@ export async function runCli(
       return 0;
     }
     case "apply": {
-      if (args.plan) return applyFromPlan(args, client, out);
+      if (args.plan) return applyFromPlan(args, client, out, runCommand);
       if (!args.container || !args.workspace || !args.spec) {
         throw new Error(`apply needs --container, --workspace and --spec.\n${USAGE}`);
       }
@@ -212,7 +244,7 @@ export async function runCli(
       } else {
         out("No changes: no version created.");
       }
-      return 0;
+      return verifyAfterPublish(args, result.published, out, runCommand);
     }
   }
 }
@@ -232,7 +264,8 @@ async function loadLibrary(path: string): Promise<GtmSnapshot> {
 async function applyFromPlan(
   args: CliArgs,
   client: GtmClient,
-  out: (line: string) => void
+  out: (line: string) => void,
+  runCommand: (command: string) => Promise<number>
 ): Promise<number> {
   if (!args.container || !args.workspace || !args.plan || !args.library) {
     throw new Error(`apply with --plan needs --container, --workspace and --library.\n${USAGE}`);
@@ -272,5 +305,5 @@ async function applyFromPlan(
   } else {
     out("No changes: no version created.");
   }
-  return 0;
+  return verifyAfterPublish(args, outcome.result?.published ?? false, out, runCommand);
 }
