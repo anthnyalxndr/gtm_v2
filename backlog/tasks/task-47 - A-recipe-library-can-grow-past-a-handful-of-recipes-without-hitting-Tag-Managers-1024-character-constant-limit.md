@@ -6,11 +6,14 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-28 23:59'
+updated_date: '2026-09-29 00:32'
 labels:
   - recipes
   - library
 dependencies:
   - TASK-40
+documentation:
+  - backlog/docs/doc-3 - Proposal-where-per-recipe-library-data-lives-TASK-47.md
 priority: medium
 ordinal: 40000
 ---
@@ -29,6 +32,12 @@ Each library keeps per-recipe data (description, Google Ads dependencies, confli
 - [ ] #4 Lint reports per-recipe data that is declared in two places or on an entity that is not a recipe root
 - [ ] #5 Unit tests cover the new location, the old-shape library and the lint rules; pnpm verify passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-29: The decision is drafted as backlog doc-3 ('Proposal - where per-recipe library data lives (TASK-47)'), which recommends per-recipe data in a recipe root's notes trailer (recipeData keyed by recipe name) and lists three alternatives. It is a doc rather than a decision file because the backlog CLI cannot write a decision's body. Waiting for the owner: once they choose, record the decision with the CLI, then implement.
+<!-- SECTION:NOTES:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
