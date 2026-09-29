@@ -142,6 +142,10 @@ export async function runCli(
         );
         source = version.data;
       }
+      // Custom environments are container level, so every source gets the same list;
+      // normalize keeps only custom ones and drops ids and authorization codes.
+      const envs = await client.call(() => api.environments.list({ parent: ref.path }));
+      source = { ...(source as object), environment: envs.data.environment ?? [] };
       out(JSON.stringify(normalizeExport(source), null, 2));
       return 0;
     }

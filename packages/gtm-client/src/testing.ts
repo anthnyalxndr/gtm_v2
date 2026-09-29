@@ -254,6 +254,33 @@ export function createFakeService(seed: FakeSeed = {}): {
               },
             };
           },
+          create: async ({ parent, requestBody }: { parent: string; requestBody: Environment }) => {
+            state.calls.push("environments.create");
+            const environmentId = nextId();
+            const env: Environment = {
+              ...requestBody,
+              path: `${parent}/environments/${environmentId}`,
+              environmentId,
+              authorizationCode: `auth-${environmentId}`,
+              fingerprint: nextId(),
+            };
+            state.environments.push(env);
+            return { data: env };
+          },
+          update: async ({ path, requestBody }: { path: string; requestBody: Environment }) => {
+            state.calls.push("environments.update");
+            const i = state.environments.findIndex((e) => e.path === path);
+            if (i < 0) throw Object.assign(new Error("environment not found"), { code: 404 });
+            const env: Environment = {
+              ...state.environments[i],
+              ...requestBody,
+              path,
+              environmentId: state.environments[i].environmentId,
+              fingerprint: nextId(),
+            };
+            state.environments[i] = env;
+            return { data: env };
+          },
         },
         destinations: {
           list: async ({ parent }: { parent: string }) => {

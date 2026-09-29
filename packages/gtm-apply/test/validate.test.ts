@@ -58,7 +58,7 @@ describe("validateSpec", () => {
         { name: "T", type: "html", paused: "yes", parentFolderId: "5", firingTriggerName: "PV" },
       ],
       folder: [{ name: "F", parentFolderName: "X" }],
-      environment: [],
+      zone: [],
     });
     expect(issues.map(formatIssue)).toEqual([
       expect.stringMatching(/^variable "V": parametr is not a field of Variable/),
@@ -69,7 +69,7 @@ describe("validateSpec", () => {
       expect.stringMatching(/^tag "T": parentFolderId is a server or id field/),
       'tag "T": firingTriggerName must be an array (got "PV")',
       expect.stringMatching(/^folder "F": parentFolderName is not a field of Folder/),
-      expect.stringMatching(/^spec: environment is not a spec section/),
+      expect.stringMatching(/^spec: zone is not a spec section/),
     ]);
   });
 

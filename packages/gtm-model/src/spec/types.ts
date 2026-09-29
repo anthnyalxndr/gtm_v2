@@ -53,6 +53,20 @@ export type TagSpec = Omit<WithFolder<Tag>, "firingTriggerId" | "blockingTrigger
   blockingTriggerName?: string[];
 };
 
+/**
+ * A custom environment, applied at container level and never versioned.
+ * Live and Latest are built in and never in a spec; Tag Manager sets the
+ * id, the authorization code and the version an environment serves.
+ */
+export interface EnvironmentSpec {
+  name: string;
+  description?: string;
+  /** Default preview URL. */
+  url?: string;
+  /** Show the debug panel when previewing this environment. */
+  enableDebug?: boolean;
+}
+
 export interface ContainerSpec {
   /** The kind of container this spec is for. When set, the target container must match. */
   containerType?: ContainerType;
@@ -66,6 +80,8 @@ export interface ContainerSpec {
   client?: ClientSpec[];
   /** Server containers only. */
   transformation?: TransformationSpec[];
+  /** Custom environments; container level, applied outside the workspace, never versioned. */
+  environment?: EnvironmentSpec[];
 }
 
 export type EntityKind = "folder" | "variable" | "trigger" | "tag" | "client" | "transformation";
@@ -86,6 +102,7 @@ interface CommonSections<N extends string> {
   variable?: VariableSpec[];
   trigger?: TriggerSpec[];
   tag?: TagSpecNaming<N>[];
+  environment?: EnvironmentSpec[];
 }
 
 /** A web container spec. A spec without a containerType is a web spec. */
