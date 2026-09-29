@@ -2,6 +2,7 @@ import type {
   BuiltInVariableType,
   Client,
   Folder,
+  GtagConfig,
   Tag,
   Transformation,
   Trigger,
@@ -58,6 +59,21 @@ export type TagSpec = Omit<WithFolder<Tag>, "firingTriggerId" | "blockingTrigger
  * Live and Latest are built in and never in a spec; Tag Manager sets the
  * id, the authorization code and the version an environment serves.
  */
+/**
+ * A Google tag config. It has no name: the parameter with key tagId (the
+ * Google tag id, e.g. G-XXXXXXX) identifies it.
+ */
+export type GtagConfigSpec = Omit<
+  GtagConfig,
+  | "accountId"
+  | "containerId"
+  | "workspaceId"
+  | "gtagConfigId"
+  | "fingerprint"
+  | "path"
+  | "tagManagerUrl"
+>;
+
 export interface EnvironmentSpec {
   name: string;
   description?: string;
@@ -82,6 +98,8 @@ export interface ContainerSpec {
   transformation?: TransformationSpec[];
   /** Custom environments; container level, applied outside the workspace, never versioned. */
   environment?: EnvironmentSpec[];
+  /** Google tag configs, identified by their tagId parameter. */
+  gtagConfig?: GtagConfigSpec[];
 }
 
 export type EntityKind = "folder" | "variable" | "trigger" | "tag" | "client" | "transformation";
@@ -108,6 +126,7 @@ interface CommonSections<N extends string> {
 /** A web container spec. A spec without a containerType is a web spec. */
 export interface WebContainerSpec<N extends string = string> extends CommonSections<N> {
   containerType?: "web";
+  gtagConfig?: GtagConfigSpec[];
   client?: never;
   transformation?: never;
 }
