@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Status, 2026-09-28:** partly replaced after the owner's review. Task 1 is done (the owner created Template - Server, GTM-WMGVDZ5H). Task 2 moved to TASK-42, built on the new gtm-model package (TASK-41). Task 3 moved to TASK-45. Pushing into the Default Workspace is TASK-44, and the cross-container check is TASK-46. Rewrite this plan for Tasks 4 to 7 when TASK-40 starts.
+> **Outcome, 2026-09-29:** done. Tasks 1 to 3 were carried out as TASK-42 (with TASK-41), TASK-45 and the owner's own container creation; Tasks 4 to 7 as TASK-40. Differences from the plan: the naming lint requires `GA4 - ` and `Custom Event - ` prefixes, so the forwarding tag is `GA4 - All Events` and the event triggers are `Custom Event - <recipe>`; the server's built-in trigger is named `All Pages`; the GA4 client mirrors the one Tag Manager creates in a new server container (two-year cookie); manifest descriptions were trimmed to fit Tag Manager's 1024-character constant limit (TASK-47 tracks the lasting fix); and version descriptions go to `create_version` as `notes`.
 
 **Goal:** A "Template - Server" container holds server-side counterparts of the Template - Web recipes, and the repo ships both libraries from one recipes package keyed by container type.
 

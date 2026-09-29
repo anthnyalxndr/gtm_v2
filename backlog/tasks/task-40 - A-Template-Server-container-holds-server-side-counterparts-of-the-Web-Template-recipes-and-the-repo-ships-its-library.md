@@ -3,11 +3,11 @@ id: TASK-40
 title: >-
   A Template - Server container holds server-side counterparts of the Web
   Template recipes and the repo ships its library
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-28 17:47'
-updated_date: '2026-09-28 23:51'
+updated_date: '2026-09-29 00:10'
 labels:
   - recipes
   - server
@@ -36,11 +36,11 @@ The owner wants the plan to consider merging the recipe packages into one packag
 - [x] #3 The plan shows how each web recipe and its server recipe fit together: what the web container sends to the tagging server, which server client claims it, and which server tags and triggers fire
 - [x] #4 The plan decides the package layout, evaluating one combined recipes package keyed by container type against a separate server package, and states any change the web package or its consumers need
 - [x] #5 A server container named Template - Server exists in the anthnyalxndr.com account (6004731770) beside Template - Web
-- [ ] #6 The server recipes are defined in code with notes-trailer metadata (decision-10), a Library - Manifest, placeholder constants for every customer value, and server naming conventions, and lint reports no findings
-- [ ] #7 The template is pushed to Template - Server as a workspace and version, and the pull writes the committed server library from it with no lint findings
-- [ ] #8 No id, domain or value from the MindScience Collective containers appears in the template or the committed library
-- [ ] #9 pnpm verify passes, and the README and example plan cover the server recipes
-- [ ] #10 The web template offers google_tag_server (the Google tag with server_container_url set from a Const - Server Container URL placeholder), its manifest entry declares a conflict with google_tag, and compilePlan reports a plan that selects both
+- [x] #6 The server recipes are defined in code with notes-trailer metadata (decision-10), a Library - Manifest, placeholder constants for every customer value, and server naming conventions, and lint reports no findings
+- [x] #7 The template is pushed to Template - Server as a workspace and version, and the pull writes the committed server library from it with no lint findings
+- [x] #8 No id, domain or value from the MindScience Collective containers appears in the template or the committed library
+- [x] #9 pnpm verify passes, and the README and example plan cover the server recipes
+- [x] #10 The web template offers google_tag_server (the Google tag with server_container_url set from a Const - Server Container URL placeholder), its manifest entry declares a conflict with google_tag, and compilePlan reports a plan that selects both
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -66,9 +66,17 @@ Full plan: docs/superpowers/plans/2026-09-28-template-server.md. Awaiting owner 
 2026-09-28: Template - Server version 2 "built-in-variables-2026-09-28" (unpublished) saves the owner's 9 built-in additions; the Default Workspace moved to workspace 3. A new server container ships with a default client named GA4 (gaaw_client, FPID cookie, cookieMaxAgeInSec 63072000), so the server template's GA4 client reconciles with it by name (an update, not a second client). Push the template into a new workspace or a named one, never the Default Workspace (decision-4, reaffirmed by the owner in TASK-44).
 
 2026-09-28: The owner approved the plan's direction and decisions ('go with your rec'), which checks AC #1; the plan doc covers AC #2-#4, and TASK-45 carried out the package decision. AC #10 added from plan decision 2 (google_tag_server). Decision 3 verified: Google's server-side tagging fundamentals say the GA4 server tag, left at its defaults, inherits all relevant fields and parameters from the client's event data (https://developers.google.com/tag-platform/learn/sst-fundamentals/5-sst-setup-analytics), so the server template has no measurement-id constant.
+
+2026-09-29, implementation: gtm-apply gained recipe conflicts (manifest conflicts, compilePlan reports a selected pair once, lint reports an unknown name) and a validation rule for Tag Manager's 1024-character constant limit, which the first server push hit mid-way (manifest 1146 characters; web 1069). Descriptions were trimmed (server 990, web 1011) and TASK-47 tracks moving per-recipe data out of the manifest. The server template follows the naming lint (GA4 - All Events, Custom Event - <recipe>), mirrors the GA4 client Tag Manager creates, and fires the Conversion Linker on the server's All Pages. Pushed: Template - Server version 3 and Template - Web version 5, both unpublished (decision 5: the owner publishes). The partial workspace from the failed push was removed. The live pushes exposed a TASK-39 bug (description sent instead of notes); fixed here, confirmed with a probe version (Template - Server version 4, same entities as version 3; Tag Manager refused to remove it as the latest, so it is named recipes-2026-09-29-copy and the server library was pulled from it). Descriptions were set with versions.update on Template - Web versions 3 and 5 and Template - Server versions 2 and 3; entity counts unchanged. AC #8: a scan of packages/ for every id-shaped value in the saved MindScience dumps plus their account, container ids and domain found only generic built-in trigger ids and API parameter keys. pnpm verify: 19 + 18 + 138 + 23.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Template - Server (GTM-WMGVDZ5H) holds the server-side lead-gen recipes and gtm-recipes ships its library as recipes.server: ga4_client (GA4 client, a GA4 tag forwarding every claimed event, Conversion Linker), a server Google Ads conversion per conversion recipe, and web_container_client. The web library gains google_tag_server, which sends hits to the tagging server and conflicts with google_tag. Along the way: recipe conflicts and a 1024-character constant check in gtm-apply, and a fix so version descriptions reach Tag Manager. Both templates are pushed as unpublished versions and pulled lint-clean; pnpm verify passes.
+<!-- SECTION:FINAL_SUMMARY:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Once the implementation plan exists, the acceptance criteria were reviewed against it and updated where the plan changed them
+- [x] #1 Once the implementation plan exists, the acceptance criteria were reviewed against it and updated where the plan changed them
 <!-- DOD:END -->
