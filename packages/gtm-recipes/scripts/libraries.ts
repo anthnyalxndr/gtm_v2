@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import type { GtmSnapshot } from "@anthnyalxndr/gtm-apply";
+import { templateSnapshot as serverTemplate } from "./server/template.js";
 import { templateSnapshot as webTemplate } from "./web/template.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,6 +21,11 @@ export const LIBRARIES = {
     publicId: "GTM-TPLKC7QP",
     libraryPath: join(root, "src", "web", "library.ts"),
     template: webTemplate,
+  },
+  server: {
+    publicId: "GTM-WMGVDZ5H",
+    libraryPath: join(root, "src", "server", "library.ts"),
+    template: serverTemplate,
   },
 } as const satisfies Record<string, LibraryEntry>;
 

@@ -1,18 +1,24 @@
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
-import {
-  applySpec,
-  formatNotes,
-  GtmSnapshot,
-  manifestVariable,
-  type PlaceholderMetadata,
-} from "@anthnyalxndr/gtm-apply";
+import { applySpec, GtmSnapshot, manifestVariable } from "@anthnyalxndr/gtm-apply";
 import {
   defineContainer,
   type TagSpec,
   type TriggerSpec,
   type VariableSpec,
 } from "@anthnyalxndr/gtm-model";
+import {
+  adsConversionId,
+  bool,
+  condition,
+  declares,
+  dependencies,
+  input,
+  label,
+  labelConstant,
+  notNeeded,
+  tpl,
+} from "../shared.js";
 
 /**
  * The Web Template container (GTM-TPLKC7QP) as a ContainerSpec: the lead-gen
@@ -28,49 +34,12 @@ import {
  * reaches a customer container.
  */
 
-const tpl = (key: string, value: string) => ({ type: "template" as const, key, value });
-const bool = (key: string, value: boolean) => ({
-  type: "boolean" as const,
-  key,
-  value: String(value),
-});
-const notNeeded = { consentStatus: "notNeeded" as const };
-
-/** Notes for a recipe root: customer text, then the library's `recipes` trailer. */
-const declares = (text: string, recipe: string): string => formatNotes(text, { recipes: [recipe] });
-
-/** A customer input: a constant holding a placeholder, documented in its notes. */
-const input = (
-  name: string,
-  value: string,
-  text: string,
-  placeholder: PlaceholderMetadata
-): VariableSpec => ({
-  name,
-  type: "c",
-  notes: formatNotes(text, { placeholder }),
-  parameter: [tpl("value", value)],
-});
 const dataLayer = (name: string, key: string, text: string): VariableSpec => ({
   name,
   type: "v",
   notes: text,
   parameter: [tpl("name", key)],
 });
-const labelConstant = (recipe: string) => `Const - Google Ads - ${recipe} Conversion Label`;
-const label = (recipe: string): VariableSpec =>
-  input(
-    labelConstant(recipe),
-    "<label>",
-    `Conversion label of the Google Ads conversion action for ${recipe}.`,
-    { kind: "adsConversionLabel", example: "AbCdEfGhIjKlMnOp", pattern: "^[A-Za-z0-9_-]{5,}$" }
-  );
-
-const condition = (type: "equals" | "contains" | "matchRegex", arg0: string, arg1: string) => ({
-  type,
-  parameter: [tpl("arg0", arg0), tpl("arg1", arg1)],
-});
-
 const customEvent = (recipe: string, notes: string): TriggerSpec => ({
   name: `Custom Event - ${recipe}`,
   type: "customEvent",
@@ -133,22 +102,6 @@ const conversion = (
   },
 ];
 
-/**
- * The recipe's Google Ads conversion action, carried by its label constant.
- * The one external resource that is genuinely per recipe: each recipe hits a
- * distinct conversion action. The conversion id and measurement id are
- * account-wide config, documented on their own constants, not repeated here;
- * a GTM constant value is capped at 1024 characters, so the manifest stays
- * lean. The action is named "GTM - <recipe>" on Google Ads (externalNames).
- */
-const dependencies = (recipe: string) => [
-  {
-    constant: labelConstant(recipe),
-    platform: "googleAds",
-    resource: "conversionAction",
-  },
-];
-
 const linkParameters = [
   eventParameter("link_url", "{{Click URL}}"),
   eventParameter("link_text", "{{Click Text}}"),
@@ -162,6 +115,10 @@ export const template = defineContainer({
       recipes: {
         google_tag: {
           description: "Google tag on Initialization; base for every recipe.",
+        },
+        google_tag_server: {
+          description: "google_tag via a tagging server; pick one.",
+          conflicts: ["google_tag"],
         },
         contact_form_submit: {
           description: "Contact form submitted (dataLayer event).",
@@ -188,11 +145,16 @@ export const template = defineContainer({
       { kind: "ga4MeasurementId", example: "G-ABC123DEF4", pattern: "^G-[A-Z0-9]+$" }
     ),
     input(
-      "Const - Google Ads Conversion ID",
-      "<XXXXXXXXX>",
-      "The bare numeric conversion id (the digits after AW- in Google Ads). GTM stores it without the prefix; the conversion tag builds AW-<id>/<label> itself.",
-      { kind: "adsConversionId", example: "123456789", pattern: "^[0-9]+$" }
+      "Const - Server Container URL",
+      "<https://sgtm.example.com>",
+      "Origin of the customer's server-side tagging server (the server container's tagging server URL), with no trailing slash.",
+      {
+        kind: "serverContainerUrl",
+        example: "https://sgtm.example.com",
+        pattern: "^https://[^/]+$",
+      }
     ),
+    adsConversionId(),
     label("contact_form_submit"),
     label("call_click"),
     label("email_click"),
@@ -249,6 +211,32 @@ export const template = defineContainer({
       notes: declares(
         'Loads the Google tag on every page. No Conversion Linker tag: a Google tag on every page sets the same first-party click cookies. Google\'s Conversion linker help says "If a container loads a Google tag on every page, it does not also need a conversion linker tag." https://support.google.com/tagmanager/answer/7549390. Add the Google Ads account as a destination of this Google tag in Google Ads or GA4 admin.',
         "google_tag"
+      ),
+    },
+    {
+      name: "Google Tag - Server",
+      type: "googtag",
+      firingTriggerName: ["Initialization - All Pages"],
+      consentSettings: notNeeded,
+      parameter: [
+        tpl("tagId", "{{Const - GA4 Measurement ID}}"),
+        {
+          type: "list",
+          key: "configSettingsTable",
+          list: [
+            {
+              type: "map",
+              map: [
+                tpl("parameter", "server_container_url"),
+                tpl("parameterValue", "{{Const - Server Container URL}}"),
+              ],
+            },
+          ],
+        },
+      ],
+      notes: declares(
+        "Loads the Google tag on every page and sends its hits to the customer's tagging server, where the server template's GA4 client claims them. Use it instead of the Google Tag, never with it. With server tagging, leave the googleAds destination out of the web plan: the server template's Ads - <recipe> tags record conversions, so each counts once.",
+        "google_tag_server"
       ),
     },
     ...conversion("contact_form_submit", "Custom Event - contact_form_submit", [

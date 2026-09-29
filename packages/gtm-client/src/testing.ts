@@ -66,7 +66,7 @@ export interface FakeState {
     path: string;
     versionId: string;
     name?: string;
-    /** Present only when create_version was sent one. */
+    /** From create_version's notes, as Tag Manager does; present only when notes were sent. */
     description?: string;
     snapshot: FakeEntities;
   }[];
@@ -408,7 +408,8 @@ export function createFakeService(seed: FakeSeed = {}): {
             requestBody,
           }: {
             path: string;
-            requestBody: { name?: string; description?: string };
+            // Like the API, only name and notes are read; notes become the version's description.
+            requestBody: { name?: string; notes?: string };
           }) => {
             state.calls.push("workspaces.create_version");
             const versionId = nextId();
@@ -419,9 +420,7 @@ export function createFakeService(seed: FakeSeed = {}): {
               path: versionPath,
               versionId,
               name: requestBody.name,
-              ...(requestBody.description !== undefined
-                ? { description: requestBody.description }
-                : {}),
+              ...(requestBody.notes !== undefined ? { description: requestBody.notes } : {}),
               snapshot: {
                 folder: inWs(state.folders),
                 variable: inWs(state.variables),
