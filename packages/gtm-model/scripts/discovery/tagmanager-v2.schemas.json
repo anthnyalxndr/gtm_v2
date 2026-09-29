@@ -1,5 +1,5 @@
 {
-  "revision": "20260909",
+  "revision": "20260924",
   "version": "v2",
   "discoveryUrl": "https://tagmanager.googleapis.com/$discovery/rest?version=v2",
   "schemas": {
@@ -532,6 +532,123 @@
       },
       "type": "object",
       "id": "ContainerFeatures"
+    },
+    "ContainerVersion": {
+      "id": "ContainerVersion",
+      "properties": {
+        "builtInVariable": {
+          "items": {
+            "$ref": "BuiltInVariable"
+          },
+          "type": "array",
+          "description": "The built-in variables in the container that this version was taken from."
+        },
+        "gtagConfig": {
+          "type": "array",
+          "items": {
+            "$ref": "GtagConfig"
+          },
+          "description": "The Google tag configs in the container that this version was taken from."
+        },
+        "accountId": {
+          "type": "string",
+          "description": "GTM Account ID."
+        },
+        "containerVersionId": {
+          "type": "string",
+          "description": "The Container Version ID uniquely identifies the GTM Container Version."
+        },
+        "container": {
+          "$ref": "Container",
+          "description": "The container that this version was taken from."
+        },
+        "tag": {
+          "items": {
+            "$ref": "Tag"
+          },
+          "type": "array",
+          "description": "The tags in the container that this version was taken from."
+        },
+        "client": {
+          "items": {
+            "$ref": "Client"
+          },
+          "type": "array",
+          "description": "The clients in the container that this version was taken from."
+        },
+        "variable": {
+          "description": "The variables in the container that this version was taken from.",
+          "items": {
+            "$ref": "Variable"
+          },
+          "type": "array"
+        },
+        "tagManagerUrl": {
+          "type": "string",
+          "description": "Auto generated link to the tag manager UI"
+        },
+        "path": {
+          "description": "GTM Container Version's API relative path.",
+          "type": "string"
+        },
+        "transformation": {
+          "items": {
+            "$ref": "Transformation"
+          },
+          "description": "The transformations in the container that this version was taken from.",
+          "type": "array"
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "A value of true indicates this container version has been deleted."
+        },
+        "customTemplate": {
+          "items": {
+            "$ref": "CustomTemplate"
+          },
+          "description": "The custom templates in the container that this version was taken from.",
+          "type": "array"
+        },
+        "name": {
+          "type": "string",
+          "description": "Container version display name."
+        },
+        "zone": {
+          "type": "array",
+          "description": "The zones in the container that this version was taken from.",
+          "items": {
+            "$ref": "Zone"
+          }
+        },
+        "containerId": {
+          "description": "GTM Container ID.",
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Container version description."
+        },
+        "folder": {
+          "type": "array",
+          "items": {
+            "$ref": "Folder"
+          },
+          "description": "The folders in the container that this version was taken from."
+        },
+        "fingerprint": {
+          "type": "string",
+          "description": "The fingerprint of the GTM Container Version as computed at storage time. This value is recomputed whenever the container version is modified."
+        },
+        "trigger": {
+          "type": "array",
+          "description": "The triggers in the container that this version was taken from.",
+          "items": {
+            "$ref": "Trigger"
+          }
+        }
+      },
+      "type": "object",
+      "description": "Represents a Google Tag Manager Container Version."
     },
     "ContainerVersionHeader": {
       "properties": {

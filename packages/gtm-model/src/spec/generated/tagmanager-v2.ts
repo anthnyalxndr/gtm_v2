@@ -1,7 +1,7 @@
 // GENERATED FILE. Do not edit by hand.
 // Source: Tag Manager API v2 Discovery document, see scripts/generate-discovery.ts.
 
-export const DISCOVERY_REVISION = "20260909";
+export const DISCOVERY_REVISION = "20260924";
 
 /** Values of BuiltInVariable.type. */
 export const BUILT_IN_VARIABLE_TYPES = [
@@ -356,6 +356,50 @@ export interface ContainerFeatures {
   supportWorkspaces?: boolean;
   /** Whether this Container supports user permissions managed by GTM. */
   supportUserPermissions?: boolean;
+}
+
+/** Represents a Google Tag Manager Container Version. */
+export interface ContainerVersion {
+  /** The built-in variables in the container that this version was taken from. */
+  builtInVariable?: BuiltInVariable[];
+  /** The Google tag configs in the container that this version was taken from. */
+  gtagConfig?: GtagConfig[];
+  /** GTM Account ID. */
+  accountId?: string;
+  /** The Container Version ID uniquely identifies the GTM Container Version. */
+  containerVersionId?: string;
+  /** The container that this version was taken from. */
+  container?: Container;
+  /** The tags in the container that this version was taken from. */
+  tag?: Tag[];
+  /** The clients in the container that this version was taken from. */
+  client?: Client[];
+  /** The variables in the container that this version was taken from. */
+  variable?: Variable[];
+  /** Auto generated link to the tag manager UI */
+  tagManagerUrl?: string;
+  /** GTM Container Version's API relative path. */
+  path?: string;
+  /** The transformations in the container that this version was taken from. */
+  transformation?: Transformation[];
+  /** A value of true indicates this container version has been deleted. */
+  deleted?: boolean;
+  /** The custom templates in the container that this version was taken from. */
+  customTemplate?: CustomTemplate[];
+  /** Container version display name. */
+  name?: string;
+  /** The zones in the container that this version was taken from. */
+  zone?: Zone[];
+  /** GTM Container ID. */
+  containerId?: string;
+  /** Container version description. */
+  description?: string;
+  /** The folders in the container that this version was taken from. */
+  folder?: Folder[];
+  /** The fingerprint of the GTM Container Version as computed at storage time. This value is recomputed whenever the container version is modified. */
+  fingerprint?: string;
+  /** The triggers in the container that this version was taken from. */
+  trigger?: Trigger[];
 }
 
 /** Represents a Google Tag Manager Container Version Header. */
@@ -854,6 +898,7 @@ export type SchemaName =
   | "Condition"
   | "Container"
   | "ContainerFeatures"
+  | "ContainerVersion"
   | "ContainerVersionHeader"
   | "CustomTemplate"
   | "Destination"
@@ -941,6 +986,28 @@ export const SCHEMAS: Record<SchemaName, Record<string, PropertyDef>> = {
     supportTriggers: { kind: "boolean" },
     supportWorkspaces: { kind: "boolean" },
     supportUserPermissions: { kind: "boolean" },
+  },
+  ContainerVersion: {
+    builtInVariable: { kind: "ref[]", ref: "BuiltInVariable" },
+    gtagConfig: { kind: "ref[]", ref: "GtagConfig" },
+    accountId: { kind: "string" },
+    containerVersionId: { kind: "string" },
+    container: { kind: "ref", ref: "Container" },
+    tag: { kind: "ref[]", ref: "Tag" },
+    client: { kind: "ref[]", ref: "Client" },
+    variable: { kind: "ref[]", ref: "Variable" },
+    tagManagerUrl: { kind: "string" },
+    path: { kind: "string" },
+    transformation: { kind: "ref[]", ref: "Transformation" },
+    deleted: { kind: "boolean" },
+    customTemplate: { kind: "ref[]", ref: "CustomTemplate" },
+    name: { kind: "string" },
+    zone: { kind: "ref[]", ref: "Zone" },
+    containerId: { kind: "string" },
+    description: { kind: "string" },
+    folder: { kind: "ref[]", ref: "Folder" },
+    fingerprint: { kind: "string" },
+    trigger: { kind: "ref[]", ref: "Trigger" },
   },
   ContainerVersionHeader: {
     deleted: { kind: "boolean" },

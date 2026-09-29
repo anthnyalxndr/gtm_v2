@@ -25,6 +25,7 @@ export const ROOTS = [
   "Workspace",
   "Environment",
   "Destination",
+  "ContainerVersion",
   "ContainerVersionHeader",
   "Client",
   "Transformation",

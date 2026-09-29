@@ -5,6 +5,7 @@
  * calls an API.
  */
 export type { ContainerType } from "./container-type.js";
+export type * from "./web-container.js";
 export * from "./spec/types.js";
 export * from "./spec/kinds.js";
 export * from "./spec/catalog.js";
