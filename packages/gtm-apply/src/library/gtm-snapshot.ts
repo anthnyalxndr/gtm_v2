@@ -1,4 +1,5 @@
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
+import { redactSnapshotSecrets } from "../snapshot/redact.js";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { pullSnapshot, snapshotToSpec } from "../snapshot/pull.js";
 import type { ApiSnapshotData, ContainerType, SnapshotSource } from "../snapshot/types.js";
@@ -554,7 +555,7 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     const spec = snapshotToSpec(data);
     const { index } = readMetadata(spec, encoding);
     return {
-      data,
+      data: redactSnapshotSecrets(data),
       manifest: this.#manifest,
       encoding: {
         name: encoding.name,

@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-23 21:28'
-updated_date: '2026-09-24 05:31'
+updated_date: '2026-09-29 00:16'
 labels:
   - gtm-apply
   - gtm-as-code
@@ -36,3 +36,9 @@ A container whose spec cannot be normalized (custom-template tags until TASK-10 
 - [ ] #4 pullContainer(client, source, dir) and pullAccount(client, accountId, outDir) are exported; unit tests with the fake service cover the file set, the byte-identical re-pull, the account fan-out and the partial-failure path; the README documents pull
 - [ ] #5 gtm-apply pull --account <id> --out <dir> writes one subdirectory per container named by containerSlug(name, publicId): the name lowercased with runs of non-alphanumerics collapsed to one dash, the lowercased public id when the name yields nothing, and the public id appended on a collision; pullAccount takes a dirFor(ref) option to override the naming; containers are pulled concurrently within the client's throttle
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-29 (TASK-48): snapshots written to a repo must not contain environment authorization codes. gtm-apply now exports redactSnapshotSecrets; apply it before writing snapshot.json (and the environment field of container.json) when PR #21 is rebased.
+<!-- SECTION:NOTES:END -->
