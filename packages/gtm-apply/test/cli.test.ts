@@ -34,6 +34,7 @@ describe("parseCliArgs", () => {
       publish: true,
       live: false,
       versionName: "v1",
+      noVersion: false,
       version: undefined,
       plan: undefined,
       library: undefined,

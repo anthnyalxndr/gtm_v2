@@ -46,6 +46,8 @@ export interface PlanTarget {
 
 export interface PlanOptions {
   publish?: boolean;
+  /** Reconcile the workspace and stop before creating a version, so it stays for review. */
+  noVersion?: boolean;
 }
 
 export interface Plan {
@@ -176,6 +178,9 @@ export async function planContainerSpec(
   options: PlanOptions = {}
 ): Promise<Plan> {
   assertValidSpec(input);
+  if (options.noVersion && options.publish) {
+    throw new Error("publish needs a version: drop the no-version option or the publish option");
+  }
   const container = await resolveContainer(client, target.container);
   const containerType = containerTypeOf(container.usageContext);
   const ops: PlannedOp[] = [];
@@ -353,7 +358,7 @@ export async function planContainerSpec(
   // A version is only created when something changed or a publish was requested;
   // creating one deletes the workspace, so an unchanged run leaves it in place.
   const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
-  if (changed || options.publish) {
+  if (!options.noVersion && (changed || options.publish)) {
     ops.push({ kind: "version", name: target.workspace, action: "create" });
   }
   if (options.publish) ops.push({ kind: "publish", name: target.workspace, action: "create" });

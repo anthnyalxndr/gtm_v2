@@ -9,7 +9,7 @@ import {
 } from "../src/resources/entities.js";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
 
-const ws = "accounts/1/containers/10/workspace/100";
+const ws = "accounts/1/containers/10/workspaces/100";
 
 describe("matches", () => {
   it("compares only keys present in desired and ignores server fields", () => {

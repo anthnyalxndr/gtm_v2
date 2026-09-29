@@ -7,6 +7,11 @@ export interface WorkspaceRef {
   created: boolean;
 }
 
+/** A workspace's page in the Tag Manager interface, e.g. to link from a pull request. */
+export function workspaceUrl(workspacePath: string): string {
+  return `https://tagmanager.google.com/#/container/${workspacePath}`;
+}
+
 export function isDefaultWorkspaceName(name: string): boolean {
   return name.trim().toLowerCase() === "default workspace";
 }
@@ -37,4 +42,25 @@ export async function ensureWorkspace(
     throw new Error(`Workspace create returned no path for "${name}"`);
   }
   return { path: created.path, workspaceId: created.workspaceId, name, created: true };
+}
+
+/**
+ * Delete a workspace by name, e.g. a review workspace when its pull request
+ * closes. Refuses the Default Workspace. Returns false when no workspace has
+ * the name, so cleanup can run more than once.
+ */
+export async function deleteWorkspace(
+  client: GtmClient,
+  containerPath: string,
+  name: string
+): Promise<boolean> {
+  if (isDefaultWorkspaceName(name)) {
+    throw new Error("Refusing to delete the Default Workspace (decision-4).");
+  }
+  const ws = client.service.accounts.containers.workspaces;
+  const listRes = await client.call(() => ws.list({ parent: containerPath }));
+  const found = (listRes.data.workspace ?? []).find((w) => w.name === name);
+  if (!found?.path) return false;
+  await client.call(() => ws.delete({ path: found.path! }));
+  return true;
 }

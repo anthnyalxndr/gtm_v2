@@ -169,6 +169,7 @@ export interface ApplyPlanOptions<R extends string, C extends string> {
   publish?: boolean;
   versionName?: string;
   versionDescription?: string;
+  noVersion?: boolean;
   /** Also write the compiled spec here as JSON, for review or a later `gtm-apply apply --spec`. */
   writeSpecTo?: string;
 }

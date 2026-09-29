@@ -152,6 +152,23 @@ Two Tag Manager behaviors shape the apply flow, both verified against the live A
 
 When nothing changed, no version is created and the workspace is left in place.
 
+### Reviewing changes in a workspace
+
+`--no-version` reconciles the named workspace and stops before creating a version, so the workspace stays for review in the Tag Manager interface. The command prints the workspace's page:
+
+```bash
+gtm-apply apply --container GTM-XXXXXXX --workspace pr-42 --spec spec.ts --no-version
+# Workspace kept for review, no version created: https://tagmanager.google.com/#/container/accounts/…/workspaces/…
+```
+
+Running it again with a changed spec updates the same workspace. Delete the workspace when the review is over, for example when the pull request closes; a workspace that is already gone is not an error, so cleanup can run twice:
+
+```bash
+gtm-apply delete-workspace --container GTM-XXXXXXX --workspace pr-42
+```
+
+A review workspace branches from the latest version, not the live one, so it shows the spec's changes against the latest version. `--no-version` cannot be combined with `--publish`, and neither command touches the Default Workspace (decision-4).
+
 ### Naming
 
 Tag Manager rejects `:` in entity names. The planner reports it before writing. Notes accept any text, so conventions like `#recipe:ga4-event` belong in an entity's notes field, not its name.
