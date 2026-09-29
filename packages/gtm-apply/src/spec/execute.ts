@@ -1,6 +1,6 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
-import { ensureWorkspace } from "../resources/workspaces.js";
+import { ensureWorkspace, workspaceUrl } from "../resources/workspaces.js";
 import { ensureBuiltIns } from "../resources/builtins.js";
 import {
   ensureClient,
@@ -27,6 +27,8 @@ export interface ExecuteOptions {
   versionName?: string;
   /** Shown with the version in Tag Manager. Left out of the request when not given. */
   versionDescription?: string;
+  /** Stop after reconciling the workspace; no version is created and the workspace stays. */
+  noVersion?: boolean;
 }
 
 export interface ApplyResult {
@@ -36,6 +38,8 @@ export interface ApplyResult {
   /** Absent when nothing changed and no publish was requested. */
   versionPath?: string;
   published: boolean;
+  /** The workspace's Tag Manager page, set when the workspace is left in place. */
+  workspaceUrl?: string;
 }
 
 const toOpAction = (action: EnsureAction): OpAction =>
@@ -123,6 +127,11 @@ export async function executePlan(
     ops.push({ kind: "tag", name, action: toOpAction(r.action) });
   }
 
+  if (options.noVersion) {
+    if (options.publish) throw new Error("publish needs a version");
+    return { workspacePath: ws.path, ops, published: false, workspaceUrl: workspaceUrl(ws.path) };
+  }
+
   const wsApi = client.service.accounts.containers.workspaces;
   const status = await client.call(() => wsApi.getStatus({ path: ws.path }));
   const conflicts = status.data.mergeConflict ?? [];
@@ -137,7 +146,7 @@ export async function executePlan(
   // something changed (or a publish was requested).
   const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
   if (!changed && !options.publish) {
-    return { workspacePath: ws.path, ops, published: false };
+    return { workspacePath: ws.path, ops, published: false, workspaceUrl: workspaceUrl(ws.path) };
   }
   const versionName = options.versionName ?? plan.target.workspace;
   const versionRes = await client.call(() =>
@@ -180,6 +189,7 @@ export interface ApplySpecOptions {
   publish?: boolean;
   versionName?: string;
   versionDescription?: string;
+  noVersion?: boolean;
 }
 
 export interface ApplySpecOutcome {
@@ -196,13 +206,14 @@ export async function applySpec(
     client,
     { container: options.container, workspace: options.workspace },
     options.spec,
-    { publish: options.publish }
+    { publish: options.publish, noVersion: options.noVersion }
   );
   if (options.dryRun) return { plan };
   const result = await executePlan(client, plan, {
     publish: options.publish,
     versionName: options.versionName,
     versionDescription: options.versionDescription,
+    noVersion: options.noVersion,
   });
   return { plan, result };
 }

@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer } from "@anthnyalxndr/gtm-client";
+import { deleteWorkspace } from "./resources/workspaces.js";
 import { loadSpecFile } from "./spec/load.js";
 import { normalizeExport } from "./spec/normalize.js";
 import { formatIssue, validateSpec } from "./spec/validate.js";
@@ -11,7 +12,7 @@ import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
 import { applyPlan, compilePlan, type TrackingPlan } from "./plan/tracking-plan.js";
 import { formatIssue as formatSpecIssue } from "./spec/validate.js";
 
-export type CliCommand = "apply" | "normalize" | "export" | "snapshot";
+export type CliCommand = "apply" | "normalize" | "export" | "snapshot" | "delete-workspace";
 
 export interface CliArgs {
   command: CliCommand;
@@ -24,6 +25,7 @@ export interface CliArgs {
   live: boolean;
   versionName?: string;
   versionDescription?: string;
+  noVersion: boolean;
   version?: string;
   plan?: string;
   library?: string;
@@ -31,7 +33,8 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish] [--version-name <name>] [--version-description <text>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--publish | --no-version] [--version-name <name>] [--version-description <text>]
+      (--no-version reconciles the workspace and keeps it for review in Tag Manager, with no version)
       (<file> is .json, or a .js/.mjs/.ts module whose default export is the spec)
   gtm-apply apply --container GTM-XXXXXXX --workspace <name> --plan <plan.ts> --library <library.json|module> [--write-spec <file>] [...]
       (compile a tracking plan against a library, then apply it)
@@ -39,7 +42,9 @@ export const USAGE = `Usage:
   gtm-apply export --container GTM-XXXXXXX [--live | --workspace <name>]
       (default: the latest version, published or not)
   gtm-apply snapshot --container GTM-XXXXXXX [--live | --version <id> | --workspace <name>]
-      (everything the API exposes for the container, as returned by the API)`;
+      (everything the API exposes for the container, as returned by the API)
+  gtm-apply delete-workspace --container GTM-XXXXXXX --workspace <name>
+      (delete a review workspace, e.g. when its pull request closes; refuses the Default Workspace)`;
 
 export function parseCliArgs(argv: readonly string[]): CliArgs {
   const { values, positionals } = parseArgs({
@@ -54,6 +59,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       live: { type: "boolean", default: false },
       "version-name": { type: "string" },
       "version-description": { type: "string" },
+      "no-version": { type: "boolean", default: false },
       version: { type: "string" },
       plan: { type: "string" },
       library: { type: "string" },
@@ -61,7 +67,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     },
   });
   const command = positionals[0];
-  if (!["apply", "normalize", "export", "snapshot"].includes(command)) {
+  if (!["apply", "normalize", "export", "snapshot", "delete-workspace"].includes(command)) {
     throw new Error(USAGE);
   }
   return {
@@ -75,6 +81,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     live: values.live ?? false,
     versionName: values["version-name"],
     versionDescription: values["version-description"],
+    noVersion: values["no-version"] ?? false,
     version: values.version,
     plan: values.plan,
     library: values.library,
@@ -149,6 +156,20 @@ export async function runCli(
       out(JSON.stringify(snapshot, null, 2));
       return 0;
     }
+    case "delete-workspace": {
+      if (!args.container || !args.workspace) {
+        throw new Error(`delete-workspace needs --container and --workspace.\n${USAGE}`);
+      }
+      await client.init();
+      const container = await resolveContainer(client, args.container);
+      const deleted = await deleteWorkspace(client, container.path, args.workspace);
+      out(
+        deleted
+          ? `Deleted workspace "${args.workspace}".`
+          : `No workspace named "${args.workspace}"; nothing to delete.`
+      );
+      return 0;
+    }
     case "apply": {
       if (args.plan) return applyFromPlan(args, client, out);
       if (!args.container || !args.workspace || !args.spec) {
@@ -166,7 +187,7 @@ export async function runCli(
         client,
         { container: args.container, workspace: args.workspace },
         spec,
-        { publish: args.publish }
+        { publish: args.publish, noVersion: args.noVersion }
       );
       out(formatPlan(plan));
       if (plan.errors.length > 0) return 1;
@@ -178,8 +199,11 @@ export async function runCli(
         publish: args.publish,
         versionName: args.versionName,
         versionDescription: args.versionDescription,
+        noVersion: args.noVersion,
       });
-      if (result.versionPath) {
+      if (args.noVersion) {
+        out(`Workspace kept for review, no version created: ${result.workspaceUrl}`);
+      } else if (result.versionPath) {
         out(`Version: ${result.versionPath}${result.published ? " (published)" : ""}`);
       } else {
         out("No changes: no version created.");
@@ -228,6 +252,7 @@ async function applyFromPlan(
     publish: args.publish,
     versionName: args.versionName,
     versionDescription: args.versionDescription,
+    noVersion: args.noVersion,
     writeSpecTo: args.writeSpec,
   });
   out(formatPlan(outcome.plan));
@@ -236,7 +261,9 @@ async function applyFromPlan(
     out("Dry run: no changes made.");
     return 0;
   }
-  if (outcome.result?.versionPath) {
+  if (args.noVersion) {
+    out(`Workspace kept for review, no version created: ${outcome.result?.workspaceUrl}`);
+  } else if (outcome.result?.versionPath) {
     out(`Version: ${outcome.result.versionPath}${outcome.result.published ? " (published)" : ""}`);
   } else {
     out("No changes: no version created.");

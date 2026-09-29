@@ -354,7 +354,7 @@ export function createFakeService(seed: FakeSeed = {}): {
           create: async ({ parent, requestBody }: { parent: string; requestBody: Workspace }) => {
             state.calls.push("workspace.create");
             const id = nextId();
-            const wsPath = `${parent}/workspace/${id}`;
+            const wsPath = `${parent}/workspaces/${id}`;
             const ws = { ...requestBody, workspaceId: id, path: wsPath, fingerprint: "1" };
             state.workspaces.push(ws);
             const mine = state.versions.filter((v) => v.path.startsWith(parent + "/"));
@@ -413,7 +413,7 @@ export function createFakeService(seed: FakeSeed = {}): {
           }) => {
             state.calls.push("workspaces.create_version");
             const versionId = nextId();
-            const versionPath = path.replace(/\/workspace\/\d+$/, `/versions/${versionId}`);
+            const versionPath = path.replace(/\/workspaces\/\d+$/, `/versions/${versionId}`);
             const inWs = <T extends Named>(items: T[]): T[] =>
               items.filter((e) => e.path?.startsWith(path + "/")).map((e) => ({ ...e }));
             state.versions.push({
