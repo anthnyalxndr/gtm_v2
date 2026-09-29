@@ -1,6 +1,8 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { ensureWorkspace, workspaceUrl } from "../resources/workspaces.js";
+import { matches } from "../resources/entities.js";
+import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import { ensureBuiltIns } from "../resources/builtins.js";
 import {
   ensureClient,
@@ -131,6 +133,34 @@ export async function executePlan(
     const r = await ensureTag(client, ws.path, body);
     if (r.entity.tagId) ids.tags.set(name, r.entity.tagId);
     ops.push({ kind: "tag", name, action: toOpAction(r.action) });
+  }
+
+  // Gtag configs, by tagId, after variables (their parameters may reference them). Read
+  // from the workspace itself: a new workspace holds the latest version's configs.
+  const gtagConfigs = plan.spec.gtagConfig ?? [];
+  if (gtagConfigs.length > 0) {
+    const gtagApi = client.service.accounts.containers.workspaces.gtag_config;
+    const listed = await client.call(() => gtagApi.list({ parent: ws.path }));
+    const inWorkspace = listed.data.gtagConfig ?? [];
+    for (const config of gtagConfigs) {
+      const tagId = gtagConfigTagId(config) ?? "";
+      const current = inWorkspace.find((c) => gtagConfigTagId(c) === tagId);
+      if (!current) {
+        await client.call(() => gtagApi.create({ parent: ws.path, requestBody: config }));
+        ops.push({ kind: "gtagConfig", name: tagId, action: "create" });
+      } else if (!matches(current, config)) {
+        await client.call(() =>
+          gtagApi.update({
+            path: current.path!,
+            fingerprint: current.fingerprint ?? undefined,
+            requestBody: config,
+          })
+        );
+        ops.push({ kind: "gtagConfig", name: tagId, action: "update" });
+      } else {
+        ops.push({ kind: "gtagConfig", name: tagId, action: "unchanged" });
+      }
+    }
   }
 
   // Container level: environments are written outside the workspace and never versioned.

@@ -9,11 +9,12 @@ export type SpecSection =
   | "client"
   | "transformation"
   | "builtInVariable"
-  | "environment";
+  | "environment"
+  | "gtagConfig";
 
 /** Which spec sections a container of each type can hold. */
 export const SECTIONS_BY_CONTAINER_TYPE: Readonly<Record<ContainerType, readonly SpecSection[]>> = {
-  web: ["folder", "variable", "trigger", "tag", "builtInVariable", "environment"],
+  web: ["folder", "variable", "trigger", "tag", "builtInVariable", "environment", "gtagConfig"],
   server: [
     "folder",
     "variable",
@@ -38,6 +39,7 @@ export const ALL_SECTIONS: readonly SpecSection[] = [
   "transformation",
   "builtInVariable",
   "environment",
+  "gtagConfig",
 ];
 
 export function sectionsFor(containerType: ContainerType | undefined): readonly SpecSection[] {

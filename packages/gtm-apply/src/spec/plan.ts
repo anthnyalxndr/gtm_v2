@@ -3,6 +3,7 @@ import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer, type ContainerRef } from "@anthnyalxndr/gtm-client";
 import { listEnabledBuiltIns } from "../resources/builtins.js";
 import { matches } from "../resources/entities.js";
+import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import { builtInTypeForName, referencedVariableNames } from "./catalog.js";
 import {
   emptyState,
@@ -29,6 +30,7 @@ export type OpKind =
   | "client"
   | "transformation"
   | "environment"
+  | "gtagConfig"
   | "version"
   | "publish";
 export type OpAction = "create" | "update" | "unchanged";
@@ -76,7 +78,8 @@ const has = (list: readonly Named[] | undefined, name: string): boolean =>
 export async function loadExisting(
   client: GtmClient,
   workspacePath: string,
-  containerType: ContainerType = "web"
+  containerType: ContainerType = "web",
+  withGtagConfigs = false
 ): Promise<ExistingState> {
   const ws = client.service.accounts.containers.workspaces;
   const parent = workspacePath;
@@ -98,6 +101,10 @@ export async function loadExisting(
   state.raw.tag = tags.data.tag ?? [];
   state.raw.client = clients?.data.client ?? [];
   state.raw.transformation = transformations?.data.transformation ?? [];
+  if (withGtagConfigs) {
+    const gtag = await client.call(() => ws.gtag_config.list({ parent }));
+    state.raw.gtagConfig = gtag.data.gtagConfig ?? [];
+  }
   indexState(state);
   state.builtIns = builtIns;
   return state;
@@ -143,6 +150,7 @@ export async function loadExistingFromLatestVersion(
   state.raw.tag = cv.tag ?? [];
   state.raw.client = cv.client ?? [];
   state.raw.transformation = cv.transformation ?? [];
+  state.raw.gtagConfig = cv.gtagConfig ?? [];
   indexState(state);
   for (const b of cv.builtInVariable ?? []) if (b.type) state.builtIns.add(b.type);
   return state;
@@ -216,8 +224,9 @@ export async function planContainerSpec(
   const wsList = await client.call(() => wsApi.list({ parent: container.path }));
   const found = (wsList.data.workspace ?? []).find((w) => w.name === target.workspace);
   const workspacePath = found?.path ?? null;
+  const withGtagConfigs = (input.gtagConfig?.length ?? 0) > 0;
   const existing = workspacePath
-    ? await loadExisting(client, workspacePath, containerType)
+    ? await loadExisting(client, workspacePath, containerType, withGtagConfigs)
     : await loadExistingFromLatestVersion(client, container.path, containerType);
 
   ops.push({
@@ -362,6 +371,17 @@ export async function planContainerSpec(
 
   // A version is only created when something changed or a publish was requested;
   // creating one deletes the workspace, so an unchanged run leaves it in place.
+  // Gtag configs have no name; their tagId parameter identifies them.
+  for (const config of input.gtagConfig ?? []) {
+    const tagId = gtagConfigTagId(config) ?? "";
+    const current = existing.raw.gtagConfig.find((c) => gtagConfigTagId(c) === tagId);
+    ops.push({
+      kind: "gtagConfig",
+      name: tagId,
+      action: !current ? "create" : matches(current, config) ? "unchanged" : "update",
+    });
+  }
+
   // Environments are container level: applied outside the workspace, never in a version.
   const environments = await loadCustomEnvironments(client, container.path);
   for (const env of input.environment ?? []) {

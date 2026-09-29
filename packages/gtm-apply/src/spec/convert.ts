@@ -24,6 +24,8 @@ export interface ExistingState {
     tag: tagmanager_v2.Schema$Tag[];
     client: tagmanager_v2.Schema$Client[];
     transformation: tagmanager_v2.Schema$Transformation[];
+    /** Read only when the spec has gtag configs; not every container supports them. */
+    gtagConfig: tagmanager_v2.Schema$GtagConfig[];
   };
 }
 
@@ -38,7 +40,15 @@ export function emptyState(containerType?: ContainerType): ExistingState {
     clients: new Map(),
     transformations: new Map(),
     builtIns: new Set(),
-    raw: { folder: [], variable: [], trigger: [], tag: [], client: [], transformation: [] },
+    raw: {
+      folder: [],
+      variable: [],
+      trigger: [],
+      tag: [],
+      client: [],
+      transformation: [],
+      gtagConfig: [],
+    },
   };
 }
 

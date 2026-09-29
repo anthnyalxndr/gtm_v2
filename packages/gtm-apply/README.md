@@ -62,6 +62,8 @@ Custom environments go in an `environment` section: `name`, and optionally `desc
 { "environment": [{ "name": "Staging", "url": "https://staging.example.com", "enableDebug": true }] }
 ```
 
+Google tag configs go in a `gtagConfig` section. A config has no name: the parameter with key `tagId` (the Google tag id, such as `G-XXXXXXXXXX`) identifies it, so two configs with the same `tagId`, or one without it, fail validation. Apply creates or updates configs by `tagId` after variables, since their parameters can reference variables, and keeps each config's id on update. Only containers that support Google tag configs accept them.
+
 The fastest way to write a spec is to build the entities once in the GTM UI, export the container, and run `gtm-apply normalize export.json`. Or capture a container with `gtm-apply export --container GTM-XXXXXXX`, which reads the latest version by default (published or not), `--live` for the published one, or `--workspace <name>` for work in progress. Keep customer-specific values in constant variables so the rest of the spec is reusable.
 
 ### Writing a spec in TypeScript

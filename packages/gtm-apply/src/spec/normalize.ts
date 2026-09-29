@@ -10,6 +10,7 @@ import type {
   TriggerSpec,
   VariableSpec,
   EnvironmentSpec,
+  GtagConfigSpec,
 } from "./types.js";
 import { containerTypeOf } from "../snapshot/pull.js";
 
@@ -77,6 +78,7 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const rawClients = (cv.client ?? []) as ClientSpec[];
   const rawTransformations = (cv.transformation ?? []) as TransformationSpec[];
   const rawEnvironments = (cv.environment ?? []) as tagmanager_v2.Schema$Environment[];
+  const rawGtagConfigs = (cv.gtagConfig ?? []) as tagmanager_v2.Schema$GtagConfig[];
 
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
@@ -156,7 +158,23 @@ export function normalizeExport(input: unknown): ContainerSpec {
     .filter((e) => !e.type || e.type === "user")
     .map(toEnvironmentSpec);
   if (environments.length) spec.environment = environments;
+  if (rawGtagConfigs.length) spec.gtagConfig = rawGtagConfigs.map(toGtagConfigSpec);
   return spec;
+}
+
+/** A gtag config without the ids and fields Tag Manager owns. */
+function toGtagConfigSpec(config: tagmanager_v2.Schema$GtagConfig): GtagConfigSpec {
+  const {
+    accountId: _a,
+    containerId: _c,
+    workspaceId: _w,
+    gtagConfigId: _g,
+    fingerprint: _f,
+    path: _p,
+    tagManagerUrl: _u,
+    ...rest
+  } = config;
+  return rest as GtagConfigSpec;
 }
 
 function toEnvironmentSpec(env: tagmanager_v2.Schema$Environment): EnvironmentSpec {
