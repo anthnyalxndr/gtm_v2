@@ -9,6 +9,7 @@ import type {
   TransformationSpec,
   TriggerSpec,
   VariableSpec,
+  EnvironmentSpec,
 } from "./types.js";
 import { containerTypeOf } from "../snapshot/pull.js";
 
@@ -75,6 +76,7 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const rawBuiltIns = (cv.builtInVariable ?? []) as (string | { type?: string | null })[];
   const rawClients = (cv.client ?? []) as ClientSpec[];
   const rawTransformations = (cv.transformation ?? []) as TransformationSpec[];
+  const rawEnvironments = (cv.environment ?? []) as tagmanager_v2.Schema$Environment[];
 
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
@@ -149,7 +151,23 @@ export function normalizeExport(input: unknown): ContainerSpec {
   if (tags.length) spec.tag = tags;
   if (clients.length) spec.client = clients;
   if (transformations.length) spec.transformation = transformations;
+  // Custom environments only: Live and Latest are built in, and Tag Manager owns ids and codes.
+  const environments = rawEnvironments
+    .filter((e) => !e.type || e.type === "user")
+    .map(toEnvironmentSpec);
+  if (environments.length) spec.environment = environments;
   return spec;
+}
+
+function toEnvironmentSpec(env: tagmanager_v2.Schema$Environment): EnvironmentSpec {
+  return {
+    name: env.name ?? "",
+    ...(env.description ? { description: env.description } : {}),
+    ...(env.url ? { url: env.url } : {}),
+    ...(env.enableDebug !== undefined && env.enableDebug !== null
+      ? { enableDebug: env.enableDebug }
+      : {}),
+  };
 }
 
 /** A UI export carries container.usageContext; a normalized spec carries containerType. */

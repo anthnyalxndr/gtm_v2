@@ -70,6 +70,7 @@ const TOP_LEVEL: Record<string, SchemaName | "builtIn"> = {
   client: "Client",
   transformation: "Transformation",
   builtInVariable: "builtIn",
+  environment: "Environment",
 };
 
 interface Ctx {
@@ -163,11 +164,30 @@ function checkEntity(
   if (typeof value.name !== "string" || value.name.length === 0) {
     push(ctx, "name", "is required");
   }
+  if (schema === "Environment") return checkEnvironment(ctx, value);
   if (schema !== "Folder" && (typeof value.type !== "string" || value.type.length === 0)) {
     push(ctx, "type", "is required");
   }
   checkObject(ctx, "", schema, value);
   if (schema === "Variable" && value.type === "c") checkConstantLength(ctx, value);
+}
+
+/** Environment fields a spec may carry; Tag Manager sets every other one. */
+const ENVIRONMENT_SPEC_FIELDS = new Set(["name", "description", "url", "enableDebug", "type"]);
+
+function checkEnvironment(ctx: Ctx, env: Record<string, unknown>): void {
+  if (typeof env.name === "string" && ["live", "latest"].includes(env.name.trim().toLowerCase())) {
+    push(ctx, "name", "is built in; Live and Latest are never in a spec");
+  }
+  for (const key of Object.keys(env)) {
+    if (!ENVIRONMENT_SPEC_FIELDS.has(key)) {
+      push(ctx, key, "is set by Tag Manager and never in a spec");
+    }
+  }
+  if (env.type !== undefined && env.type !== "user") {
+    push(ctx, "type", 'must be "user" (only custom environments are in a spec)');
+  }
+  checkObject(ctx, "", "Environment", env);
 }
 
 /** Tag Manager rejects a constant variable whose value is longer than this. */

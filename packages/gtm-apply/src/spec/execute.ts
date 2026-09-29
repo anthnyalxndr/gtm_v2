@@ -19,7 +19,13 @@ import {
   toApiVariable,
   type Unresolved,
 } from "./convert.js";
-import { planContainerSpec, type OpAction, type Plan, type PlannedOp } from "./plan.js";
+import {
+  environmentChanged,
+  planContainerSpec,
+  type OpAction,
+  type Plan,
+  type PlannedOp,
+} from "./plan.js";
 import type { ContainerSpec } from "./types.js";
 
 export interface ExecuteOptions {
@@ -127,6 +133,28 @@ export async function executePlan(
     ops.push({ kind: "tag", name, action: toOpAction(r.action) });
   }
 
+  // Container level: environments are written outside the workspace and never versioned.
+  const envApi = client.service.accounts.containers.environments;
+  for (const env of plan.spec.environment ?? []) {
+    const current = plan.environments.get(env.name);
+    const body = { ...env, type: "user" };
+    if (!current) {
+      await client.call(() => envApi.create({ parent: plan.container.path, requestBody: body }));
+      ops.push({ kind: "environment", name: env.name, action: "create" });
+    } else if (environmentChanged(current, env)) {
+      await client.call(() =>
+        envApi.update({
+          path: current.path!,
+          fingerprint: current.fingerprint ?? undefined,
+          requestBody: { ...current, ...body },
+        })
+      );
+      ops.push({ kind: "environment", name: env.name, action: "update" });
+    } else {
+      ops.push({ kind: "environment", name: env.name, action: "unchanged" });
+    }
+  }
+
   if (options.noVersion) {
     if (options.publish) throw new Error("publish needs a version");
     return { workspacePath: ws.path, ops, published: false, workspaceUrl: workspaceUrl(ws.path) };
@@ -144,7 +172,9 @@ export async function executePlan(
   // Creating a version deletes the workspace, and a fresh workspace branches
   // from the latest version, so a version is only worth creating when
   // something changed (or a publish was requested).
-  const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
+  const changed = ops.some(
+    (o) => o.action !== "unchanged" && o.kind !== "workspace" && o.kind !== "environment"
+  );
   if (!changed && !options.publish) {
     return { workspacePath: ws.path, ops, published: false, workspaceUrl: workspaceUrl(ws.path) };
   }

@@ -1,3 +1,4 @@
+import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer, type ContainerRef } from "@anthnyalxndr/gtm-client";
 import { listEnabledBuiltIns } from "../resources/builtins.js";
@@ -11,7 +12,7 @@ import {
   type Converted,
   type ExistingState,
 } from "./convert.js";
-import type { ContainerSpec, VariableSpec } from "./types.js";
+import type { ContainerSpec, EnvironmentSpec, VariableSpec } from "./types.js";
 import { assertValidSpec } from "./validate.js";
 import { SECTIONS_BY_CONTAINER_TYPE } from "./kinds.js";
 import { containerTypeOf } from "../snapshot/pull.js";
@@ -27,6 +28,7 @@ export type OpKind =
   | "tag"
   | "client"
   | "transformation"
+  | "environment"
   | "version"
   | "publish";
 export type OpAction = "create" | "update" | "unchanged";
@@ -58,6 +60,8 @@ export interface Plan {
   /** The input spec plus implicit folders, with variables sorted by reference. */
   spec: ContainerSpec;
   existing: ExistingState;
+  /** The container's custom environments by name; container level, outside any workspace. */
+  environments: ReadonlyMap<string, tagmanager_v2.Schema$Environment>;
   ops: PlannedOp[];
   errors: string[];
 }
@@ -203,6 +207,7 @@ export async function planContainerSpec(
       workspacePath: null,
       spec: input,
       existing: emptyState(containerType),
+      environments: new Map(),
       ops,
       errors,
     };
@@ -357,13 +362,52 @@ export async function planContainerSpec(
 
   // A version is only created when something changed or a publish was requested;
   // creating one deletes the workspace, so an unchanged run leaves it in place.
-  const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
+  // Environments are container level: applied outside the workspace, never in a version.
+  const environments = await loadCustomEnvironments(client, container.path);
+  for (const env of input.environment ?? []) {
+    const current = environments.get(env.name);
+    ops.push({
+      kind: "environment",
+      name: env.name,
+      action: !current ? "create" : environmentChanged(current, env) ? "update" : "unchanged",
+    });
+  }
+
+  const changed = ops.some(
+    (o) => o.action !== "unchanged" && o.kind !== "workspace" && o.kind !== "environment"
+  );
   if (!options.noVersion && (changed || options.publish)) {
     ops.push({ kind: "version", name: target.workspace, action: "create" });
   }
   if (options.publish) ops.push({ kind: "publish", name: target.workspace, action: "create" });
 
-  return { target, container, workspacePath, spec, existing, ops, errors };
+  return { target, container, workspacePath, spec, existing, environments, ops, errors };
+}
+
+/** A container's custom (type user) environments by name. */
+async function loadCustomEnvironments(
+  client: GtmClient,
+  containerPath: string
+): Promise<Map<string, tagmanager_v2.Schema$Environment>> {
+  const api = client.service.accounts.containers.environments;
+  const res = await client.call(() => api.list({ parent: containerPath }));
+  return new Map(
+    (res.data.environment ?? [])
+      .filter((e) => e.type === "user" && e.name)
+      .map((e) => [e.name as string, e])
+  );
+}
+
+/** Whether a spec environment differs from the container's, treating absent as empty or false. */
+export function environmentChanged(
+  current: tagmanager_v2.Schema$Environment,
+  env: EnvironmentSpec
+): boolean {
+  return (
+    (current.description ?? "") !== (env.description ?? "") ||
+    (current.url ?? "") !== (env.url ?? "") ||
+    Boolean(current.enableDebug) !== Boolean(env.enableDebug)
+  );
 }
 
 const LABEL: Record<OpAction, string> = { create: "[+]", update: "[~]", unchanged: "[=]" };
@@ -372,8 +416,13 @@ export function formatPlan(plan: Plan): string {
   const lines = [
     `Container ${plan.target.container} (${plan.container.name}), workspace "${plan.target.workspace}"`,
   ];
-  for (const op of plan.ops) {
-    lines.push(`${LABEL[op.action]} ${op.kind} "${op.name}"${op.implicit ? " (implicit)" : ""}`);
+  const line = (op: PlannedOp) =>
+    `${LABEL[op.action]} ${op.kind} "${op.name}"${op.implicit ? " (implicit)" : ""}`;
+  const environmentOps = plan.ops.filter((op) => op.kind === "environment");
+  for (const op of plan.ops) if (op.kind !== "environment") lines.push(line(op));
+  if (environmentOps.length > 0) {
+    lines.push("Environments (container level, not versioned):");
+    for (const op of environmentOps) lines.push(line(op));
   }
   if (plan.errors.length > 0) {
     lines.push(`Plan has ${plan.errors.length} error(s):`);
