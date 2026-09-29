@@ -36,3 +36,27 @@ describe("version description", () => {
     expect(Object.hasOwn(state.versions.at(-1)!, "description")).toBe(false);
   });
 });
+
+describe("version description in the request", () => {
+  it("sends the description as notes, the only field create_version reads for it", async () => {
+    const { service } = createFakeService();
+    const bodies: unknown[] = [];
+    const createVersion = service.accounts.containers.workspaces.create_version;
+    service.accounts.containers.workspaces.create_version = (async (args: {
+      path: string;
+      requestBody: unknown;
+    }) => {
+      bodies.push(args.requestBody);
+      return createVersion(args as never);
+    }) as typeof createVersion;
+    const client = new GtmClient({ service, minIntervalMs: 0 });
+    await applySpec(client, {
+      container: "GTM-ABC123",
+      workspace: "ws",
+      spec,
+      versionName: "v1",
+      versionDescription: "Adds Const - X.",
+    });
+    expect(bodies).toEqual([{ name: "v1", notes: "Adds Const - X." }]);
+  });
+});

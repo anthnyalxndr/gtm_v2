@@ -1,3 +1,4 @@
+import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { ensureWorkspace } from "../resources/workspaces.js";
 import { ensureBuiltIns } from "../resources/builtins.js";
@@ -140,15 +141,7 @@ export async function executePlan(
   }
   const versionName = options.versionName ?? plan.target.workspace;
   const versionRes = await client.call(() =>
-    wsApi.create_version({
-      path: ws.path,
-      requestBody: {
-        name: versionName,
-        ...(options.versionDescription !== undefined
-          ? { description: options.versionDescription }
-          : {}),
-      },
-    })
+    wsApi.create_version({ path: ws.path, requestBody: versionOptions(versionName, options) })
   );
   const versionPath = versionRes.data.containerVersion?.path ?? undefined;
   if (!versionPath) throw new Error("create_version returned no container version path");
@@ -164,6 +157,19 @@ export async function executePlan(
   }
 
   return { workspacePath: ws.path, ops, versionPath, published };
+}
+
+/**
+ * The create_version request body. The API reads only name and notes, and
+ * stores notes as the version's description; typed so an unknown field fails.
+ */
+function versionOptions(
+  name: string,
+  options: ExecuteOptions
+): tagmanager_v2.Schema$CreateContainerVersionRequestVersionOptions {
+  return options.versionDescription === undefined
+    ? { name }
+    : { name, notes: options.versionDescription };
 }
 
 export interface ApplySpecOptions {

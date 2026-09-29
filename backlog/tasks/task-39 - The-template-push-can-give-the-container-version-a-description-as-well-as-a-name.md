@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-27 23:22'
-updated_date: '2026-09-28 23:47'
+updated_date: '2026-09-29 00:08'
 labels:
   - recipes
   - apply
@@ -37,6 +37,8 @@ pnpm push in packages/gtm-web-recipes names the version it creates (GTM_LIBRARY_
 2026-09-28: TASK-44 changes the same push script (workspace and version name as separate settings); do them together or TASK-44 first.
 
 Acceptance criteria unchanged by the plan. versionDescription threads through executePlan, applySpec, applyPlan, GtmSnapshot.push and a new --version-description CLI flag (parity with --version-name, a pass-through), and pnpm push reads GTM_LIBRARY_VERSION_DESCRIPTION. The gtm-client fake now records a version's description only when create_version sends one, which is how the tests show the field is omitted by default. AC #1 is verified against the fake and the API's documented ContainerVersion.description field; the first live push that uses it is TASK-40's. pnpm verify: 19 + 18 + 131 + 13.
+
+2026-09-29 correction (found in TASK-40): the first live pushes showed no description. workspaces.create_version reads only name and notes (Schema$CreateContainerVersionRequestVersionOptions); the description field this task sent was dropped without an error, and TypeScript missed it because the field came through an object spread. A live probe on Template - Server confirmed notes becomes the version's description. Fixed in the TASK-40 PR: execute sends notes through a typed helper, and the gtm-client fake now reads only name and notes like the API, which would have caught this. Existing versions without descriptions were fixed with versions.update.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
