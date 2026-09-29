@@ -3,11 +3,11 @@ id: TASK-40
 title: >-
   A Template - Server container holds server-side counterparts of the Web
   Template recipes and the repo ships its library
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-28 17:47'
-updated_date: '2026-09-28 23:45'
+updated_date: '2026-09-28 23:51'
 labels:
   - recipes
   - server
@@ -31,15 +31,16 @@ The owner wants the plan to consider merging the recipe packages into one packag
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Before any code or container changes, an implementation plan is recorded on this task and the owner approves it
-- [ ] #2 The plan maps each Template - Web recipe to its server-side counterpart, or says why a recipe has none, based on what GTM-P23F82XZ and GTM-MXK8K5KJ actually contain
-- [ ] #3 The plan shows how each web recipe and its server recipe fit together: what the web container sends to the tagging server, which server client claims it, and which server tags and triggers fire
-- [ ] #4 The plan decides the package layout, evaluating one combined recipes package keyed by container type against a separate server package, and states any change the web package or its consumers need
+- [x] #1 Before any code or container changes, an implementation plan is recorded on this task and the owner approves it
+- [x] #2 The plan maps each Template - Web recipe to its server-side counterpart, or says why a recipe has none, based on what GTM-P23F82XZ and GTM-MXK8K5KJ actually contain
+- [x] #3 The plan shows how each web recipe and its server recipe fit together: what the web container sends to the tagging server, which server client claims it, and which server tags and triggers fire
+- [x] #4 The plan decides the package layout, evaluating one combined recipes package keyed by container type against a separate server package, and states any change the web package or its consumers need
 - [x] #5 A server container named Template - Server exists in the anthnyalxndr.com account (6004731770) beside Template - Web
 - [ ] #6 The server recipes are defined in code with notes-trailer metadata (decision-10), a Library - Manifest, placeholder constants for every customer value, and server naming conventions, and lint reports no findings
 - [ ] #7 The template is pushed to Template - Server as a workspace and version, and the pull writes the committed server library from it with no lint findings
 - [ ] #8 No id, domain or value from the MindScience Collective containers appears in the template or the committed library
 - [ ] #9 pnpm verify passes, and the README and example plan cover the server recipes
+- [ ] #10 The web template offers google_tag_server (the Google tag with server_container_url set from a Const - Server Container URL placeholder), its manifest entry declares a conflict with google_tag, and compilePlan reports a plan that selects both
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,6 +64,8 @@ Full plan: docs/superpowers/plans/2026-09-28-template-server.md. Awaiting owner 
 2026-09-28: The owner created Template - Server (GTM-WMGVDZ5H, containerId 265489931) in account 6004731770 and enabled every built-in variable in its Default Workspace; no version yet. AC #5 is met. Decisions from the plan review: the per-container catalog moves to TASK-42 (built on the new gtm-model package, TASK-41), the package rename moves to TASK-45, pushing into the Default Workspace without a prior version is TASK-44, and the cross-container check is TASK-46. The plan in docs/superpowers/plans/2026-09-28-template-server.md predates this split: rewrite it for what is left (the server template, google_tag_server, push, pull, docs) and update these acceptance criteria to match before implementing.
 
 2026-09-28: Template - Server version 2 "built-in-variables-2026-09-28" (unpublished) saves the owner's 9 built-in additions; the Default Workspace moved to workspace 3. A new server container ships with a default client named GA4 (gaaw_client, FPID cookie, cookieMaxAgeInSec 63072000), so the server template's GA4 client reconciles with it by name (an update, not a second client). Push the template into a new workspace or a named one, never the Default Workspace (decision-4, reaffirmed by the owner in TASK-44).
+
+2026-09-28: The owner approved the plan's direction and decisions ('go with your rec'), which checks AC #1; the plan doc covers AC #2-#4, and TASK-45 carried out the package decision. AC #10 added from plan decision 2 (google_tag_server). Decision 3 verified: Google's server-side tagging fundamentals say the GA4 server tag, left at its defaults, inherits all relevant fields and parameters from the client's event data (https://developers.google.com/tag-platform/learn/sst-fundamentals/5-sst-setup-analytics), so the server template has no measurement-id constant.
 <!-- SECTION:NOTES:END -->
 
 ## Definition of Done

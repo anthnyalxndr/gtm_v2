@@ -35,7 +35,7 @@ export const data = {
             type: "template",
             key: "value",
             value:
-              '{"conventions":{},"recipes":{"ga4_client":{"description":"GA4 client, a GA4 tag forwarding every claimed event, and the Conversion Linker; base for every recipe."},"contact_form_submit":{"description":"Google Ads conversion on the contact_form_submit event.","dependencies":[{"constant":"Const - Google Ads - contact_form_submit Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"call_click":{"description":"Google Ads conversion on the call_click event.","dependencies":[{"constant":"Const - Google Ads - call_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"email_click":{"description":"Google Ads conversion on the email_click event.","dependencies":[{"constant":"Const - Google Ads - email_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"maps_click":{"description":"Google Ads conversion on the maps_click event.","dependencies":[{"constant":"Const - Google Ads - maps_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"web_container_client":{"description":"Serves the web container first-party from the tagging server."}}}',
+              '{"conventions":{},"recipes":{"ga4_client":{"description":"GA4 client, GA4 forwarding, Conversion Linker; base for every recipe."},"contact_form_submit":{"description":"Contact form submitted.","dependencies":[{"constant":"Const - Google Ads - contact_form_submit Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"call_click":{"description":"tel: link clicked.","dependencies":[{"constant":"Const - Google Ads - call_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"email_click":{"description":"mailto: link clicked.","dependencies":[{"constant":"Const - Google Ads - email_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"maps_click":{"description":"Google Maps link clicked.","dependencies":[{"constant":"Const - Google Ads - maps_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"web_container_client":{"description":"Serves the web container\'s gtm.js first-party."}}}',
           },
         ],
         variableId: "2",
@@ -652,11 +652,10 @@ export const data = {
     conventions: {},
     recipes: {
       ga4_client: {
-        description:
-          "GA4 client, a GA4 tag forwarding every claimed event, and the Conversion Linker; base for every recipe.",
+        description: "GA4 client, GA4 forwarding, Conversion Linker; base for every recipe.",
       },
       contact_form_submit: {
-        description: "Google Ads conversion on the contact_form_submit event.",
+        description: "Contact form submitted.",
         dependencies: [
           {
             constant: "Const - Google Ads - contact_form_submit Conversion Label",
@@ -666,7 +665,7 @@ export const data = {
         ],
       },
       call_click: {
-        description: "Google Ads conversion on the call_click event.",
+        description: "tel: link clicked.",
         dependencies: [
           {
             constant: "Const - Google Ads - call_click Conversion Label",
@@ -676,7 +675,7 @@ export const data = {
         ],
       },
       email_click: {
-        description: "Google Ads conversion on the email_click event.",
+        description: "mailto: link clicked.",
         dependencies: [
           {
             constant: "Const - Google Ads - email_click Conversion Label",
@@ -686,7 +685,7 @@ export const data = {
         ],
       },
       maps_click: {
-        description: "Google Ads conversion on the maps_click event.",
+        description: "Google Maps link clicked.",
         dependencies: [
           {
             constant: "Const - Google Ads - maps_click Conversion Label",
@@ -696,7 +695,7 @@ export const data = {
         ],
       },
       web_container_client: {
-        description: "Serves the web container first-party from the tagging server.",
+        description: "Serves the web container's gtm.js first-party.",
       },
     },
   },
@@ -774,8 +773,7 @@ export const data = {
   recipes: [
     {
       name: "ga4_client",
-      description:
-        "GA4 client, a GA4 tag forwarding every claimed event, and the Conversion Linker; base for every recipe.",
+      description: "GA4 client, GA4 forwarding, Conversion Linker; base for every recipe.",
       roots: [
         {
           kind: "tag",
@@ -821,7 +819,7 @@ export const data = {
     },
     {
       name: "contact_form_submit",
-      description: "Google Ads conversion on the contact_form_submit event.",
+      description: "Contact form submitted.",
       roots: [
         {
           kind: "tag",
@@ -865,7 +863,7 @@ export const data = {
     },
     {
       name: "call_click",
-      description: "Google Ads conversion on the call_click event.",
+      description: "tel: link clicked.",
       roots: [
         {
           kind: "tag",
@@ -909,7 +907,7 @@ export const data = {
     },
     {
       name: "email_click",
-      description: "Google Ads conversion on the email_click event.",
+      description: "mailto: link clicked.",
       roots: [
         {
           kind: "tag",
@@ -953,7 +951,7 @@ export const data = {
     },
     {
       name: "maps_click",
-      description: "Google Ads conversion on the maps_click event.",
+      description: "Google Maps link clicked.",
       roots: [
         {
           kind: "tag",
@@ -997,7 +995,7 @@ export const data = {
     },
     {
       name: "web_container_client",
-      description: "Serves the web container first-party from the tagging server.",
+      description: "Serves the web container's gtm.js first-party.",
       roots: [
         {
           kind: "client",

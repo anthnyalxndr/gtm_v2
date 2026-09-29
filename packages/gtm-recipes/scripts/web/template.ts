@@ -117,8 +117,7 @@ export const template = defineContainer({
           description: "Google tag on Initialization; base for every recipe.",
         },
         google_tag_server: {
-          description:
-            "Google tag on Initialization, sent through the customer's tagging server; use instead of google_tag.",
+          description: "google_tag via a tagging server; pick one.",
           conflicts: ["google_tag"],
         },
         contact_form_submit: {

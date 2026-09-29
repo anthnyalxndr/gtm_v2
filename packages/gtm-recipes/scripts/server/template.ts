@@ -110,27 +110,26 @@ export const template = defineContainer({
       conventions: {},
       recipes: {
         ga4_client: {
-          description:
-            "GA4 client, a GA4 tag forwarding every claimed event, and the Conversion Linker; base for every recipe.",
+          description: "GA4 client, GA4 forwarding, Conversion Linker; base for every recipe.",
         },
         contact_form_submit: {
-          description: "Google Ads conversion on the contact_form_submit event.",
+          description: "Contact form submitted.",
           dependencies: dependencies("contact_form_submit"),
         },
         call_click: {
-          description: "Google Ads conversion on the call_click event.",
+          description: "tel: link clicked.",
           dependencies: dependencies("call_click"),
         },
         email_click: {
-          description: "Google Ads conversion on the email_click event.",
+          description: "mailto: link clicked.",
           dependencies: dependencies("email_click"),
         },
         maps_click: {
-          description: "Google Ads conversion on the maps_click event.",
+          description: "Google Maps link clicked.",
           dependencies: dependencies("maps_click"),
         },
         web_container_client: {
-          description: "Serves the web container first-party from the tagging server.",
+          description: "Serves the web container's gtm.js first-party.",
         },
       },
     }),

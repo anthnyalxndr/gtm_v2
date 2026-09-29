@@ -35,7 +35,7 @@ export const data = {
             type: "template",
             key: "value",
             value:
-              '{"conventions":{},"recipes":{"google_tag":{"description":"Google tag on Initialization; base for every recipe."},"google_tag_server":{"description":"Google tag on Initialization, sent through the customer\'s tagging server; use instead of google_tag.","conflicts":["google_tag"]},"contact_form_submit":{"description":"Contact form submitted (dataLayer event).","dependencies":[{"constant":"Const - Google Ads - contact_form_submit Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"call_click":{"description":"tel: link clicked.","dependencies":[{"constant":"Const - Google Ads - call_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"email_click":{"description":"mailto: link clicked.","dependencies":[{"constant":"Const - Google Ads - email_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"maps_click":{"description":"Google Maps link clicked.","dependencies":[{"constant":"Const - Google Ads - maps_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]}}}',
+              '{"conventions":{},"recipes":{"google_tag":{"description":"Google tag on Initialization; base for every recipe."},"google_tag_server":{"description":"google_tag via a tagging server; pick one.","conflicts":["google_tag"]},"contact_form_submit":{"description":"Contact form submitted (dataLayer event).","dependencies":[{"constant":"Const - Google Ads - contact_form_submit Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"call_click":{"description":"tel: link clicked.","dependencies":[{"constant":"Const - Google Ads - call_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"email_click":{"description":"mailto: link clicked.","dependencies":[{"constant":"Const - Google Ads - email_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]},"maps_click":{"description":"Google Maps link clicked.","dependencies":[{"constant":"Const - Google Ads - maps_click Conversion Label","platform":"googleAds","resource":"conversionAction"}]}}}',
           },
         ],
         variableId: "2",
@@ -881,8 +881,7 @@ export const data = {
         description: "Google tag on Initialization; base for every recipe.",
       },
       google_tag_server: {
-        description:
-          "Google tag on Initialization, sent through the customer's tagging server; use instead of google_tag.",
+        description: "google_tag via a tagging server; pick one.",
         conflicts: ["google_tag"],
       },
       contact_form_submit: {
@@ -1040,8 +1039,7 @@ export const data = {
     },
     {
       name: "google_tag_server",
-      description:
-        "Google tag on Initialization, sent through the customer's tagging server; use instead of google_tag.",
+      description: "google_tag via a tagging server; pick one.",
       roots: [
         {
           kind: "tag",

@@ -167,6 +167,24 @@ function checkEntity(
     push(ctx, "type", "is required");
   }
   checkObject(ctx, "", schema, value);
+  if (schema === "Variable" && value.type === "c") checkConstantLength(ctx, value);
+}
+
+/** Tag Manager rejects a constant variable whose value is longer than this. */
+export const CONSTANT_VALUE_MAX_LENGTH = 1024;
+
+function checkConstantLength(ctx: Ctx, variable: Record<string, unknown>): void {
+  const params = Array.isArray(variable.parameter) ? variable.parameter : [];
+  for (const p of params) {
+    if (!isRecord(p) || p.key !== "value" || typeof p.value !== "string") continue;
+    if (p.value.length > CONSTANT_VALUE_MAX_LENGTH) {
+      push(
+        ctx,
+        "parameter.value",
+        `is ${p.value.length} characters; Tag Manager caps a constant's value at ${CONSTANT_VALUE_MAX_LENGTH}`
+      );
+    }
+  }
 }
 
 /**
