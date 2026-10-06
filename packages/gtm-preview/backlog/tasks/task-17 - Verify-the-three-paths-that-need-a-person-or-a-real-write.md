@@ -1,0 +1,50 @@
+---
+id: TASK-17
+title: Verify the three paths that need a person or a real write
+status: In Progress
+assignee: []
+created_date: '2026-09-19 20:13'
+updated_date: '2026-09-23 20:25'
+labels:
+  - verification
+dependencies:
+  - TASK-9
+  - TASK-15
+priority: medium
+ordinal: 17000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+
+Three shipped behaviours were tested only against fakes or on the wire, never end to end, because each needs something a headless session cannot supply: a deliberate write to a real container, a person at the Playwright Inspector, or a person watching GA4 DebugView. Run each once on the test container GTM-WNX8FFXW (never a client container) and record what happened in this task's notes, fixing anything that does not behave as documented.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+
+<!-- AC:BEGIN -->
+
+- [x] #1 run --version-from-workspace "Default Workspace" against GTM-WNX8FFXW creates a version without publishing, the CLI reports the version path, and a following run against Latest loads that version; the created version is noted here
+- [x] #2 record scenarios/example.json opens headed, pauses in the Inspector with Record available, and after Resume writes the report for the clicks made; the generated code from the Inspector is pasted into a driver and replays headless without edits
+- [ ] #3 run --hits debug against the fixture site with a scenario whose container sends to a real GA4 property shows the events in that property's DebugView, and the note records which property was used and that the hits carried _dbg=1
+- [x] #4 Any discrepancy found is fixed in the same change with a test, or split into its own task
+
+<!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+Check 1 (2026-09-20, GTM-WNX8FFXW): run --version-from-workspace "Default Workspace" created accounts/6335001612/containers/241202947/versions/3 (named gtm-preview 2026-09-20T19:48:30.183Z, 1 tag, 1 trigger, 1 variable) and the run that followed loaded Latest from the API. Verified via the API that Live (env 1) still serves version 1 and Latest (env 2) serves version 3. Two observations: GTM created version 3 even though the workspace had no changes since version 2, and it replaced the Default Workspace with a new one (id 2 became 8), which the client's fake modelled correctly. Fixed the first: the resolver now calls workspaces.getStatus first, skips the write when there are no changes, refuses on merge conflicts, and surfaces compilerError; a second live run reported 'no changes since the latest version; not creating a version' and Latest stayed at version 3. Tests cover the skip and the conflict paths.
+
+Check 2, part 1 (2026-09-20, www.sjpools.com, GTM-5KNSPW9K Live, hits dry): record opened headed, paused in the Inspector, and after Resume wrote the report, raw session, and Tag Assistant file for a two-page session (home, then /contact with a form submit): 35 events, 20 tags executed, 3 Google Ads tags reported failed by GTM, 36 hits all aborted. Two defects found and fixed in the same change: (1) GTM sends a diagnostics beacon to gtm.js with is_td=1 that Google answers with 204; the container matcher rewrote it and the run failed as if the code were rejected (Wix sends it, Squarespace did not). (2) Event ids restart on every page load and GTM can reuse an id within a load for a different event name, so the parser and exporter now key events by groupId, id, and name; before, the second page's events merged into the first page's and every later hit fell onto the wrong event. A two-page regression test covers it. Part 2 (paste the Inspector's generated code into a driver and replay headless) is pending the code.
+
+Check 2, part 2 (2026-09-20, www.sjpools.com): the first recording was lost because the Inspector only displays generated code and never saves it. Fixed by having record enable Playwright's recorder on the session (the private _enableRecorder call that playwright codegen --output uses) and convert its output to scenarios/flows/<name>.recorded.mjs automatically; an integration test records fixture steps, converts, and replays headless. Second recording wrote a four-action driver (Accept All, CONTACT, phone link, email link). Replayed headless with no edits: ran without error, but the phone and email clicks raced GTM on the contact page and were not captured. With four waitForEvent lines added (including a new count option for a second gtm.linkClick) the replay reproduced the recording: 23 events over two pages, call_click and email_click GA4 tags fired, one Ads tag reported failed by GTM. So 'without edits' holds for running, and waits are needed for fidelity; the README says so. Known limitation seen here: hits that leave a few ms after the next event starts are attributed to that event by time (page_view hits landing on consent_status), so they show as unexplained; a follow-up could attribute to the nearest earlier event with an explaining tag.
+
+Discrepancies from checks 1 and 2, all fixed and merged: the workspace-status guard before creating a version (6eb01e5); the is_td diagnostics beacon being rewritten as the container load and event ids colliding across page loads (bd5a730); the Inspector never saving its generated code, so record now writes the driver itself (215ea55). Two documentation defects fixed on 2026-09-23: the claim that GTM containers speak protocol version 2 and Google tags version 3 (GTM has reported 2 and 16, Google tags 2 and 3, with identical record shapes, so nothing branches on it, guarded by a test), and the claim that the debug build does not mark GA4 hits with _dbg=1 (true of the GTM container's build, false of the Google tag's, which marked 14 of 15 GA4 hits in a dry run on sjpools). The research notes carry both as dated corrections rather than rewritten history.
+
+Check 3 setup (2026-09-23): the GA4 property is 'GA4 - dev' (properties/519543836, account anthny.xyz 380295431), web stream 'dev.anthny.xyz - web', measurement ID G-GVG5MC89MH, found through the Analytics Admin API dataStreams endpoint since GA4 properties are not in the Tag Manager API. The test container's 'Const - GA4 Measurement ID' variable in workspace 8 now holds that ID; no version was created, so Live and Latest still serve G-PLACEHOLDER. Environment 8 (type workspace, created by quick_preview) serves G-GVG5MC89MH and is what a check-3 run should use. Check 3 still needs someone watching DebugView for that property while the run happens.
+
+Check 3 (DebugView) skipped on 2026-09-23 at the user's request and left unchecked. Everything it needs is in place: the test container's workspace holds G-GVG5MC89MH, and since task-19 the run is 'run <scenario> --workspace "Default Workspace" --hits debug' with no version involved. It needs someone watching DebugView for the GA4 - dev property while the run happens.
+<!-- SECTION:NOTES:END -->
