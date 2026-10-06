@@ -1,7 +1,14 @@
 # AGENTS.md
 
-> Single source of truth for this repo. `CLAUDE.md` and `.cursor/rules/agents.mdc`
-> both point here. Keep this file current; it is read by every coding agent.
+> Single source of truth for this package. `CLAUDE.md` points here. Keep this file current;
+> it is read by every coding agent.
+
+This package lives in the gtm workspace (`packages/gtm-preview` of `anthnyalxndr/gtm_v2`),
+beside `gtm-model`, `gtm-client`, `gtm-apply` and `gtm-recipes`. The hooks, the verify gate,
+CI, the Backlog.md backlog and the decision log are the workspace's, at the repository root.
+It was a standalone repository until 2026-10-06; its history is intact under this directory
+and the move is recorded in the workspace's `backlog/decisions/decision-13`. Paths in this
+file are relative to this directory unless they start with `backlog/`.
 
 ## Project
 
@@ -90,27 +97,34 @@ code is left out of the file unless `--include-auth` is passed on `run`.
 
 ## Tech stack
 
-- TypeScript (strict), Node 22, pnpm
+- TypeScript (strict), Node 22, pnpm workspace (`workspace:^` on `@anthnyalxndr/gtm-client`)
 - `playwright` (library, not `@playwright/test`) drives Chromium. `pnpm browsers` downloads it.
+  No unit test needs it; the one integration test that does is skipped unless its auth
+  environment variable is set.
 - `zod` validates scenario files and Tag Manager API responses at the boundary
 - Vitest for unit tests. tsx runs the CLI in dev, tsup bundles it.
 - No HTTP server. The entry point is a CLI (`src/index.ts`, bin name `gtm-preview`).
 
 ## Commands
 
-| Task                           | Command                                                          |
-| ------------------------------ | ---------------------------------------------------------------- |
-| Install                        | `pnpm install` then `pnpm browsers` (one-time Chromium download) |
-| Run the CLI in dev             | `pnpm dev run scenarios/<name>.json --out report.json`           |
-| Build                          | `pnpm build`                                                     |
-| Run built CLI                  | `pnpm start run scenarios/<name>.json`                           |
-| All checks (the pre-push gate) | `pnpm verify`                                                    |
-| Tests                          | `pnpm test`                                                      |
-| One test file                  | `pnpm vitest run src/cli/parse-args.test.ts`                     |
-| One test by name               | `pnpm vitest run -t "parses run with --out"`                     |
-| Watch tests                    | `pnpm test:watch`                                                |
-| Lint                           | `pnpm lint`                                                      |
-| Typecheck                      | `pnpm typecheck`                                                 |
+Run these from this directory. From the workspace root, prefix each with
+`pnpm --filter @anthnyalxndr/gtm-preview` (or `cd packages/gtm-preview`). `pnpm install` runs at
+the workspace root, and the pre-commit hook runs the workspace's `pnpm verify`, which builds,
+typechecks, lints and tests every package including this one.
+
+| Task                       | Command                                                |
+| -------------------------- | ------------------------------------------------------ |
+| Chromium (one time)        | `pnpm browsers`                                        |
+| Run the CLI in dev         | `pnpm dev run scenarios/<name>.json --out report.json` |
+| Build                      | `pnpm build`                                           |
+| Run built CLI              | `pnpm start run scenarios/<name>.json`                 |
+| This package's checks      | `pnpm verify` (lint, typecheck, test)                  |
+| Tests                      | `pnpm test`                                            |
+| One test file              | `pnpm vitest run src/cli/parse-args.test.ts`           |
+| One test by name           | `pnpm vitest run -t "parses run with --out"`           |
+| Watch tests                | `pnpm test:watch`                                      |
+| Lint                       | `pnpm lint`                                            |
+| Typecheck                  | `pnpm typecheck`                                       |
 
 ## Architecture to keep as the code grows
 
@@ -177,8 +191,8 @@ These are non-negotiable for all agents and humans:
 - **Tests with every change** — production changes ship with test changes. Don't commit if tests fail.
 - **Never** use `git push --force` or bypass hooks with `--no-verify`.
 - **Security** — never commit secrets; `.env*`, `*.pem`, `*.key`, `*_rsa`, `*.p12` are gitignored. Check `git diff --cached` before committing. Never read/print `.env` files.
-- **Hook strictness:** `standard` (see `.husky/` or `.pre-commit-config.yaml`).
-- **What is next** lives in the Backlog.md document titled `Plan` (`backlog doc view` or `backlog/docs/`), an ordered list with rationale rewritten at each planning pass; `backlog-next` reads it first.
+- **Hooks** are the workspace's (`.husky/` at the root): lint-staged with Prettier and this package's ESLint, then `pnpm verify`; commitlint on the message.
+- **Tasks** are in the workspace's Backlog.md (`backlog task list --plain` from the root). This package's own backlog was retired on 2026-10-06; `backlog/docs/doc-4` maps its ids to the ones here. **What is next** lives in the workspace's Backlog.md document titled `Plan`, an ordered list with rationale rewritten at each planning pass; `backlog-next` reads it first.
 
 ## Suggested workflow loop
 
@@ -191,7 +205,7 @@ For any non-trivial change, follow this loop (skills are Claude Code superpowers
 5. **Self-review** before claiming done — `superpowers:verification-before-completion` (run the actual commands).
 6. **Request review** — `superpowers:requesting-code-review` and/or `/code-review`.
 7. **Commit & PR** — `commit-commands:commit-push-pr` (Conventional Commits).
-8. **Record decisions** worth keeping in `docs/decisions/` (ADRs).
+8. **Record decisions** worth keeping. Decisions about this package's internals go in `docs/decisions/` (ADRs 0001 to 0003 are there); decisions that touch the workspace go in the root `backlog/decisions/` through `backlog decision create`.
 
 ## Tooling (skills / plugins to reach for)
 

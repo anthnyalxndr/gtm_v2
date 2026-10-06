@@ -8,6 +8,7 @@ Packages for automating Google Tag Manager, published under the `@anthnyalxndr` 
 | `@anthnyalxndr/gtm-client` | Authenticated, throttled Tag Manager API v2 client. OAuth with a shared credential directory, retry with backoff, typed helpers for accounts and containers, and a `testing` entry with an in-memory fake of the API. Import it into any project that talks to Tag Manager programmatically. | [packages/gtm-client](packages/gtm-client/README.md) |
 | `@anthnyalxndr/gtm-apply` | Declarative apply tool and `gtm-apply` CLI. Describe a container in the shape of a GTM export, plan, and reconcile by name. Snapshots, recipe libraries (`GtmSnapshot`), and tracking plans. Depends on `gtm-client` and `gtm-model`, and re-exports the model so existing imports keep working. | [packages/gtm-apply](packages/gtm-apply/README.md) |
 | `@anthnyalxndr/gtm-recipes` | Recipe libraries keyed by container type (`recipes.web`, with server to follow): committed snapshots of the template containers as `const` modules, typed for tracking plans. Private. | [packages/gtm-recipes](packages/gtm-recipes/README.md) |
+| `@anthnyalxndr/gtm-preview` | Headless GTM preview sessions and `gtm-preview` CLI. Playwright loads a container's debug build against a site, runs a scenario, and reports which dataLayer events happened, which tags GTM says fired, what each sent, and where the two disagree. Exports a file Tag Assistant can import. Depends on `gtm-client` for environment authorization codes. Private. | [packages/gtm-preview](packages/gtm-preview/README.md) |
 
 For ad hoc, one-off work from the terminal, use owntag's [gtm-cli](https://github.com/owntag/gtm-cli) instead of either package. The reasoning behind that and every other structural choice is recorded in [backlog/decisions](backlog/decisions/).
 
@@ -15,11 +16,11 @@ For ad hoc, one-off work from the terminal, use owntag's [gtm-cli](https://githu
 
 ```bash
 pnpm install
-pnpm verify        # build every package in dependency order, typecheck, test
+pnpm verify        # build every package in dependency order, typecheck, lint, test
 pnpm dev           # runs packages/gtm-apply/example.ts (dry run)
 ```
 
-Pre-commit hooks run prettier and `pnpm verify`. Work is tracked with Backlog.md (`backlog task list --plain`). The original design record is in `docs/superpowers/plans/2026-09-09-gtm-sdk.md`.
+Node 22 or later. Pre-commit hooks run prettier, gtm-preview's ESLint on its staged files, and `pnpm verify`; a commit-msg hook enforces Conventional Commits. GitHub Actions runs a secret scan and `pnpm verify` on every pull request. gtm-preview's integration test and its CLI need Chromium (`pnpm --filter @anthnyalxndr/gtm-preview browsers`); nothing in `pnpm verify` does. Work is tracked with Backlog.md (`backlog task list --plain`). The original design record is in `docs/superpowers/plans/2026-09-09-gtm-sdk.md`.
 
 ## Publishing
 

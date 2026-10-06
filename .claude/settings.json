@@ -23,6 +23,7 @@
       "Bash(pnpm install:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm typecheck:*)",
+      "Bash(pnpm lint:*)",
       "Bash(pnpm verify:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm format:*)",
