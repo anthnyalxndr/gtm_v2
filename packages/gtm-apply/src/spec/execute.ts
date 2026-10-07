@@ -9,6 +9,7 @@ import {
   ensureClient,
   ensureFolder,
   ensureTag,
+  ensureTemplate,
   ensureTransformation,
   ensureTrigger,
   ensureVariable,
@@ -17,11 +18,13 @@ import {
 import {
   toApiClient,
   toApiTag,
+  toApiTemplate,
   toApiTransformation,
   toApiTrigger,
   toApiVariable,
   type Unresolved,
 } from "./convert.js";
+import { targetCvtType } from "./cvt.js";
 import {
   environmentChanged,
   planContainerSpec,
@@ -33,6 +36,9 @@ import {
   type PlannedOp,
 } from "./plan.js";
 import type { ContainerSpec } from "./types.js";
+import { writeFile } from "node:fs/promises";
+import { computeChanges } from "../report/change-report.js";
+import { renderReport } from "../report/render.js";
 
 export interface ExecuteOptions extends PlanOptions {
   /**
@@ -95,6 +101,14 @@ export async function executePlan(
     const r = await ensureFolder(client, ws.path, { name: f.name });
     if (r.entity.folderId) ids.folders.set(f.name, r.entity.folderId);
     ops.push({ kind: "folder", name: f.name, action: toOpAction(r.action) });
+  }
+
+  for (const tpl of plan.spec.customTemplate ?? []) {
+    const name = tpl.name ?? "";
+    const r = await ensureTemplate(client, ws.path, toApiTemplate(tpl));
+    const cvt = targetCvtType(plan.container.containerId, r.entity);
+    if (cvt) ids.templates.set(name, cvt);
+    ops.push({ kind: "customTemplate", name, action: toOpAction(r.action) });
   }
 
   for (const v of plan.spec.variable ?? []) {
@@ -300,6 +314,18 @@ export interface ApplySpecOptions extends ExecuteOptions {
   workspace: string;
   spec: ContainerSpec;
   dryRun?: boolean;
+  /** Write a change report here (.md or .html). Produced from the plan, so a dry run reports the same as a real run. */
+  report?: string;
+}
+
+/** Compute a change report from a planned apply and write it by file extension. */
+export async function writePlanReport(plan: Plan, path: string): Promise<void> {
+  const report = computeChanges(plan.existing, plan.spec, {
+    container: plan.target.container,
+    workspace: plan.target.workspace,
+    source: "spec",
+  });
+  await writeFile(path, renderReport(report, path));
 }
 
 export interface ApplySpecOutcome {
@@ -323,6 +349,7 @@ export async function applySpec(
     options.spec,
     planOptions
   );
+  if (options.report) await writePlanReport(plan, options.report);
   if (options.dryRun) return { plan };
   const result = await executePlan(client, plan, planOptions);
   return { plan, result };
