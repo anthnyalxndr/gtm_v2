@@ -13,6 +13,7 @@ export {
   ensureTag,
   ensureClient,
   ensureTransformation,
+  ensureTemplate,
   matches,
   SERVER_FIELDS,
 } from "./resources/entities.js";
@@ -23,6 +24,14 @@ export type { PublishPermission } from "./resources/permissions.js";
 export { Gtm } from "./gtm.js";
 export type { SnapshotCallOptions } from "./gtm.js";
 export { defineContainer } from "./spec/types.js";
+export {
+  CVT_SENTINEL,
+  cvtSentinel,
+  templateNameOf,
+  sourceCvtType,
+  targetCvtType,
+  cleanGalleryReference,
+} from "./spec/cvt.js";
 export { SECTIONS_BY_CONTAINER_TYPE, ALL_SECTIONS, sectionsFor } from "./spec/kinds.js";
 export {
   DEFAULT_CONVENTIONS,
@@ -40,6 +49,7 @@ export type {
   TagSpec,
   ClientSpec,
   TransformationSpec,
+  CustomTemplateSpec,
   EntityKind,
 } from "./spec/types.js";
 export {
@@ -104,13 +114,24 @@ export type {
   GtmSnapshotInput,
   RecipeNameOf,
   ConstantNameOf,
+  PlaceholderConstantNameOf,
+  RequiredConstantNameOf,
   GtmSnapshotOptions,
   SelectOptions,
 } from "./library/gtm-snapshot.js";
 export { notesEncoding, registerEncoding, resolveEncoding } from "./library/encoding.js";
 export type { EncodingFactory } from "./library/encoding.js";
+export { classifyLiteral, findLiterals, describeLiteral } from "./library/literals.js";
+export type {
+  LiteralKind,
+  LiteralRules,
+  LiteralHit,
+  LiteralFinding,
+  LiteralBearer,
+} from "./library/literals.js";
 export {
   NOTES_DELIMITER,
+  NOTES_MAX_LENGTH,
   NOTED_KINDS,
   parseNotes,
   formatNotes,
@@ -139,6 +160,16 @@ export type {
   ExternalDependency,
 } from "./library/manifest.js";
 export { closure, referencesOf, refKey } from "./library/closure.js";
+export { computeChanges, computeSpecChanges, attributeRecipes } from "./report/change-report.js";
+export type {
+  ChangeReport,
+  ChangeKind,
+  EntityChange,
+  FieldDiff,
+  ChangeReportCounts,
+  ComputeChangesOptions,
+} from "./report/change-report.js";
+export { renderMarkdownReport, renderHtmlReport, renderReport } from "./report/render.js";
 export type { EntityRef, RefKind } from "./library/closure.js";
 export type { ApiSnapshotData, ContainerType, SnapshotSource } from "./snapshot/types.js";
 export { mergeSpecs } from "./spec/merge.js";
@@ -196,6 +227,7 @@ export {
 } from "./plan/tracking-plan.js";
 export type {
   TrackingPlan,
+  TrackingPlanFor,
   CompiledPlan,
   ApplyPlanOptions,
   ApplyPlanOutcome,
