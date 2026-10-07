@@ -12,7 +12,7 @@ Auth, throttling, and the raw API service come from [`@anthnyalxndr/gtm-client`]
 
 ## Credentials
 
-Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `client_secrets.json.example`). On first run gtm-apply opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-apply/token.json`. That one token serves every repo on the machine. Set `GTM_APPLY_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client.
+Place your OAuth client file at `~/.config/gtm-apply/client_secrets.json` (see `client_secrets.json.example`). On first run gtm-apply opens a browser, receives the callback on a random localhost port, and stores the token at `~/.config/gtm-apply/token.json`. That one token serves every repo on the machine. Set `GTM_APPLY_CONFIG_DIR` to use another directory, or pass `clientSecretsPath` and `tokenPath` to the client. In CI, set `GTM_SERVICE_ACCOUNT_KEY`, `GOOGLE_APPLICATION_CREDENTIALS` or `GTM_REFRESH_TOKEN` instead; the client never opens a browser when one of those is present, and fails with a message naming them when there is no terminal (see the [gtm-client README](../gtm-client/README.md#headless-authentication-ci)).
 
 ## Getting started
 

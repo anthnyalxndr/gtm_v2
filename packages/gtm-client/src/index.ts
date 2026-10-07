@@ -1,5 +1,5 @@
-export { GtmClient, TAG_MANAGER_SCOPES } from "./client.js";
-export type { GtmClientOptions } from "./client.js";
+export { GtmClient, TAG_MANAGER_SCOPES, selectCredentials, HEADLESS_HELP } from "./client.js";
+export type { GtmClientOptions, CredentialSource, AuthClient } from "./client.js";
 export { resolveConfigPaths } from "./config.js";
 export type { ConfigPaths } from "./config.js";
 export { withRetry, createLimiter, isRetryable } from "./throttle.js";
