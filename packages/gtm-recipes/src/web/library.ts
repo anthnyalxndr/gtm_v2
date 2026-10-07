@@ -34,6 +34,7 @@ export const data = {
       tagIds: ["GTM-TPLKC7QP"],
     },
     containerType: "web",
+    liveVersionId: null,
     environments: [
       {
         path: "accounts/6004731770/containers/263680884/environments/1",
@@ -75,6 +76,7 @@ export const data = {
       numVariables: "12",
     },
     environment: null,
+    published: false,
     folder: [],
     variable: [
       {

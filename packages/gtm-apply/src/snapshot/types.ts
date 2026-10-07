@@ -28,10 +28,21 @@ export interface ApiSnapshotData {
   workspace: tagmanager_v2.Schema$Workspace | null;
   /** Header of the version read; for a workspace source, the version it branched from. */
   containerVersionHeader: tagmanager_v2.Schema$ContainerVersionHeader | null;
+  /** Id of the published (live) version, or null when nothing is published. */
+  liveVersionId: string | null;
   /** Every environment of the container. */
   environments: tagmanager_v2.Schema$Environment[];
-  /** The environment that serves the version read (matched by containerVersionId); null for a workspace source. */
+  /**
+   * The environment that serves the version read: Live for a live source,
+   * Latest for the default source, and for a version id the custom environment
+   * whose containerVersionId matches, else Live or Latest when the id is
+   * theirs. The API does not report a version id on the built-in Live and
+   * Latest environments, so they are resolved by type, not by id. Null for a
+   * workspace source.
+   */
   environment: tagmanager_v2.Schema$Environment | null;
+  /** True when the version read is the published one. False for a workspace source. */
+  published: boolean;
   /** Google tag ids linked to this container. */
   destinations: tagmanager_v2.Schema$Destination[];
   folder: tagmanager_v2.Schema$Folder[];

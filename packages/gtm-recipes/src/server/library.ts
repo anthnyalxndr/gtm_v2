@@ -34,6 +34,7 @@ export const data = {
       tagIds: ["GTM-WMGVDZ5H"],
     },
     containerType: "server",
+    liveVersionId: null,
     environments: [
       {
         path: "accounts/6004731770/containers/265489931/environments/2",
@@ -76,6 +77,7 @@ export const data = {
       numClients: "2",
     },
     environment: null,
+    published: false,
     folder: [],
     variable: [
       {

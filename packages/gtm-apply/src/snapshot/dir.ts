@@ -46,6 +46,8 @@ export interface ContainerRecord {
   workspace: string | null;
   /** Name of the environment serving the version read, when known. */
   environment: string | null;
+  /** True when the version read is the published one. */
+  published: boolean;
 }
 
 export interface PullOutcome {
@@ -69,6 +71,7 @@ export function containerRecord(snapshot: ApiSnapshotData): ContainerRecord {
       : null,
     workspace: snapshot.workspace?.name ?? null,
     environment: snapshot.environment?.name ?? null,
+    published: snapshot.published,
   };
 }
 

@@ -59,22 +59,30 @@ export async function pullSnapshot(
   }
   const ref = await resolveContainer(client, source.container);
   const api = client.service.accounts.containers;
-  const [containerRes, envRes, destRes, headersRes] = await Promise.all([
+  const [containerRes, envRes, destRes, headersRes, liveRes] = await Promise.all([
     client.call(() => api.get({ path: ref.path })),
     client.call(() => api.environments.list({ parent: ref.path })),
     client.call(() => api.destinations.list({ parent: ref.path })),
     client.call(() => api.version_headers.list({ parent: ref.path })),
+    client.call(() => api.versions.live({ parent: ref.path })),
   ]);
   const container = containerRes.data;
   const environments = envRes.data.environment ?? [];
   const headers = headersRes.data.containerVersionHeader ?? [];
   const headerFor = (id: string | null | undefined) =>
     headers.find((h) => h.containerVersionId === id) ?? null;
+  // Version 0 is the empty version every container starts with; live at 0 means nothing was published.
+  const liveVersionId =
+    liveRes.data.containerVersionId && liveRes.data.containerVersionId !== "0"
+      ? liveRes.data.containerVersionId
+      : null;
+  const byType = (type: string) => environments.find((e) => e.type === type) ?? null;
   const base = {
     pulledAt: new Date().toISOString(),
     source,
     container,
     containerType: containerTypeOf(container.usageContext),
+    liveVersionId,
     environments,
     destinations: destRes.data.destination ?? [],
   };
@@ -105,6 +113,7 @@ export async function pullSnapshot(
       workspace,
       containerVersionHeader: headerFor(latest.data.containerVersionId),
       environment: null,
+      published: false,
       folder: folder.data.folder ?? [],
       variable: variable.data.variable ?? [],
       trigger: trigger.data.trigger ?? [],
@@ -118,24 +127,37 @@ export async function pullSnapshot(
   }
 
   let version: Version;
+  let environment: tagmanager_v2.Schema$Environment | null;
   if (source.version === "live") {
-    version = (await client.call(() => api.versions.live({ parent: ref.path }))).data;
-  } else {
-    let id = source.version;
-    if (!id || id === "latest") {
-      const latest = await client.call(() => api.version_headers.latest({ parent: ref.path }));
-      id = latest.data.containerVersionId ?? undefined;
-      if (!id) throw new Error(`Container ${source.container} has no versions yet`);
-    }
+    version = liveRes.data;
+    environment = byType("live");
+  } else if (!source.version || source.version === "latest") {
+    const latest = await client.call(() => api.version_headers.latest({ parent: ref.path }));
+    const id = latest.data.containerVersionId;
+    if (!id) throw new Error(`Container ${source.container} has no versions yet`);
     version = (await client.call(() => api.versions.get({ path: `${ref.path}/versions/${id}` })))
       .data;
+    environment = byType("latest");
+  } else {
+    const id = source.version;
+    version = (await client.call(() => api.versions.get({ path: `${ref.path}/versions/${id}` })))
+      .data;
+    const latest = await client.call(() => api.version_headers.latest({ parent: ref.path }));
+    // Only custom environments carry a version id; Live and Latest are matched by what they serve.
+    environment =
+      environments.find(
+        (e) => e.type !== "live" && e.type !== "latest" && e.containerVersionId === id
+      ) ??
+      (id === liveVersionId ? byType("live") : null) ??
+      (id === latest.data.containerVersionId ? byType("latest") : null);
   }
   const versionId = version.containerVersionId ?? null;
   return {
     ...base,
     workspace: null,
     containerVersionHeader: headerFor(versionId),
-    environment: environments.find((e) => e.containerVersionId === versionId) ?? null,
+    environment,
+    published: versionId !== null && versionId === liveVersionId,
     ...entities(version),
   };
 }

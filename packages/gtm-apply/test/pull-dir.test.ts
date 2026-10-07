@@ -109,6 +109,7 @@ describe("pullContainer", () => {
       version: { id: versionId, name: "lead v1" },
       workspace: null,
       environment: null,
+      published: false,
     });
     expect(outcome.record).toEqual(record);
 
