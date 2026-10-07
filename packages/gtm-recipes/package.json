@@ -1,0 +1,56 @@
+{
+  "name": "@anthnyalxndr/gtm-recipes",
+  "version": "0.1.0",
+  "description": "Recipe libraries for Google Tag Manager, keyed by container type: committed snapshots of the template containers, typed for gtm-apply tracking plans.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js",
+      "default": "./dist/web/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js",
+      "default": "./dist/server/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthnyalxndr/gtm_v2.git",
+    "directory": "packages/gtm-recipes"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "pull": "tsx scripts/pull.ts",
+    "sample": "tsx scripts/sample.ts",
+    "push": "tsx scripts/push.ts"
+  },
+  "dependencies": {
+    "@anthnyalxndr/gtm-apply": "workspace:^",
+    "@anthnyalxndr/gtm-model": "workspace:^"
+  },
+  "peerDependencies": {
+    "@anthnyalxndr/gtm-client": "workspace:^"
+  },
+  "devDependencies": {
+    "@anthnyalxndr/gtm-client": "workspace:^"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

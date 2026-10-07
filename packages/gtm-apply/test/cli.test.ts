@@ -33,12 +33,34 @@ describe("parseCliArgs", () => {
       dryRun: true,
       publish: true,
       live: false,
+      createVersion: false,
       versionName: "v1",
       version: undefined,
       plan: undefined,
       library: undefined,
       writeSpec: undefined,
     });
+  });
+
+  it("reads --version as a flag for apply and as a version id for snapshot", () => {
+    expect(
+      parseCliArgs([
+        "apply",
+        "--container",
+        "GTM-X",
+        "--workspace",
+        "ws",
+        "--spec",
+        "s",
+        "--version",
+      ])
+    ).toMatchObject({ command: "apply", createVersion: true, version: undefined });
+    expect(parseCliArgs(["snapshot", "--container", "GTM-X", "--version", "42"])).toMatchObject({
+      command: "snapshot",
+      createVersion: false,
+      version: "42",
+    });
+    expect(() => parseCliArgs(["apply", "--no-version"])).toThrow(/no-version/);
   });
 
   it("parses normalize with a file and rejects unknown commands", () => {
@@ -108,27 +130,67 @@ describe("runCli", () => {
     expect(state.calls.some((c) => c.endsWith(".create"))).toBe(false);
   });
 
-  it("apply executes and reports the version", async () => {
+  const applyArgs = [
+    "apply",
+    "--container",
+    "GTM-ABC123",
+    "--workspace",
+    "ws",
+    "--spec",
+    fixturePath,
+  ];
+
+  it("apply writes the workspace, prints its URL and creates no version", async () => {
+    const { client, state } = fresh();
+    const lines: string[] = [];
+    const code = await runCli(parseCliArgs(applyArgs), client, (l) => lines.push(l));
+    expect(code).toBe(0);
+    expect(state.versions).toEqual([]);
+    expect(state.tags).toHaveLength(1);
+    const [ws] = state.workspaces;
+    expect(lines).toContain(`Workspace "ws": https://tagmanager.google.com/#/container/${ws.path}`);
+    expect(lines.at(-1)).toBe(
+      "No version created. Add --version to create one, or --publish to create and publish it."
+    );
+  });
+
+  it("apply --version creates a version and reports it", async () => {
     const { client, state } = fresh();
     const lines: string[] = [];
     const code = await runCli(
-      parseCliArgs([
-        "apply",
-        "--container",
-        "GTM-ABC123",
-        "--workspace",
-        "ws",
-        "--spec",
-        fixturePath,
-      ]),
+      parseCliArgs([...applyArgs, "--version", "--version-name", "v1"]),
       client,
       (l) => lines.push(l)
     );
     expect(code).toBe(0);
     expect(state.versions[0].snapshot.tag).toHaveLength(1);
-    expect(lines[lines.length - 1]).toMatch(
-      /^Version: accounts\/1\/containers\/10\/versions\/\d+$/
+    expect(state.versions[0].name).toBe("v1");
+    expect(lines.at(-1)).toMatch(/^Version: accounts\/1\/containers\/10\/versions\/\d+$/);
+  });
+
+  it("apply --version prints the workspace URL when there is nothing to version", async () => {
+    const { client, state } = fresh();
+    await runCli(parseCliArgs([...applyArgs, "--version"]), client, () => undefined);
+    const lines: string[] = [];
+    const code = await runCli(parseCliArgs([...applyArgs, "--version"]), client, (l) =>
+      lines.push(l)
     );
+    expect(code).toBe(0);
+    expect(state.versions).toHaveLength(1);
+    const [ws] = state.workspaces;
+    expect(lines).toContain(`Workspace "ws": https://tagmanager.google.com/#/container/${ws.path}`);
+    expect(lines.at(-1)).toBe("No changes to version; the workspace matches the latest version.");
+  });
+
+  it("apply --publish creates and publishes a version without --version", async () => {
+    const { client, state } = fresh();
+    const lines: string[] = [];
+    const code = await runCli(parseCliArgs([...applyArgs, "--publish"]), client, (l) =>
+      lines.push(l)
+    );
+    expect(code).toBe(0);
+    expect(state.published).toEqual([state.versions[0].path]);
+    expect(lines.at(-1)).toMatch(/^Version: .* \(published\)$/);
   });
 
   it("apply returns 1 on plan errors", async () => {
@@ -201,7 +263,7 @@ describe("runCli", () => {
       (l) => lines.push(l)
     );
     expect(code).toBe(0);
-    expect(state.versions[0].snapshot.tag.map((t) => t.name)).toEqual(["T"]);
+    expect(state.tags.map((t) => t.name)).toEqual(["T"]);
     expect(lines.join("\n")).toContain('[+] trigger "CE"');
   });
 
@@ -274,20 +336,7 @@ describe("runCli", () => {
       client,
       () => undefined
     );
-    // That apply created a version (deleting "wip"); re-applying recreates the workspace unchanged.
-    await runCli(
-      parseCliArgs([
-        "apply",
-        "--container",
-        "GTM-ABC123",
-        "--workspace",
-        "wip",
-        "--spec",
-        fixturePath,
-      ]),
-      client,
-      () => undefined
-    );
+    // The apply left "wip" in place with the spec's entities and no version.
     const lines: string[] = [];
     const code = await runCli(
       parseCliArgs(["export", "--container", "GTM-ABC123", "--workspace", "wip"]),

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fixture page two</title>
+    <script>
+      window.dataLayer = window.dataLayer || []
+      window.dataLayer.push({ event: 'page2_ready' })
+    </script>
+    <script>
+      ;(function (w, d, s, l, i) {
+        w[l] = w[l] || []
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s)
+        j.async = true
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i
+        f.parentNode.insertBefore(j, f)
+      })(window, document, 'script', 'dataLayer', '__GTM_ID__')
+    </script>
+  </head>
+  <body>
+    <h1>Page two</h1>
+  </body>
+</html>

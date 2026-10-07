@@ -1,0 +1,79 @@
+# Proposed grouping for the gh task migration of gtm_v2 (2026-10-06).
+# Every open task appears once. The migrator refuses the file otherwise.
+# Confirmed by the owner on 2026-10-07. TASK-49 was committed first, TASK-12 was set to Done and left out, and TASK-11 was set to Deferred.
+initiatives:
+  - title: GTM as code
+    description: >-
+      A git repository is the source of truth for the GTM containers of an account.
+      A client engineer runs one command that scaffolds the account repo and imports its containers.
+      After that, every change to a container is a pull request.
+      CI plans each change against the live version and checks it against policy rules.
+      A merge applies and publishes the change, with the commit subject as the version name.
+      An edit made in the GTM UI shows up as drift on a schedule.
+      Drift is either imported by a reconcile pull request or overwritten by re-applying main.
+      The design is the GTM as code plan document and decision-11.
+    scope: >-
+      In scope: the gtm-apply engine work that full management from git needs, headless auth for CI,
+      plan output with a drift exit code, policy rules, the repo config file, the gtm-as-code package,
+      and the CI workflow and runbook.
+      Out of scope: recipe content and gtm-preview sessions.
+    tasks:
+      - TASK-10
+      - TASK-18
+      - TASK-19
+      - TASK-23
+      - TASK-24
+      - TASK-25
+      - TASK-27
+      - TASK-28
+      - TASK-29
+      - TASK-30
+      - TASK-32
+      - TASK-34
+      - TASK-35
+      - TASK-36
+      - TASK-37
+      - TASK-38
+      - TASK-49
+  - title: Recipe libraries
+    description: >-
+      A tracking plan is applied to a customer container from recipes that were built in a template container.
+      Each library is a committed snapshot of its template container, shipped by gtm-recipes per container type.
+      Library metadata and placeholders live in entity notes, so the template container describes itself.
+      A recipe's external dependencies are checked before publish.
+      The checks cover GA4 now, Google Ads once a Google Ads client exists, and the paired web or server container.
+      A customer can read what an apply changed and which recipe each change came from.
+      A library can hold a dozen or more recipes without hitting the Tag Manager limit on a constant's length.
+      The rules are in decisions 7, 9 and 10.
+    scope: >-
+      In scope: library metadata and its limits, verification of the dependencies a recipe declares,
+      and the change report that a recipe apply produces.
+      Out of scope: the account repo workflow, which belongs to GTM as code.
+    tasks:
+      - TASK-9
+      - TASK-11
+      - TASK-46
+      - TASK-47
+  - title: Headless preview sessions
+    description: >-
+      gtm-preview runs a GTM preview session in a headless browser.
+      It reports which dataLayer events happened, which tags fired, and what each tag sent.
+      Decision-13 names two consumers of those reports: the verify step after publish and the preview workspace of each pull request.
+      Both need the reports to be accurate.
+      Three gaps remain.
+      Consent banners have no decided handling.
+      A tag that fails because the dry hits policy aborted its request looks the same as a tag that failed on its own.
+      One shipped path, hits sent to GA4 DebugView, has never been checked end to end by a person.
+    scope: >-
+      In scope: packages/gtm-preview, its scenarios, its report and its documentation.
+      Out of scope: the shared gtm-client token store, which TASK-54 fixes on its own.
+    tasks:
+      - TASK-51
+      - TASK-52
+      - TASK-53
+standalone:
+  - id: TASK-54
+    reason: >-
+      A bug in the token store that gtm-client shares with every package.
+      A token minted by gtm-preview with a narrower scope breaks gtm-apply's writes.
+      It is shared plumbing under every initiative, so it belongs to none of them.

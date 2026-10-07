@@ -58,7 +58,7 @@ describe("validateSpec", () => {
         { name: "T", type: "html", paused: "yes", parentFolderId: "5", firingTriggerName: "PV" },
       ],
       folder: [{ name: "F", parentFolderName: "X" }],
-      environment: [],
+      zone: [],
     });
     expect(issues.map(formatIssue)).toEqual([
       expect.stringMatching(/^variable "V": parametr is not a field of Variable/),
@@ -69,7 +69,7 @@ describe("validateSpec", () => {
       expect.stringMatching(/^tag "T": parentFolderId is a server or id field/),
       'tag "T": firingTriggerName must be an array (got "PV")',
       expect.stringMatching(/^folder "F": parentFolderName is not a field of Folder/),
-      expect.stringMatching(/^spec: environment is not a spec section/),
+      expect.stringMatching(/^spec: zone is not a spec section/),
     ]);
   });
 
@@ -123,5 +123,36 @@ describe("validateSpec", () => {
       expect((err as Error).message).toContain('trigger "B": type is required');
     }
     expect(() => assertValidSpec({ trigger: [{ name: "A", type: "pageview" }] })).not.toThrow();
+  });
+});
+
+describe("constant value length", () => {
+  const constant = (value: string) => ({
+    variable: [
+      { name: "Const - Long", type: "c", parameter: [{ type: "template", key: "value", value }] },
+    ],
+  });
+
+  it("accepts a constant value of up to 1024 characters", () => {
+    expect(validateSpec(constant("x".repeat(1024)))).toEqual([]);
+  });
+
+  it("reports a constant value over 1024 characters, which Tag Manager rejects", () => {
+    expect(validateSpec(constant("x".repeat(1025))).map(formatIssue)).toEqual([
+      'variable "Const - Long": parameter.value is 1025 characters; Tag Manager caps a constant\'s value at 1024',
+    ]);
+  });
+
+  it("leaves long values in other variable types alone", () => {
+    const js = {
+      variable: [
+        {
+          name: "JS - Long",
+          type: "jsm",
+          parameter: [{ type: "template", key: "javascript", value: "x".repeat(5000) }],
+        },
+      ],
+    };
+    expect(validateSpec(js)).toEqual([]);
   });
 });
