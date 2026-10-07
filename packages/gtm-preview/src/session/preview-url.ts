@@ -1,0 +1,68 @@
+const CONTAINER_HOST = 'www.googletagmanager.com'
+
+/**
+ * True for the request that loads the container script. GTM also sends a diagnostics beacon
+ * to the same path with `is_td=1` (answered with 204), which must be left alone.
+ */
+export function isContainerRequest(url: string, containerId: string): boolean {
+  return containerRequestId(url) === containerId
+}
+
+/**
+ * The container id a request loads, or undefined when the request is not a container script.
+ * A page can carry more than one GTM snippet, so the runner matches on this and then decides
+ * whether that id is one the scenario names.
+ */
+export function containerRequestId(url: string): string | undefined {
+  let u: URL
+  try {
+    u = new URL(url)
+  } catch {
+    return undefined
+  }
+  if (u.host !== CONTAINER_HOST || u.pathname !== '/gtm.js' || u.searchParams.has('is_td')) {
+    return undefined
+  }
+  return u.searchParams.get('id') ?? undefined
+}
+
+export interface DebugBuildParams {
+  authCode: string
+  environment: number
+}
+
+/** Rewrite a plain gtm.js request into a request for the environment's debug build. */
+export function toDebugBuildUrl(url: string, { authCode, environment }: DebugBuildParams): string {
+  const u = new URL(url)
+  u.searchParams.set('gtm_auth', authCode)
+  u.searchParams.set('gtm_preview', `env-${environment}`)
+  u.searchParams.set('gtm_cookies_win', 'x')
+  u.searchParams.set('gtm_debug', 'x')
+  return u.toString()
+}
+
+/** Remove an authorization code wherever it appears in a string. */
+export function redactAuthCode(text: string, authCode: string): string {
+  if (!authCode) return text
+  return text.split(authCode).join('<redacted>')
+}
+
+/**
+ * True for a Google tag script request (gtag.js or a destination the container loads). These
+ * serve their debug build to anyone with `gtm_debug=x`; no authorization code is involved.
+ */
+export function isGoogleTagRequest(url: string): boolean {
+  const u = new URL(url)
+  return (
+    u.host === CONTAINER_HOST &&
+    (u.pathname === '/gtag/js' || u.pathname === '/gtag/destination') &&
+    u.searchParams.has('id') &&
+    !u.searchParams.has('is_td')
+  )
+}
+
+export function toGoogleTagDebugUrl(url: string): string {
+  const u = new URL(url)
+  u.searchParams.set('gtm_debug', 'x')
+  return u.toString()
+}
