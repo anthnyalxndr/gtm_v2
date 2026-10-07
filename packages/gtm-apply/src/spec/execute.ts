@@ -9,6 +9,7 @@ import {
   ensureClient,
   ensureFolder,
   ensureTag,
+  ensureTemplate,
   ensureTransformation,
   ensureTrigger,
   ensureVariable,
@@ -17,11 +18,13 @@ import {
 import {
   toApiClient,
   toApiTag,
+  toApiTemplate,
   toApiTransformation,
   toApiTrigger,
   toApiVariable,
   type Unresolved,
 } from "./convert.js";
+import { targetCvtType } from "./cvt.js";
 import {
   environmentChanged,
   planContainerSpec,
@@ -95,6 +98,14 @@ export async function executePlan(
     const r = await ensureFolder(client, ws.path, { name: f.name });
     if (r.entity.folderId) ids.folders.set(f.name, r.entity.folderId);
     ops.push({ kind: "folder", name: f.name, action: toOpAction(r.action) });
+  }
+
+  for (const tpl of plan.spec.customTemplate ?? []) {
+    const name = tpl.name ?? "";
+    const r = await ensureTemplate(client, ws.path, toApiTemplate(tpl));
+    const cvt = targetCvtType(plan.container.containerId, r.entity);
+    if (cvt) ids.templates.set(name, cvt);
+    ops.push({ kind: "customTemplate", name, action: toOpAction(r.action) });
   }
 
   for (const v of plan.spec.variable ?? []) {
