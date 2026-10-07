@@ -26,7 +26,7 @@ function fake() {
   return { client: new GtmClient({ service, minIntervalMs: 0 }), state };
 }
 
-const target = { container: "GTM-ABC123", workspace: "gtag" };
+const target = { container: "GTM-ABC123", workspace: "gtag", version: true };
 
 describe("Google tag configs", () => {
   it("creates a config keyed by its tagId, and a second apply reports it unchanged", async () => {

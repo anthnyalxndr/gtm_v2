@@ -1,6 +1,7 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
-import { ensureWorkspace, workspaceUrl } from "../resources/workspaces.js";
+import { ensureWorkspace, workspaceStatus, workspaceUrl } from "../resources/workspaces.js";
+import { checkPublishPermission } from "../resources/permissions.js";
 import { matches } from "../resources/entities.js";
 import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import { ensureBuiltIns } from "../resources/builtins.js";
@@ -24,30 +25,28 @@ import {
 import {
   environmentChanged,
   planContainerSpec,
+  versionName,
+  wantsVersion,
   type OpAction,
   type Plan,
+  type PlanOptions,
   type PlannedOp,
 } from "./plan.js";
 import type { ContainerSpec } from "./types.js";
 
-export interface ExecuteOptions {
-  publish?: boolean;
-  versionName?: string;
-  /** Shown with the version in Tag Manager. Left out of the request when not given. */
-  versionDescription?: string;
-  /** Stop after reconciling the workspace; no version is created and the workspace stays. */
-  noVersion?: boolean;
-}
+export type ExecuteOptions = PlanOptions;
 
 export interface ApplyResult {
   /** The workspace written to. Tag Manager deletes it once a version is created from it. */
   workspacePath: string;
   ops: PlannedOp[];
-  /** Absent when nothing changed and no publish was requested. */
+  /** Set when a version was created: asked for with `version` or `publish`, and the workspace held changes. */
   versionPath?: string;
   published: boolean;
   /** The workspace's Tag Manager page, set when the workspace is left in place. */
   workspaceUrl?: string;
+  /** Checks that could not run, such as a publish permission that could not be read. */
+  warnings: string[];
 }
 
 const toOpAction = (action: EnsureAction): OpAction =>
@@ -185,43 +184,66 @@ export async function executePlan(
     }
   }
 
-  if (options.noVersion) {
-    if (options.publish) throw new Error("publish needs a version");
-    return { workspacePath: ws.path, ops, published: false, workspaceUrl: workspaceUrl(ws.path) };
-  }
+  const warnings: string[] = [];
+  const kept: ApplyResult = {
+    workspacePath: ws.path,
+    ops,
+    published: false,
+    workspaceUrl: workspaceUrl(ws.path),
+    warnings,
+  };
+  if (!wantsVersion(options)) return kept;
 
-  const wsApi = client.service.accounts.containers.workspaces;
-  const status = await client.call(() => wsApi.getStatus({ path: ws.path }));
-  const conflicts = status.data.mergeConflict ?? [];
-  if (conflicts.length > 0) {
+  const status = await workspaceStatus(client, ws.path);
+  if (status.mergeConflicts > 0) {
     throw new Error(
-      `Workspace "${ws.name}" has ${conflicts.length} merge conflict(s). Resolve them in the GTM UI before creating a version.`
+      `Workspace "${ws.name}" has ${status.mergeConflicts} merge conflict(s). Resolve them in the GTM UI before creating a version.`
     );
   }
 
   // Creating a version deletes the workspace, and a fresh workspace branches
-  // from the latest version, so a version is only worth creating when
-  // something changed (or a publish was requested).
+  // from the latest version, so a version is only worth creating when the
+  // workspace differs from it: this run changed something, or an earlier apply
+  // left changes behind. A publish always versions.
   const changed = ops.some(
     (o) => o.action !== "unchanged" && o.kind !== "workspace" && o.kind !== "environment"
   );
-  if (!changed && !options.publish) {
-    return { workspacePath: ws.path, ops, published: false, workspaceUrl: workspaceUrl(ws.path) };
+  if (!changed && status.changes === 0 && !options.publish) return kept;
+
+  // Publishing a version the caller may not publish would leave an unpublished
+  // version and no workspace, so check first, while the workspace is still here.
+  if (options.publish) {
+    const permission = await checkPublishPermission(client, plan.container);
+    if (permission.outcome === "missing") {
+      const holders =
+        permission.holders.length > 0
+          ? `Publish is held by: ${permission.holders.join(", ")}.`
+          : "No user holds Publish on it.";
+      throw new Error(
+        `${permission.email} does not hold Publish on container ${plan.container.publicId} (${plan.container.name}), so no version was created. ${holders} ` +
+          `The workspace "${ws.name}" keeps the applied changes: ${workspaceUrl(ws.path)}`
+      );
+    }
+    if (permission.outcome === "unknown") {
+      warnings.push(`Publish permission not checked: ${permission.reason}`);
+    }
   }
-  const versionName = options.versionName ?? plan.target.workspace;
+
+  const name = versionName(options, plan.target.workspace);
+  const wsApi = client.service.accounts.containers.workspaces;
   const versionRes = await client.call(() =>
-    wsApi.create_version({ path: ws.path, requestBody: versionOptions(versionName, options) })
+    wsApi.create_version({ path: ws.path, requestBody: versionRequest(name, options) })
   );
   const versionPath = versionRes.data.containerVersion?.path ?? undefined;
   if (!versionPath) throw new Error("create_version returned no container version path");
-  ops.push({ kind: "version", name: versionName, action: "create" });
+  ops.push({ kind: "version", name, action: "create" });
 
   let published = false;
   if (options.publish) {
     await client.call(() =>
       client.service.accounts.containers.versions.publish({ path: versionPath })
     );
-    ops.push({ kind: "publish", name: versionName, action: "create" });
+    ops.push({ kind: "publish", name, action: "create" });
     published = true;
     // Publishing returns before anything else is known; confirm the live version is ours.
     const createdId =
@@ -236,31 +258,26 @@ export async function executePlan(
     }
   }
 
-  return { workspacePath: ws.path, ops, versionPath, published };
+  return { workspacePath: ws.path, ops, versionPath, published, warnings };
 }
 
 /**
  * The create_version request body. The API reads only name and notes, and
  * stores notes as the version's description; typed so an unknown field fails.
  */
-function versionOptions(
+function versionRequest(
   name: string,
   options: ExecuteOptions
 ): tagmanager_v2.Schema$CreateContainerVersionRequestVersionOptions {
-  return options.versionDescription === undefined
-    ? { name }
-    : { name, notes: options.versionDescription };
+  const notes = typeof options.version === "object" ? options.version.notes : undefined;
+  return notes === undefined ? { name } : { name, notes };
 }
 
-export interface ApplySpecOptions {
+export interface ApplySpecOptions extends PlanOptions {
   container: string;
   workspace: string;
   spec: ContainerSpec;
   dryRun?: boolean;
-  publish?: boolean;
-  versionName?: string;
-  versionDescription?: string;
-  noVersion?: boolean;
 }
 
 export interface ApplySpecOutcome {
@@ -273,18 +290,14 @@ export async function applySpec(
   client: GtmClient,
   options: ApplySpecOptions
 ): Promise<ApplySpecOutcome> {
+  const planOptions: PlanOptions = { version: options.version, publish: options.publish };
   const plan = await planContainerSpec(
     client,
     { container: options.container, workspace: options.workspace },
     options.spec,
-    { publish: options.publish, noVersion: options.noVersion }
+    planOptions
   );
   if (options.dryRun) return { plan };
-  const result = await executePlan(client, plan, {
-    publish: options.publish,
-    versionName: options.versionName,
-    versionDescription: options.versionDescription,
-    noVersion: options.noVersion,
-  });
+  const result = await executePlan(client, plan, planOptions);
   return { plan, result };
 }

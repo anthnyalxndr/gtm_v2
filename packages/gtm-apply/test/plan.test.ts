@@ -22,7 +22,7 @@ function fresh() {
 describe("planContainerSpec", () => {
   it("plans all creates against an empty container, with implicit workspace", async () => {
     const { client } = fresh();
-    const plan = await planContainerSpec(client, target, fixtureSpec());
+    const plan = await planContainerSpec(client, target, fixtureSpec(), { version: true });
     expect(plan.errors).toEqual([]);
     expect(plan.workspacePath).toBeNull();
     const byKind = (k: string) => plan.ops.filter((o) => o.kind === k);
@@ -45,10 +45,10 @@ describe("planContainerSpec", () => {
 
   it("is all unchanged after an execute", async () => {
     const { client, state } = fresh();
-    const first = await planContainerSpec(client, target, fixtureSpec());
-    await executePlan(client, first);
+    const first = await planContainerSpec(client, target, fixtureSpec(), { version: true });
+    await executePlan(client, first, { version: true });
     // Creating the version deleted the workspace; the plan must read the latest version instead.
-    const second = await planContainerSpec(client, target, fixtureSpec());
+    const second = await planContainerSpec(client, target, fixtureSpec(), { version: true });
     expect(second.errors).toEqual([]);
     expect(second.workspacePath).toBeNull();
     expect(state.calls).toContain("version_headers.latest");

@@ -31,7 +31,6 @@ describe("apply without a version", () => {
       container: "GTM-ABC123",
       workspace: "pr-42",
       spec: constant("a"),
-      noVersion: true,
     });
     expect(outcome.plan.ops.some((o) => o.kind === "version")).toBe(false);
     expect(outcome.result?.versionPath).toBeUndefined();
@@ -46,7 +45,7 @@ describe("apply without a version", () => {
 
   it("updates the same workspace when run again with a changed spec", async () => {
     const { client, state } = fake();
-    const target = { container: "GTM-ABC123", workspace: "pr-42", noVersion: true };
+    const target = { container: "GTM-ABC123", workspace: "pr-42" };
     await applySpec(client, { ...target, spec: constant("a") });
     const again = await applySpec(client, { ...target, spec: constant("b") });
     expect(again.plan.ops.find((o) => o.name === "Const - X")?.action).toBe("update");
@@ -54,30 +53,12 @@ describe("apply without a version", () => {
     const variable = state.variables.find((v) => v.name === "Const - X");
     expect(variable?.parameter?.[0].value).toBe("b");
   });
-
-  it("refuses to publish without a version", async () => {
-    const { client } = fake();
-    await expect(
-      applySpec(client, {
-        container: "GTM-ABC123",
-        workspace: "pr-42",
-        spec: constant("a"),
-        noVersion: true,
-        publish: true,
-      })
-    ).rejects.toThrow(/publish needs a version/);
-  });
 });
 
 describe("deleteWorkspace", () => {
   it("deletes a workspace by name and reports one that is already gone", async () => {
     const { client, state } = fake();
-    await applySpec(client, {
-      container: "GTM-ABC123",
-      workspace: "pr-42",
-      spec: constant("a"),
-      noVersion: true,
-    });
+    await applySpec(client, { container: "GTM-ABC123", workspace: "pr-42", spec: constant("a") });
     expect(await deleteWorkspace(client, "accounts/1/containers/10", "pr-42")).toBe(true);
     expect(named(state, "pr-42")).toHaveLength(0);
     expect(await deleteWorkspace(client, "accounts/1/containers/10", "pr-42")).toBe(false);
@@ -92,25 +73,13 @@ describe("deleteWorkspace", () => {
 });
 
 describe("cli", () => {
-  it("parses --no-version and the delete-workspace command", () => {
-    expect(
-      parseCliArgs([
-        "apply",
-        "--container",
-        "GTM-X",
-        "--workspace",
-        "pr-1",
-        "--spec",
-        "s.json",
-        "--no-version",
-      ])
-    ).toMatchObject({ command: "apply", noVersion: true });
+  it("parses the delete-workspace command", () => {
     expect(
       parseCliArgs(["delete-workspace", "--container", "GTM-X", "--workspace", "pr-1"])
     ).toMatchObject({ command: "delete-workspace", container: "GTM-X", workspace: "pr-1" });
   });
 
-  it("prints the workspace URL after an apply with --no-version, then deletes it", async () => {
+  it("prints the workspace URL after an apply, then deletes the workspace", async () => {
     const { client, state } = fake();
     const dir = await mkdtemp(join(tmpdir(), "gtm-preview-"));
     const specPath = join(dir, "spec.json");
@@ -118,17 +87,9 @@ describe("cli", () => {
     const lines: string[] = [];
     const out = (l: string) => lines.push(l);
     const base = ["--container", "GTM-ABC123", "--workspace", "pr-7"];
-    expect(
-      await runCli(
-        parseCliArgs(["apply", ...base, "--spec", specPath, "--no-version"]),
-        client,
-        out
-      )
-    ).toBe(0);
+    expect(await runCli(parseCliArgs(["apply", ...base, "--spec", specPath]), client, out)).toBe(0);
     const [ws] = named(state, "pr-7");
-    expect(lines).toContain(
-      `Workspace kept for review, no version created: ${workspaceUrl(ws.path!)}`
-    );
+    expect(lines).toContain(`Workspace "pr-7": ${workspaceUrl(ws.path!)}`);
     expect(await runCli(parseCliArgs(["delete-workspace", ...base]), client, out)).toBe(0);
     expect(lines.at(-1)).toBe('Deleted workspace "pr-7".');
     expect(await runCli(parseCliArgs(["delete-workspace", ...base]), client, out)).toBe(0);

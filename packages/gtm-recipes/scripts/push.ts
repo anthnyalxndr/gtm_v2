@@ -41,7 +41,7 @@ await client.init();
 const outcome = await library.push(
   client,
   { container, workspace },
-  { dryRun, versionName, versionDescription }
+  { dryRun, version: { name: versionName, notes: versionDescription } }
 );
 console.log(formatPlan(outcome.plan));
 if (outcome.plan.errors.length > 0) process.exit(1);

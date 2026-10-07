@@ -5,6 +5,7 @@ import type { GtmSnapshot, GtmSnapshotData } from "../library/gtm-snapshot.js";
 import type { PlaceholderMetadata } from "../library/metadata.js";
 import { checkNames } from "../spec/conventions.js";
 import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
+import type { PlanOptions } from "../spec/plan.js";
 import type { ContainerSpec, VariableSpec } from "../spec/types.js";
 import { formatIssue, type SpecIssue } from "../spec/validate.js";
 
@@ -160,16 +161,12 @@ export function compilePlan<R extends string, C extends string>(
   return { spec, issues, warnings };
 }
 
-export interface ApplyPlanOptions<R extends string, C extends string> {
+export interface ApplyPlanOptions<R extends string, C extends string> extends PlanOptions {
   library: GtmSnapshot<R, C>;
   plan: TrackingPlan<R, C>;
   container: string;
   workspace: string;
   dryRun?: boolean;
-  publish?: boolean;
-  versionName?: string;
-  versionDescription?: string;
-  noVersion?: boolean;
   /** Also write the compiled spec here as JSON, for review or a later `gtm-apply apply --spec`. */
   writeSpecTo?: string;
 }

@@ -12,6 +12,26 @@ export function workspaceUrl(workspacePath: string): string {
   return `https://tagmanager.google.com/#/container/${workspacePath}`;
 }
 
+export interface WorkspaceStatus {
+  /** Entities changed in the workspace against the version it branched from. */
+  changes: number;
+  /** Conflicts with versions created since; Tag Manager refuses a version until they are resolved. */
+  mergeConflicts: number;
+}
+
+/** What the workspace holds against the latest version, from the status endpoint. */
+export async function workspaceStatus(
+  client: GtmClient,
+  workspacePath: string
+): Promise<WorkspaceStatus> {
+  const ws = client.service.accounts.containers.workspaces;
+  const res = await client.call(() => ws.getStatus({ path: workspacePath }));
+  return {
+    changes: res.data.workspaceChange?.length ?? 0,
+    mergeConflicts: res.data.mergeConflict?.length ?? 0,
+  };
+}
+
 export function isDefaultWorkspaceName(name: string): boolean {
   return name.trim().toLowerCase() === "default workspace";
 }

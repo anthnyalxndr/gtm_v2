@@ -16,29 +16,33 @@ function fake() {
 }
 
 describe("version description", () => {
-  it("sends the description to create_version alongside the name", async () => {
+  it("sends the notes to create_version alongside the name", async () => {
     const { client, state } = fake();
     await applySpec(client, {
       container: "GTM-ABC123",
       workspace: "ws",
       spec,
-      versionName: "v1",
-      versionDescription: "Adds Const - X.",
+      version: { name: "v1", notes: "Adds Const - X." },
     });
     const v = state.versions.at(-1)!;
     expect(v.name).toBe("v1");
     expect(v.description).toBe("Adds Const - X.");
   });
 
-  it("sends no description field when none is given", async () => {
+  it("sends no description field when no notes are given", async () => {
     const { client, state } = fake();
-    await applySpec(client, { container: "GTM-ABC123", workspace: "ws", spec, versionName: "v1" });
+    await applySpec(client, {
+      container: "GTM-ABC123",
+      workspace: "ws",
+      spec,
+      version: { name: "v1" },
+    });
     expect(Object.hasOwn(state.versions.at(-1)!, "description")).toBe(false);
   });
 });
 
 describe("version description in the request", () => {
-  it("sends the description as notes, the only field create_version reads for it", async () => {
+  it("sends the notes as notes, the only field create_version reads for it", async () => {
     const { service } = createFakeService();
     const bodies: unknown[] = [];
     const createVersion = service.accounts.containers.workspaces.create_version;
@@ -54,8 +58,7 @@ describe("version description in the request", () => {
       container: "GTM-ABC123",
       workspace: "ws",
       spec,
-      versionName: "v1",
-      versionDescription: "Adds Const - X.",
+      version: { name: "v1", notes: "Adds Const - X." },
     });
     expect(bodies).toEqual([{ name: "v1", notes: "Adds Const - X." }]);
   });

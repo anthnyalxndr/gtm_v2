@@ -69,7 +69,12 @@ describe("built-in triggers by container type", () => {
         },
       ],
     });
-    const outcome = await applySpec(client, { container: "GTM-SRV", workspace: "ws", spec });
+    const outcome = await applySpec(client, {
+      container: "GTM-SRV",
+      workspace: "ws",
+      spec,
+      version: true,
+    });
     expect(outcome.plan.errors).toEqual([]);
     const tag = latestSnapshot(state).tag.find((t) => t.name === "Conversion Linker");
     expect(tag?.firingTriggerId).toEqual(["2147479574"]);

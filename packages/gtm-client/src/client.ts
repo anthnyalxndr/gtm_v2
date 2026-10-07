@@ -13,7 +13,10 @@ import open from "open";
 import { resolveConfigPaths } from "./config.js";
 import { createLimiter, withRetry } from "./throttle.js";
 
-/** Tag Manager API v2 scopes */
+/**
+ * Tag Manager API v2 scopes, plus the email scope so the token can say which
+ * Google account it belongs to (used to check the caller's own permissions).
+ */
 export const TAG_MANAGER_SCOPES: readonly string[] = [
   "https://www.googleapis.com/auth/tagmanager.manage.accounts",
   "https://www.googleapis.com/auth/tagmanager.edit.containers",
@@ -21,6 +24,7 @@ export const TAG_MANAGER_SCOPES: readonly string[] = [
   "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
   "https://www.googleapis.com/auth/tagmanager.manage.users",
   "https://www.googleapis.com/auth/tagmanager.publish",
+  "https://www.googleapis.com/auth/userinfo.email",
 ];
 
 interface ClientSecrets {
@@ -46,6 +50,11 @@ export interface GtmClientOptions {
   minIntervalMs?: number;
   /** Pre-built service. When set, init() performs no auth. Intended for tests. */
   service?: tagmanager_v2.Tagmanager;
+  /**
+   * The Google account behind the credentials, when known up front. A real client
+   * reads it from the token instead; set it alongside an injected service.
+   */
+  email?: string;
 }
 
 export class GtmClient {
@@ -53,9 +62,12 @@ export class GtmClient {
   private readonly tokenPath: string;
   private readonly scopes: readonly string[];
   private readonly limiter: <T>(fn: () => Promise<T>) => Promise<T>;
+  private readonly knownEmail: string | undefined;
   private api: tagmanager_v2.Tagmanager | null = null;
+  private auth: OAuth2Client | null = null;
   private initialized = false;
   private initializationPromise: Promise<void> | null = null;
+  private emailPromise: Promise<string | undefined> | null = null;
 
   public constructor(options: GtmClientOptions = {}) {
     const defaults = resolveConfigPaths();
@@ -63,10 +75,33 @@ export class GtmClient {
     this.tokenPath = options.tokenPath ?? defaults.tokenPath;
     this.scopes = options.scopes ?? TAG_MANAGER_SCOPES;
     this.limiter = createLimiter(options.minIntervalMs ?? 250);
+    this.knownEmail = options.email;
     if (options.service) {
       this.api = options.service;
       this.initialized = true;
     }
+  }
+
+  /**
+   * The email address the credentials belong to. Undefined when it cannot be
+   * known: an injected service without an email, or a token granted without the
+   * email scope (one stored before that scope was added).
+   */
+  public email(): Promise<string | undefined> {
+    this.emailPromise ??= this.readEmail().catch((err: unknown) => {
+      this.emailPromise = null;
+      throw err;
+    });
+    return this.emailPromise;
+  }
+
+  private async readEmail(): Promise<string | undefined> {
+    if (this.knownEmail) return this.knownEmail;
+    if (!this.auth) return undefined;
+    const { token } = await this.auth.getAccessToken();
+    if (!token) return undefined;
+    const info = await this.auth.getTokenInfo(token);
+    return info.email ?? undefined;
   }
 
   public async init(): Promise<void> {
@@ -119,6 +154,7 @@ export class GtmClient {
     }
 
     const auth = await this.getAuthenticatedClient();
+    this.auth = auth;
     this.api = tagmanager({ version: "v2", auth });
     this.initialized = true;
   }

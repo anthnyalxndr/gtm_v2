@@ -37,6 +37,24 @@ describe("GtmClient", () => {
   });
 });
 
+describe("GtmClient.email", () => {
+  const fake = { accounts: {} } as unknown as tagmanager_v2.Tagmanager;
+
+  it("returns the email the client was given", async () => {
+    const client = new GtmClient({ service: fake, email: "owner@acme.com" });
+    expect(await client.email()).toBe("owner@acme.com");
+  });
+
+  it("returns undefined when the identity behind an injected service is unknown", async () => {
+    const client = new GtmClient({ service: fake });
+    expect(await client.email()).toBeUndefined();
+  });
+
+  it("asks for the email scope so the token can say who the caller is", () => {
+    expect(pkg.TAG_MANAGER_SCOPES).toContain("https://www.googleapis.com/auth/userinfo.email");
+  });
+});
+
 describe("GtmClient.call", () => {
   it("explains an invalid_grant refresh failure and names the token file", async () => {
     const fake = {

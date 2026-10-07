@@ -76,7 +76,7 @@ describe("pushing into an existing workspace", () => {
     const outcome = await library.push(
       client,
       { container: "GTM-TPL", workspace: "owner-edits" },
-      { dryRun: true, versionName: "recipes-2026-09-28" }
+      { dryRun: true, version: { name: "recipes-2026-09-28" } }
     );
     const op = (name: string) => outcome.plan.ops.find((o) => o.name === name);
     expect(op("owner-edits")?.action).toBe("unchanged");
@@ -96,7 +96,7 @@ describe("pushing into an existing workspace", () => {
     const outcome = await library.push(
       client,
       { container: "GTM-TPL", workspace: "owner-edits" },
-      { versionName: "recipes-2026-09-28" }
+      { version: { name: "recipes-2026-09-28" } }
     );
     expect(outcome.plan.errors).toEqual([]);
     expect(state.versions.at(-1)?.name).toBe("recipes-2026-09-28");

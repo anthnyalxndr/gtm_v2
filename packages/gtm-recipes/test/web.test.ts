@@ -136,6 +136,7 @@ describe("gtm-recipes web library", () => {
       plan,
       container: "GTM-CUST",
       workspace: "onboarding",
+      version: true,
     });
     expect(outcome.plan.errors).toEqual([]);
     expect(outcome.warnings).toEqual([]);

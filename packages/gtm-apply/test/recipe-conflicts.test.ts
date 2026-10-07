@@ -35,7 +35,7 @@ async function library(conflicts: Record<string, string[]>) {
     containers: [{ accountId: "1", containerId: "10", publicId: "GTM-LIB", name: "lib" }],
   });
   const client = new GtmClient({ service, minIntervalMs: 0 });
-  await applySpec(client, { container: "GTM-LIB", workspace: "seed", spec });
+  await applySpec(client, { container: "GTM-LIB", workspace: "seed", spec, version: true });
   return new GtmSnapshot(client, { container: "GTM-LIB" }).init();
 }
 
