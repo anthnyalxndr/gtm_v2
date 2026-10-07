@@ -1,0 +1,13 @@
+{
+  "name": "example-fixture",
+  "startUrl": "http://127.0.0.1:4173/",
+  "container": { "id": "GTM-WNX8FFXW", "environment": 2, "authCodeEnv": "GTM_AUTH_WNX8FFXW" },
+  "hits": "dry",
+  "steps": [
+    { "kind": "click", "selector": "#cta" },
+    { "kind": "waitForEvent", "event": "cta_click" },
+    { "kind": "fill", "selector": "#email", "value": "someone@example.com" },
+    { "kind": "click", "selector": "#submit" },
+    { "kind": "waitForEvent", "event": "form_submit" }
+  ]
+}

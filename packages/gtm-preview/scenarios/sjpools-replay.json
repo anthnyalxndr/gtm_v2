@@ -1,0 +1,8 @@
+{
+  "name": "sjpools-replay",
+  "startUrl": "https://www.sjpools.com/",
+  "container": { "id": "GTM-5KNSPW9K", "environment": "Live" },
+  "hits": "dry",
+  "settleMs": 3000,
+  "driver": "./flows/sjpools.recorded.mjs"
+}

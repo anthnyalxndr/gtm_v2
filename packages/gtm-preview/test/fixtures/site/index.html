@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fixture home</title>
+    <script>
+      window.dataLayer = window.dataLayer || []
+      window.dataLayer.push({ event: 'pre_snippet', fixture: true })
+    </script>
+    <!-- Google Tag Manager -->
+    <script>
+      ;(function (w, d, s, l, i) {
+        w[l] = w[l] || []
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' })
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : ''
+        j.async = true
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl
+        f.parentNode.insertBefore(j, f)
+      })(window, document, 'script', 'dataLayer', '__GTM_ID__')
+    </script>
+    <!-- End Google Tag Manager -->
+  </head>
+  <body>
+    <h1>Fixture home</h1>
+    <button id="cta">Call to action</button>
+    <form id="contact">
+      <input id="email" name="email" />
+      <button id="submit" type="submit">Send</button>
+    </form>
+    <a id="next" href="/page2.html">Second page</a>
+    <script>
+      document.getElementById('cta').addEventListener('click', function () {
+        window.dataLayer.push({ event: 'cta_click', label: 'hero' })
+      })
+      document.getElementById('contact').addEventListener('submit', function (e) {
+        e.preventDefault()
+        window.dataLayer.push({ event: 'form_submit', form_id: 'contact', email_domain: (document.getElementById('email').value.split('@')[1] || '') })
+      })
+      // Vendor-shaped requests that do not depend on any container, for hit-policy tests.
+      fetch('https://www.google-analytics.com/g/collect?v=2&tid=G-FIXTURE&en=fixture_ping', { mode: 'no-cors' }).catch(function () {})
+      var img = new Image()
+      img.src = 'https://googleads.g.doubleclick.net/pagead/viewthroughconversion/000000000/?fixture=1'
+      var fl = new Image()
+      fl.src = 'https://fls.doubleclick.net/activityi;src=0;type=fixture;ord=1?'
+    </script>
+  </body>
+</html>

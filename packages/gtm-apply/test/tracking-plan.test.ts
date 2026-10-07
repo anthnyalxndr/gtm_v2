@@ -154,7 +154,12 @@ async function fake() {
     ],
   });
   const client = new GtmClient({ service, minIntervalMs: 0 });
-  await applySpec(client, { container: "GTM-TPL", workspace: "seed", spec: template });
+  await applySpec(client, {
+    container: "GTM-TPL",
+    workspace: "seed",
+    spec: template,
+    version: true,
+  });
   const library = await new GtmSnapshot(client, { container: "GTM-TPL" }).init();
   return { client, state, library };
 }
@@ -268,6 +273,7 @@ describe("applyPlan", () => {
       plan,
       container: "GTM-CUST",
       workspace: "onboarding",
+      version: true,
       writeSpecTo: join(dir, "compiled.json"),
     } as Parameters<typeof applyPlan>[1]);
     expect(first.plan.errors).toEqual([]);
@@ -429,11 +435,12 @@ describe("gtm-apply apply --plan", () => {
     );
     expect(code).toBe(0);
     expect(lines.join("\n")).toContain('[+] tag "Ads - call_click"');
-    expect(
-      latestSnapshot(state)
-        .tag.map((t) => t.name)
-        .sort()
-    ).toEqual(["Ads - call_click", "Conversion Linker", "GA4 - call_click"]);
+    // The apply left the tags in workspace "w"; the library's seed workspace is gone with its version.
+    expect(state.tags.map((t) => t.name).sort()).toEqual([
+      "Ads - call_click",
+      "Conversion Linker",
+      "GA4 - call_click",
+    ]);
     expect(JSON.parse(await readFile(join(dir, "out.json"), "utf-8")).tag).toHaveLength(3);
 
     const bad: string[] = [];

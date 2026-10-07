@@ -1,6 +1,6 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { SERVER_FIELDS } from "../resources/entities.js";
-import { upperSnakeToCamel } from "./catalog.js";
+import { catalogFor, upperSnakeToCamel } from "./catalog.js";
 import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
 import type {
   ClientSpec,
@@ -9,6 +9,8 @@ import type {
   TransformationSpec,
   TriggerSpec,
   VariableSpec,
+  EnvironmentSpec,
+  GtagConfigSpec,
 } from "./types.js";
 import { containerTypeOf } from "../snapshot/pull.js";
 
@@ -75,13 +77,22 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const rawBuiltIns = (cv.builtInVariable ?? []) as (string | { type?: string | null })[];
   const rawClients = (cv.client ?? []) as ClientSpec[];
   const rawTransformations = (cv.transformation ?? []) as TransformationSpec[];
+  const rawEnvironments = (cv.environment ?? []) as tagmanager_v2.Schema$Environment[];
+  const rawGtagConfigs = (cv.gtagConfig ?? []) as tagmanager_v2.Schema$GtagConfig[];
 
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
   );
-  const triggerNames: IdMap = new Map(
-    rawTriggers.filter((t) => t.triggerId).map((t) => [String(t.triggerId), t.name ?? ""])
-  );
+  // Built-in trigger ids differ by container type (web and server each have an "All Pages").
+  const containerType = containerTypeFrom(cv, input);
+  const triggerNames: IdMap = new Map([
+    ...Object.entries(catalogFor(containerType).triggers.builtIn).map(
+      ([name, id]): [string, string] => [id, name]
+    ),
+    ...rawTriggers
+      .filter((t) => t.triggerId)
+      .map((t): [string, string] => [String(t.triggerId), t.name ?? ""]),
+  ]);
 
   const withFolder = <T extends { parentFolderId?: string | null; parentFolderName?: string }>(
     entity: T
@@ -134,7 +145,6 @@ export function normalizeExport(input: unknown): ContainerSpec {
     .map((t) => (UPPER_SNAKE.test(t) ? upperSnakeToCamel(t) : t)) as BuiltInVariableType[];
 
   const spec: ContainerSpec = {};
-  const containerType = containerTypeFrom(cv, input);
   if (containerType) spec.containerType = containerType;
   if (rawFolders.length) spec.folder = rawFolders.map((f) => ({ name: f.name ?? "" }));
   if (builtIns.length) spec.builtInVariable = [...new Set(builtIns)];
@@ -143,7 +153,39 @@ export function normalizeExport(input: unknown): ContainerSpec {
   if (tags.length) spec.tag = tags;
   if (clients.length) spec.client = clients;
   if (transformations.length) spec.transformation = transformations;
+  // Custom environments only: Live and Latest are built in, and Tag Manager owns ids and codes.
+  const environments = rawEnvironments
+    .filter((e) => !e.type || e.type === "user")
+    .map(toEnvironmentSpec);
+  if (environments.length) spec.environment = environments;
+  if (rawGtagConfigs.length) spec.gtagConfig = rawGtagConfigs.map(toGtagConfigSpec);
   return spec;
+}
+
+/** A gtag config without the ids and fields Tag Manager owns. */
+function toGtagConfigSpec(config: tagmanager_v2.Schema$GtagConfig): GtagConfigSpec {
+  const {
+    accountId: _a,
+    containerId: _c,
+    workspaceId: _w,
+    gtagConfigId: _g,
+    fingerprint: _f,
+    path: _p,
+    tagManagerUrl: _u,
+    ...rest
+  } = config;
+  return rest as GtagConfigSpec;
+}
+
+function toEnvironmentSpec(env: tagmanager_v2.Schema$Environment): EnvironmentSpec {
+  return {
+    name: env.name ?? "",
+    ...(env.description ? { description: env.description } : {}),
+    ...(env.url ? { url: env.url } : {}),
+    ...(env.enableDebug !== undefined && env.enableDebug !== null
+      ? { enableDebug: env.enableDebug }
+      : {}),
+  };
 }
 
 /** A UI export carries container.usageContext; a normalized spec carries containerType. */

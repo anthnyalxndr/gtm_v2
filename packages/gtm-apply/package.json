@@ -33,8 +33,8 @@
     "test": "vitest run",
     "dev": "tsx example.ts",
     "prepublishOnly": "pnpm build",
-    "gen:discovery": "tsx scripts/generate-discovery.ts",
-    "probe:notes-cap": "tsx scripts/probe-notes-cap.ts"
+    "gen:discovery": "pnpm --filter @anthnyalxndr/gtm-model gen:discovery",
+    "probe:notes-cap": "pnpm --filter @anthnyalxndr/gtm-model probe:notes-cap"
   },
   "keywords": [
     "google-tag-manager",
@@ -44,6 +44,7 @@
   ],
   "dependencies": {
     "@anthnyalxndr/gtm-client": "workspace:^",
+    "@anthnyalxndr/gtm-model": "workspace:^",
     "@googleapis/tagmanager": "^16.0.0"
   },
   "engines": {

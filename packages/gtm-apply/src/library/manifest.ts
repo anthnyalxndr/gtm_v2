@@ -23,6 +23,8 @@ export interface ExternalDependency {
 export interface RecipeManifestEntry {
   description?: string;
   dependencies?: ExternalDependency[];
+  /** Recipes a plan must not select together with this one, e.g. two variants of the same tag. */
+  conflicts?: string[];
 }
 
 export interface LibraryManifest {
