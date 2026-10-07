@@ -1,0 +1,3393 @@
+{
+  "records": [
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "INIT",
+      "consentData": {
+        "fullConsentList": {},
+        "usedContainerConsent": false,
+        "consentList": {},
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "containerLoadSource": 0,
+      "aliases": ["GTM-WNX8FFXW"],
+      "destinations": [],
+      "environment": "env-2",
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          }
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          }
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          }
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          }
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          }
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          }
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          }
+        }
+      ],
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "__gaawe",
+            "vtp_eventName": "form_submit",
+            "vtp_measurementIdOverride": {
+              "type": "macro",
+              "name": "Const - GA4 Measurement ID"
+            },
+            "vtp_enableUserProperties": true,
+            "vtp_enableEuid": true,
+            "vtp_migratedToV2": true,
+            "vtp_demoV2": false,
+            "tag_id": 6
+          }
+        }
+      ],
+      "gtg": {
+        "source": 3,
+        "mPath": ""
+      },
+      "capturedAt": 1789837687762,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 1,
+        "eventName": "gtm.init_consent",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837687766,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 1,
+        "eventName": "gtm.init_consent",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "gtm.init_consent"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837687767,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 1,
+        "eventName": "gtm.init_consent",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "gtm.init_consent",
+        "gtm.uniqueEventId": 1
+      },
+      "abstractModel": {
+        "event": "gtm.init_consent",
+        "gtm": {
+          "uniqueEventId": 1
+        }
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.init_consent"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.init_consent"
+        }
+      ],
+      "capturedAt": 1789837687768,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 2,
+        "eventName": "gtm.init",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837687768,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 2,
+        "eventName": "gtm.init",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "gtm.init"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837687768,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 2,
+        "eventName": "gtm.init",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "gtm.init",
+        "gtm.uniqueEventId": 2
+      },
+      "abstractModel": {
+        "event": "gtm.init",
+        "gtm": {
+          "uniqueEventId": 2
+        }
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.init"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.init"
+        }
+      ],
+      "capturedAt": 1789837687770,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 3,
+        "eventName": "pre_snippet",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837687771,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 3,
+        "eventName": "pre_snippet",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "pre_snippet"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837687771,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 3,
+        "eventName": "pre_snippet",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "pre_snippet",
+        "fixture": true,
+        "gtm.uniqueEventId": 3
+      },
+      "abstractModel": {
+        "event": "pre_snippet",
+        "gtm": {
+          "uniqueEventId": 3
+        },
+        "fixture": true
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "pre_snippet"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "pre_snippet"
+        }
+      ],
+      "capturedAt": 1789837687771,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 4,
+        "eventName": "gtm.js",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837687771,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 4,
+        "eventName": "gtm.js",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "gtm.js"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837687771,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 4,
+        "eventName": "gtm.js",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "gtm.start": 1789837682263,
+        "event": "gtm.js",
+        "gtm.uniqueEventId": 4
+      },
+      "abstractModel": {
+        "event": "gtm.js",
+        "gtm": {
+          "uniqueEventId": 4,
+          "start": 1789837682263
+        },
+        "fixture": true
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.js"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.js"
+        }
+      ],
+      "capturedAt": 1789837687772,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 5,
+        "eventName": "gtm.dom",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837687772,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 5,
+        "eventName": "gtm.dom",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "gtm.dom"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837687772,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 5,
+        "eventName": "gtm.dom",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "gtm.dom",
+        "gtm.uniqueEventId": 5
+      },
+      "abstractModel": {
+        "event": "gtm.dom",
+        "gtm": {
+          "uniqueEventId": 5,
+          "start": 1789837682263
+        },
+        "fixture": true
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.dom"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.dom"
+        }
+      ],
+      "capturedAt": 1789837687772,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 6,
+        "eventName": "gtm.load",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837688251,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 6,
+        "eventName": "gtm.load",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "gtm.load"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837688251,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 6,
+        "eventName": "gtm.load",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "gtm.load",
+        "gtm.uniqueEventId": 6
+      },
+      "abstractModel": {
+        "event": "gtm.load",
+        "gtm": {
+          "uniqueEventId": 6,
+          "start": 1789837682263
+        },
+        "fixture": true
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.load"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "gtm.load"
+        }
+      ],
+      "capturedAt": 1789837688252,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 7,
+        "eventName": "cta_click",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837688306,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 7,
+        "eventName": "cta_click",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "cta_click"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": false,
+              "isIgnored": false
+            }
+          ],
+          "pass": false,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837688306,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 7,
+        "eventName": "cta_click",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "cta_click",
+        "label": "hero",
+        "gtm.uniqueEventId": 7
+      },
+      "abstractModel": {
+        "event": "cta_click",
+        "gtm": {
+          "uniqueEventId": 7,
+          "start": 1789837682263
+        },
+        "fixture": true,
+        "label": "hero"
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "cta_click"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "cta_click"
+        }
+      ],
+      "capturedAt": 1789837688306,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "eventName": "form_submit",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "EVENT_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "metadata": {
+            "type": "gaawe",
+            "isVendorTemplate": true
+          },
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          }
+        }
+      ],
+      "capturedAt": 1789837688389,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "eventName": "form_submit",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "MACRO_RESOLVED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "ruleInfo": [
+        {
+          "name": "Custom Event - form_submit",
+          "predicates": [
+            {
+              "function": "eq",
+              "arg0": [
+                {
+                  "type": "macro",
+                  "name": "_event"
+                },
+                "form_submit"
+              ],
+              "arg1": ["form_submit", "form_submit"],
+              "pass": true,
+              "isIgnored": false
+            }
+          ],
+          "pass": true,
+          "firingTags": [0],
+          "blockingTags": []
+        }
+      ],
+      "capturedAt": 1789837688390,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "eventName": "form_submit",
+        "groupId": "975148875690806",
+        "tagName": "GA4 - form_submit",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "TAG_STARTED",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "tagData": {
+            "function": "gaawe",
+            "vtp_eventName": ["form_submit", "form_submit"],
+            "vtp_measurementIdOverride": [
+              {
+                "type": "macro",
+                "name": "Const - GA4 Measurement ID"
+              },
+              "G-PLACEHOLDER"
+            ],
+            "vtp_enableUserProperties": [true, true],
+            "vtp_enableEuid": [true, true],
+            "vtp_migratedToV2": [true, true],
+            "vtp_demoV2": [false, false],
+            "tag_id": [6, 6]
+          },
+          "execute": "execute"
+        }
+      ],
+      "capturedAt": 1789837688390,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "eventName": "form_submit",
+        "groupId": "975148875690806",
+        "tagName": "GA4 - form_submit",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "TAG_STATUS",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "execute": "execute_running"
+        }
+      ],
+      "nominatedTag": 0,
+      "capturedAt": 1789837688390,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "eventName": "form_submit",
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "DATA_LAYER",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "message": {
+        "event": "form_submit",
+        "form_id": "contact",
+        "email_domain": "example.com",
+        "gtm.uniqueEventId": 8
+      },
+      "abstractModel": {
+        "event": "form_submit",
+        "gtm": {
+          "uniqueEventId": 8,
+          "start": 1789837682263
+        },
+        "fixture": true,
+        "label": "hero",
+        "form_id": "contact",
+        "email_domain": "example.com"
+      },
+      "macroInfo": [
+        {
+          "name": "_event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "form_submit"
+        },
+        {
+          "name": "Const - GA4 Measurement ID",
+          "type": "c",
+          "metadata": {
+            "type": "c",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "c",
+            "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+          },
+          "resolvedValue": "G-PLACEHOLDER"
+        },
+        {
+          "name": "Page URL",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["URL", "URL"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "http://127.0.0.1:4173/"
+        },
+        {
+          "name": "Page Hostname",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["HOST", "HOST"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "127.0.0.1"
+        },
+        {
+          "name": "Page Path",
+          "type": "u",
+          "metadata": {
+            "type": "u",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "u",
+            "vtp_component": ["PATH", "PATH"],
+            "vtp_enableMultiQueryKeys": [false, false],
+            "vtp_enableIgnoreEmptyQueryParam": [false, false]
+          },
+          "resolvedValue": "/"
+        },
+        {
+          "name": "Referrer",
+          "type": "f",
+          "metadata": {
+            "type": "f",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "f",
+            "vtp_component": ["URL", "URL"]
+          },
+          "resolvedValue": ""
+        },
+        {
+          "name": "Event",
+          "type": "e",
+          "metadata": {
+            "type": "e",
+            "isVendorTemplate": true
+          },
+          "macroData": {
+            "function": "e"
+          },
+          "resolvedValue": "form_submit"
+        }
+      ],
+      "capturedAt": 1789837688391,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "priorityId": 1,
+        "groupId": "975148875690806",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "GTAG_COMMAND",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "commandType": "event",
+      "commandData": {
+        "event": "form_submit",
+        "send_to": "G-PLACEHOLDER"
+      },
+      "inPageCommand": false,
+      "targets": ["G-PLACEHOLDER"],
+      "originatingEntity": {
+        "entityType": 1,
+        "indexInOriginContainer": 0,
+        "nameInOriginContainer": "GA4 - form_submit",
+        "originContainerId": "GTM-WNX8FFXW",
+        "originCId": "241202947"
+      },
+      "parentContainerId": "GTM-WNX8FFXW",
+      "capturedAt": 1789837688393,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    },
+    {
+      "containerProduct": "GTM",
+      "key": {
+        "publicId": "GTM-WNX8FFXW",
+        "eventId": 8,
+        "eventName": "form_submit",
+        "groupId": "975148875690806",
+        "tagName": "GA4 - form_submit",
+        "targetRef": {
+          "ctid": "GTM-WNX8FFXW",
+          "isDestination": false,
+          "canonicalId": "241202947"
+        }
+      },
+      "version": "2",
+      "messageType": "TAG_STATUS",
+      "consentData": {
+        "fullConsentList": {
+          "ad_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "analytics_storage": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_user_data": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          },
+          "ad_personalization": {
+            "consentEntry": {
+              "implicit": true
+            },
+            "isConsentGranted": true
+          }
+        },
+        "usedContainerConsent": false,
+        "consentList": {
+          "ad_storage": {
+            "implicit": true
+          },
+          "analytics_storage": {
+            "implicit": true
+          },
+          "ad_user_data": {
+            "implicit": true
+          },
+          "ad_personalization": {
+            "implicit": true
+          }
+        },
+        "defaultConsent": false,
+        "wasSetLate": false
+      },
+      "tagInfo": [
+        {
+          "name": "GA4 - form_submit",
+          "execute": "execute_succeeded"
+        }
+      ],
+      "nominatedTag": 0,
+      "capturedAt": 1789837688394,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "pageTitle": "Fixture home"
+    }
+  ],
+  "hits": [
+    {
+      "at": 1789837682270,
+      "vendor": "ga4",
+      "host": "www.google-analytics.com",
+      "path": "/g/collect",
+      "params": {
+        "v": "2",
+        "tid": "G-FIXTURE",
+        "en": "fixture_ping"
+      },
+      "eventName": "fixture_ping",
+      "outcome": "aborted"
+    },
+    {
+      "at": 1789837682271,
+      "vendor": "google_ads",
+      "host": "googleads.g.doubleclick.net",
+      "path": "/pagead/viewthroughconversion/000000000/",
+      "params": {
+        "fixture": "1"
+      },
+      "outcome": "aborted"
+    },
+    {
+      "at": 1789837682271,
+      "vendor": "floodlight",
+      "host": "fls.doubleclick.net",
+      "path": "/activityi;src=0;type=fixture;ord=1",
+      "params": {},
+      "outcome": "aborted"
+    },
+    {
+      "at": 1789837688883,
+      "vendor": "ga4",
+      "host": "www.google-analytics.com",
+      "path": "/g/collect",
+      "params": {
+        "v": "2",
+        "tid": "G-PLACEHOLDER",
+        "gtm": "45je69g1h1z89241202947za20gzb9241202947zd9241202947xf1",
+        "_p": "1789837682263",
+        "gcd": "13l3l3l3l1l1",
+        "npa": "0",
+        "dma": "0",
+        "cid": "1685994658.1789837689",
+        "frm": "0",
+        "pscdl": "noapi",
+        "rcb": "9",
+        "sr": "1280x720",
+        "uaa": "arm",
+        "uab": "64",
+        "uafvl": "HeadlessChrome;153.0.8010.12|Not_A%20Brand;8.0.0.0|Chromium;153.0.8010.12",
+        "uam": "",
+        "uamb": "0",
+        "uap": "macOS",
+        "uapv": "15.7.4",
+        "uaw": "0",
+        "ul": "en-us",
+        "_s": "1",
+        "tag_exp": "115616986~115938466~115938469~118897920~118897930~120385423~120469145~120469153",
+        "sid": "1789837688",
+        "sct": "1",
+        "seg": "0",
+        "dl": "http://127.0.0.1/",
+        "dt": "Fixture home",
+        "en": "form_submit",
+        "_fv": "1",
+        "_nsi": "1",
+        "_ss": "1",
+        "tfd": "6641"
+      },
+      "eventName": "form_submit",
+      "outcome": "aborted"
+    },
+    {
+      "at": 1789837688885,
+      "vendor": "ga4",
+      "host": "www.google.com",
+      "path": "/g/collect",
+      "params": {
+        "v": "2",
+        "tid": "G-PLACEHOLDER",
+        "gtm": "45je69g1h1z89241202947za20gzb9241202947zd9241202947xf1",
+        "_p": "1789837682263",
+        "gcd": "13l3l3l3l1l1",
+        "npa": "0",
+        "dma": "0",
+        "cid": "1685994658.1789837689",
+        "frm": "0",
+        "pscdl": "noapi",
+        "rcb": "9",
+        "sr": "1280x720",
+        "uaa": "arm",
+        "uab": "64",
+        "uafvl": "HeadlessChrome;153.0.8010.12|Not_A%20Brand;8.0.0.0|Chromium;153.0.8010.12",
+        "uam": "",
+        "uamb": "0",
+        "uap": "macOS",
+        "uapv": "15.7.4",
+        "uaw": "0",
+        "ul": "en-us",
+        "_s": "1",
+        "tag_exp": "115616986~115938466~115938469~118897920~118897930~120385423~120469145~120469153",
+        "sid": "1789837688",
+        "sct": "1",
+        "seg": "0",
+        "dl": "http://127.0.0.1/",
+        "dt": "Fixture home",
+        "en": "form_submit",
+        "_fv": "1",
+        "_nsi": "1",
+        "_ss": "1",
+        "tfd": "6641",
+        "gaf": "1"
+      },
+      "eventName": "form_submit",
+      "outcome": "aborted"
+    }
+  ],
+  "dataLayer": [
+    {
+      "capturedAt": 1789837682262,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "value": {
+        "event": "pre_snippet",
+        "fixture": true
+      }
+    },
+    {
+      "capturedAt": 1789837682263,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "value": {
+        "gtm.start": 1789837682263,
+        "event": "gtm.js"
+      }
+    },
+    {
+      "capturedAt": 1789837687772,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "value": {
+        "event": "gtm.dom"
+      }
+    },
+    {
+      "capturedAt": 1789837688250,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "value": {
+        "event": "gtm.load"
+      }
+    },
+    {
+      "capturedAt": 1789837688305,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "value": {
+        "event": "cta_click",
+        "label": "hero"
+      }
+    },
+    {
+      "capturedAt": 1789837688389,
+      "pageUrl": "http://127.0.0.1:4173/",
+      "value": {
+        "event": "form_submit",
+        "form_id": "contact",
+        "email_domain": "example.com"
+      }
+    }
+  ],
+  "errors": [],
+  "debugBuildLoaded": true
+}

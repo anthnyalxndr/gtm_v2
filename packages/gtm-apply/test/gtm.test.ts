@@ -19,7 +19,12 @@ describe("Gtm", () => {
   it("delegates apply, plan, export, snapshot and applyPlan to the engine", async () => {
     const { gtm, state } = fake();
     await gtm.init();
-    const seeded = await gtm.apply({ container: "GTM-TPL", workspace: "seed", spec: template });
+    const seeded = await gtm.apply({
+      container: "GTM-TPL",
+      workspace: "seed",
+      spec: template,
+      version: true,
+    });
     expect(seeded.result?.versionPath).toBeDefined();
 
     const exported = await gtm.export({ container: "GTM-TPL" });
@@ -44,6 +49,7 @@ describe("Gtm", () => {
       },
       container: "GTM-CUST",
       workspace: "onboarding",
+      version: true,
     });
     expect(outcome.plan.errors).toEqual([]);
     expect(
@@ -55,7 +61,7 @@ describe("Gtm", () => {
 
   it("memoizes snapshots per source until refresh is requested", async () => {
     const { gtm, state } = fake();
-    await gtm.apply({ container: "GTM-TPL", workspace: "seed", spec: template });
+    await gtm.apply({ container: "GTM-TPL", workspace: "seed", spec: template, version: true });
     const a = await gtm.snapshot({ container: "GTM-TPL" });
     const calls = state.calls.length;
     const b = await gtm.snapshot({ container: "GTM-TPL" });
@@ -74,8 +80,8 @@ describe("Gtm", () => {
   it("snapshotAccount memoizes per container", async () => {
     const { gtm, state } = fake();
     await gtm.init();
-    await gtm.apply({ container: "GTM-TPL", workspace: "seed", spec: template });
-    await gtm.apply({ container: "GTM-CUST", workspace: "seed", spec: template });
+    await gtm.apply({ container: "GTM-TPL", workspace: "seed", spec: template, version: true });
+    await gtm.apply({ container: "GTM-CUST", workspace: "seed", spec: template, version: true });
     const all = await gtm.snapshotAccount("1");
     expect(all.map((s) => s.data.container.publicId)).toEqual(["GTM-TPL", "GTM-CUST"]);
     const reads = state.calls.filter((c) => c === "versions.get").length;

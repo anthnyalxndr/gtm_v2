@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><title>poc</title>
+<script>
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({ event: 'pre_snippet', foo: 'bar' });
+</script>
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;
+j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl+'&gtm_auth='+w.GTM_AUTH+'&gtm_preview=env-2&gtm_cookies_win=x&gtm_debug=x';
+f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',window.GTM_ID);
+</script>
+</head><body><h1>poc</h1><button id="b">click me</button>
+<script>document.getElementById('b').addEventListener('click',()=>dataLayer.push({event:'cta_click', label:'hero'}));</script>
+</body></html>
