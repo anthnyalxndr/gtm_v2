@@ -8,13 +8,23 @@ export type SpecSection =
   | "tag"
   | "client"
   | "transformation"
+  | "customTemplate"
   | "builtInVariable"
   | "environment"
   | "gtagConfig";
 
 /** Which spec sections a container of each type can hold. */
 export const SECTIONS_BY_CONTAINER_TYPE: Readonly<Record<ContainerType, readonly SpecSection[]>> = {
-  web: ["folder", "variable", "trigger", "tag", "builtInVariable", "environment", "gtagConfig"],
+  web: [
+    "folder",
+    "variable",
+    "trigger",
+    "tag",
+    "customTemplate",
+    "builtInVariable",
+    "environment",
+    "gtagConfig",
+  ],
   server: [
     "folder",
     "variable",
@@ -22,6 +32,7 @@ export const SECTIONS_BY_CONTAINER_TYPE: Readonly<Record<ContainerType, readonly
     "tag",
     "client",
     "transformation",
+    "customTemplate",
     "builtInVariable",
     "environment",
   ],
@@ -37,6 +48,7 @@ export const ALL_SECTIONS: readonly SpecSection[] = [
   "tag",
   "client",
   "transformation",
+  "customTemplate",
   "builtInVariable",
   "environment",
   "gtagConfig",

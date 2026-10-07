@@ -70,6 +70,7 @@ const TOP_LEVEL: Record<string, SchemaName | "builtIn"> = {
   tag: "Tag",
   client: "Client",
   transformation: "Transformation",
+  customTemplate: "CustomTemplate",
   builtInVariable: "builtIn",
   environment: "Environment",
   gtagConfig: "GtagConfig",
@@ -170,7 +171,8 @@ function checkEntity(
     push(ctx, "name", "is required");
   }
   if (schema === "Environment") return checkEnvironment(ctx, value);
-  if (schema !== "Folder" && (typeof value.type !== "string" || value.type.length === 0)) {
+  const typeless = schema === "Folder" || schema === "CustomTemplate";
+  if (!typeless && (typeof value.type !== "string" || value.type.length === 0)) {
     push(ctx, "type", "is required");
   }
   checkObject(ctx, "", schema, value);

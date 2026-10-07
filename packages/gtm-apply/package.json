@@ -32,7 +32,9 @@
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "dev": "tsx example.ts",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "gen:discovery": "pnpm --filter @anthnyalxndr/gtm-model gen:discovery",
+    "probe:notes-cap": "pnpm --filter @anthnyalxndr/gtm-model probe:notes-cap"
   },
   "keywords": [
     "google-tag-manager",
