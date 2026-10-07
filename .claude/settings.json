@@ -4,7 +4,6 @@
       "Read",
       "Edit",
       "Write",
-      "Bash(backlog:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git branch:*)",
@@ -27,7 +26,11 @@
       "Bash(pnpm verify:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm format:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(gh task:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh search issues:*)"
     ],
     "deny": [
       "Bash(git reset:*)",

@@ -1,6 +1,6 @@
 # GTM account repos: design for the gtm-as-code package
 
-Written 2026-09-23. Records the design behind decision-11 and tasks TASK-34 to TASK-38 in milestone m-0. It extends the GTM as code plan (`backlog/docs/doc-1`), which lists what gtm-apply still lacks for a git repo to be the source of truth for a container. This document says how such a repo is created, what it holds, and how it stays aligned with Tag Manager.
+Written 2026-09-23. Records the design behind decision-11 and tasks TASK-34 to TASK-38 in milestone m-0. It extends the GTM as code plan (`docs/gtm-as-code-plan.md`), which lists what gtm-apply still lacks for a git repo to be the source of truth for a container. This document says how such a repo is created, what it holds, and how it stays aligned with Tag Manager.
 
 Reader: whoever implements one of those tasks, or TASK-30 and TASK-32, which share files with them.
 
