@@ -3,7 +3,7 @@ import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { ensureBuiltIns, listEnabledBuiltIns } from "../src/resources/builtins.js";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
 
-const ws = "accounts/1/containers/10/workspace/100";
+const ws = "accounts/1/containers/10/workspaces/100";
 
 describe("ensureBuiltIns", () => {
   it("enables only the missing built-ins", async () => {

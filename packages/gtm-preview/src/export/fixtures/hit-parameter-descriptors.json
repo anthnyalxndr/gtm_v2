@@ -1,0 +1,1390 @@
+{
+  "ads": [
+    {
+      "shortName": "_dbg",
+      "type": 2,
+      "displayName": "Debug View"
+    },
+    {
+      "shortName": "bttype",
+      "type": 0,
+      "displayName": "Transaction type"
+    },
+    {
+      "shortName": "currency_code",
+      "type": 0,
+      "displayName": "Currency code"
+    },
+    {
+      "shortName": "dscnt",
+      "type": 1,
+      "displayName": "Discount"
+    },
+    {
+      "shortName": "fcntr",
+      "type": 0,
+      "displayName": "Country"
+    },
+    {
+      "shortName": "flng",
+      "type": 0,
+      "displayName": "Language"
+    },
+    {
+      "shortName": "itba",
+      "type": 0,
+      "displayName": "Page title"
+    },
+    {
+      "shortName": "label",
+      "type": 0,
+      "displayName": "Conversion Label"
+    },
+    {
+      "shortName": "ltd",
+      "type": 0,
+      "displayName": "No Cookie Consent Given"
+    },
+    {
+      "shortName": "evjid",
+      "type": 0,
+      "displayName": "Event Join ID"
+    },
+    {
+      "shortName": "mid",
+      "type": 1,
+      "displayName": "Merchant Center ID"
+    },
+    {
+      "shortName": "did",
+      "type": 0,
+      "displayName": "Developer IDs"
+    },
+    {
+      "shortName": "gdid",
+      "type": 0,
+      "displayName": "Global Developer IDs"
+    },
+    {
+      "shortName": "edid",
+      "type": 0,
+      "displayName": "Event Developer IDs"
+    },
+    {
+      "shortName": "oid",
+      "type": 1,
+      "displayName": "Transaction ID"
+    },
+    {
+      "shortName": "ref",
+      "type": 0,
+      "displayName": "Page referrer"
+    },
+    {
+      "shortName": "url",
+      "type": 0,
+      "displayName": "Page location"
+    },
+    {
+      "shortName": "value",
+      "type": 0,
+      "displayName": "Conversion value"
+    },
+    {
+      "shortName": "gclgb",
+      "type": 0,
+      "displayName": "Aggregate Web ID(s)"
+    },
+    {
+      "shortName": "mcov",
+      "type": 0,
+      "displayName": "Multiple Conversions Marker"
+    },
+    {
+      "shortName": "gacgb",
+      "type": 0,
+      "displayName": "Aggregate Web ID(s)"
+    },
+    {
+      "shortName": "gacmov",
+      "type": 0,
+      "displayName": "Multiple Conversions Marker"
+    },
+    {
+      "shortName": "uaa",
+      "type": 0,
+      "displayName": "User-Agent Architecture"
+    },
+    {
+      "shortName": "uab",
+      "type": 1,
+      "displayName": "User-Agent Bitness"
+    },
+    {
+      "shortName": "uafvl",
+      "type": 0,
+      "displayName": "User-Agent Full Version List"
+    },
+    {
+      "shortName": "uamb",
+      "type": 2,
+      "displayName": "User-Agent Mobileness"
+    },
+    {
+      "shortName": "uam",
+      "type": 0,
+      "displayName": "User-Agent Model"
+    },
+    {
+      "shortName": "uap",
+      "type": 0,
+      "displayName": "User-Agent Platform"
+    },
+    {
+      "shortName": "uapv",
+      "type": 0,
+      "displayName": "User-Agent Platform Version"
+    },
+    {
+      "shortName": "uaw",
+      "type": 2,
+      "displayName": "User-Agent WoW64 (Win32 on Win64)"
+    },
+    {
+      "shortName": "top",
+      "type": 0,
+      "displayName": "Top origin"
+    },
+    {
+      "shortName": "en",
+      "type": 0,
+      "displayName": "Event name"
+    },
+    {
+      "shortName": "dr",
+      "type": 0,
+      "displayName": "Page referrer"
+    },
+    {
+      "shortName": "dl",
+      "type": 0,
+      "displayName": "Page location"
+    },
+    {
+      "shortName": "ncl",
+      "type": 0,
+      "displayName": "Conversion Linker disabled"
+    },
+    {
+      "shortName": "ga_uid",
+      "type": 0,
+      "displayName": "Google Analytics Shared User ID"
+    },
+    {
+      "shortName": "ext.value",
+      "type": 0,
+      "displayName": "Extracted Value"
+    },
+    {
+      "shortName": "ext.currency_code",
+      "type": 0,
+      "displayName": "Extracted Currency Code"
+    },
+    {
+      "shortName": "ext.oid",
+      "type": 0,
+      "displayName": "Extracted Transaction Id"
+    },
+    {
+      "shortName": "gcs",
+      "type": 0,
+      "displayName": "Cookie Consent State"
+    },
+    {
+      "shortName": "gcd",
+      "type": 0,
+      "displayName": "gcd"
+    },
+    {
+      "shortName": "gcu",
+      "type": 2,
+      "displayName": "Cookie Consent Updated"
+    },
+    {
+      "shortName": "dma_cps",
+      "type": 0,
+      "displayName": "Google Services Consent State"
+    },
+    {
+      "shortName": "em",
+      "type": 0,
+      "displayName": "em"
+    },
+    {
+      "shortName": "ec_mode",
+      "type": 0,
+      "displayName": "ec_mode"
+    },
+    {
+      "shortName": "npa",
+      "type": 2,
+      "displayName": "Non-personalized Ads"
+    },
+    {
+      "shortName": "vdnc",
+      "type": 0,
+      "displayName": "New Customer"
+    }
+  ],
+  "ua": [
+    {
+      "shortName": "_u",
+      "type": 0,
+      "displayName": "Usage Tracking"
+    },
+    {
+      "shortName": "_s",
+      "type": 0,
+      "displayName": "Hit Number"
+    },
+    {
+      "shortName": "_v",
+      "type": 0,
+      "displayName": "Client Library Identifier"
+    },
+    {
+      "shortName": "tid",
+      "type": 0,
+      "displayName": "Measurement ID"
+    },
+    {
+      "shortName": "t",
+      "type": 0,
+      "displayName": "Hit Type"
+    },
+    {
+      "shortName": "v",
+      "type": 0,
+      "displayName": "Protocol Version"
+    },
+    {
+      "shortName": "cid",
+      "type": 0,
+      "displayName": "Client ID"
+    },
+    {
+      "shortName": "aip",
+      "type": 2,
+      "displayName": "Anonymize IP"
+    },
+    {
+      "shortName": "qt",
+      "type": 1,
+      "displayName": "Queue Time"
+    },
+    {
+      "shortName": "z",
+      "type": 0,
+      "displayName": "Cache Buster"
+    },
+    {
+      "shortName": "sc",
+      "type": 0,
+      "displayName": "Session Control"
+    },
+    {
+      "shortName": "sr",
+      "type": 0,
+      "displayName": "Screen Resolution"
+    },
+    {
+      "shortName": "vp",
+      "type": 0,
+      "displayName": "Viewport size"
+    },
+    {
+      "shortName": "de",
+      "type": 0,
+      "displayName": "Document Encoding"
+    },
+    {
+      "shortName": "sd",
+      "type": 0,
+      "displayName": "Screen Colors"
+    },
+    {
+      "shortName": "ul",
+      "type": 0,
+      "displayName": "User Language"
+    },
+    {
+      "shortName": "je",
+      "type": 2,
+      "displayName": "Java Enabled"
+    },
+    {
+      "shortName": "fl",
+      "type": 0,
+      "displayName": "Flash Version"
+    },
+    {
+      "shortName": "dr",
+      "type": 0,
+      "displayName": "Document Referrer"
+    },
+    {
+      "shortName": "ni",
+      "type": 2,
+      "displayName": "Non-Interaction Hit"
+    },
+    {
+      "shortName": "dl",
+      "type": 0,
+      "displayName": "Document location URL"
+    },
+    {
+      "shortName": "dh",
+      "type": 0,
+      "displayName": "Document Host Name"
+    },
+    {
+      "shortName": "dp",
+      "type": 0,
+      "displayName": "Document Path"
+    },
+    {
+      "shortName": "cd",
+      "type": 0,
+      "displayName": "Screen Name"
+    },
+    {
+      "shortName": "dt",
+      "type": 0,
+      "displayName": "Document Title"
+    },
+    {
+      "shortName": "cg",
+      "type": 0,
+      "displayName": "Content Group",
+      "shortNameRegExp": "^cg"
+    },
+    {
+      "shortName": "cd",
+      "type": 0,
+      "displayName": "Custom Dimension",
+      "shortNameRegExp": "^cd"
+    },
+    {
+      "shortName": "cm",
+      "type": 1,
+      "displayName": "Custom Metric",
+      "shortNameRegExp": "^cm"
+    },
+    {
+      "shortName": "an",
+      "type": 0,
+      "displayName": "Application Name"
+    },
+    {
+      "shortName": "av",
+      "type": 0,
+      "displayName": "Application Version"
+    },
+    {
+      "shortName": "aid",
+      "type": 0,
+      "displayName": "Application ID"
+    },
+    {
+      "shortName": "ec",
+      "type": 0,
+      "displayName": "Event Category"
+    },
+    {
+      "shortName": "ea",
+      "type": 0,
+      "displayName": "Event Action"
+    },
+    {
+      "shortName": "el",
+      "type": 0,
+      "displayName": "Event Label"
+    },
+    {
+      "shortName": "ev",
+      "type": 1,
+      "displayName": "Event Value"
+    },
+    {
+      "shortName": "sn",
+      "type": 0,
+      "displayName": "Social Network"
+    },
+    {
+      "shortName": "sa",
+      "type": 0,
+      "displayName": "Social Action"
+    },
+    {
+      "shortName": "st",
+      "type": 0,
+      "displayName": "Social Action Target"
+    },
+    {
+      "shortName": "pr*id",
+      "type": 0,
+      "displayName": "Product SKU",
+      "shortNameRegExp": "^pr.*id$"
+    },
+    {
+      "shortName": "pr*nm",
+      "type": 0,
+      "displayName": "Product Name",
+      "shortNameRegExp": "^pr.*nm$"
+    },
+    {
+      "shortName": "pr*br",
+      "type": 0,
+      "displayName": "Product Brand",
+      "shortNameRegExp": "^pr.*br$"
+    },
+    {
+      "shortName": "pr*ca",
+      "type": 0,
+      "displayName": "Product Category",
+      "shortNameRegExp": "^pr.*ca$"
+    },
+    {
+      "shortName": "pr*va",
+      "type": 0,
+      "displayName": "Product Variant",
+      "shortNameRegExp": "^pr.*va$"
+    },
+    {
+      "shortName": "pr*pr",
+      "type": 1,
+      "displayName": "Product Price",
+      "shortNameRegExp": "^pr.*pr$"
+    },
+    {
+      "shortName": "pr*qt",
+      "type": 1,
+      "displayName": "Product Quantity",
+      "shortNameRegExp": "^pr.*qt$"
+    },
+    {
+      "shortName": "pr*cc",
+      "type": 0,
+      "displayName": "Product Coupon Code",
+      "shortNameRegExp": "^pr.*cc$"
+    },
+    {
+      "shortName": "pr*ps",
+      "type": 1,
+      "displayName": "Product Position",
+      "shortNameRegExp": "^pr.*ps$"
+    },
+    {
+      "shortName": "pr*cd*",
+      "type": 0,
+      "displayName": "Product Custom Dimension",
+      "shortNameRegExp": "^pr.*cd"
+    },
+    {
+      "shortName": "pr*cm*",
+      "type": 1,
+      "displayName": "Product Custom Metric",
+      "shortNameRegExp": "^pr.*cm"
+    },
+    {
+      "shortName": "pa",
+      "type": 0,
+      "displayName": "Product Action"
+    },
+    {
+      "shortName": "ti",
+      "type": 0,
+      "displayName": "Transaction ID"
+    },
+    {
+      "shortName": "ta",
+      "type": 0,
+      "displayName": "Affiliation"
+    },
+    {
+      "shortName": "tr",
+      "type": 1,
+      "displayName": "Revenue"
+    },
+    {
+      "shortName": "tt",
+      "type": 1,
+      "displayName": "Tax"
+    },
+    {
+      "shortName": "ts",
+      "type": 1,
+      "displayName": "Shipping"
+    },
+    {
+      "shortName": "tcc",
+      "type": 0,
+      "displayName": "Coupon Code"
+    },
+    {
+      "shortName": "cos",
+      "type": 1,
+      "displayName": "Checkout Step"
+    },
+    {
+      "shortName": "col",
+      "type": 0,
+      "displayName": "Checkout Step Option"
+    },
+    {
+      "shortName": "pal",
+      "type": 0,
+      "displayName": "Product Action List"
+    },
+    {
+      "shortName": "il*nm",
+      "type": 0,
+      "displayName": "Product Impression List Name",
+      "shortNameRegExp": "^il.*nm$"
+    },
+    {
+      "shortName": "il*pi*id",
+      "type": 0,
+      "displayName": "Product Impression SKU",
+      "shortNameRegExp": "^il.*pi.*id$"
+    },
+    {
+      "shortName": "il*pi*nm",
+      "type": 0,
+      "displayName": "Product Impression Name",
+      "shortNameRegExp": "^il.*pi.*nm$"
+    },
+    {
+      "shortName": "il*pi*br",
+      "type": 0,
+      "displayName": "Product Impression Brand",
+      "shortNameRegExp": "^il.*pi.*br$"
+    },
+    {
+      "shortName": "il*pi*ca",
+      "type": 0,
+      "displayName": "Product Impression Category",
+      "shortNameRegExp": "^il.*pi.*ca$"
+    },
+    {
+      "shortName": "il*pi*va",
+      "type": 0,
+      "displayName": "Product Impression Variant",
+      "shortNameRegExp": "^il.*pi.*va$"
+    },
+    {
+      "shortName": "il*pi*ps",
+      "type": 1,
+      "displayName": "Product Impression Position",
+      "shortNameRegExp": "^il.*pi.*ps$"
+    },
+    {
+      "shortName": "il*pi*pr",
+      "type": 1,
+      "displayName": "Product Impression Price",
+      "shortNameRegExp": "^il.*pi.*pr$"
+    },
+    {
+      "shortName": "il*pi*cd*",
+      "type": 0,
+      "displayName": "Product Impression Custom Dimension",
+      "shortNameRegExp": "^il.*pi.*cd"
+    },
+    {
+      "shortName": "il*pi*cm*",
+      "type": 1,
+      "displayName": "Product Impression Custom Metric",
+      "shortNameRegExp": "^il.*pi.*cm"
+    },
+    {
+      "shortName": "promo*id",
+      "type": 0,
+      "displayName": "Promotion ID",
+      "shortNameRegExp": "^promo.*id$"
+    },
+    {
+      "shortName": "promo*nm",
+      "type": 0,
+      "displayName": "Promotion Name",
+      "shortNameRegExp": "^promo.*nm$"
+    },
+    {
+      "shortName": "promo*cr",
+      "type": 0,
+      "displayName": "Promotion Creative",
+      "shortNameRegExp": "^promo.*cr$"
+    },
+    {
+      "shortName": "promo*ps",
+      "type": 0,
+      "displayName": "Promotion Position",
+      "shortNameRegExp": "^promo.*ps$"
+    },
+    {
+      "shortName": "promoa",
+      "type": 0,
+      "displayName": "Promotion Action"
+    },
+    {
+      "shortName": "ti",
+      "type": 0,
+      "displayName": "Transaction ID"
+    },
+    {
+      "shortName": "ta",
+      "type": 0,
+      "displayName": "Transaction Affiliation"
+    },
+    {
+      "shortName": "tr",
+      "type": 1,
+      "displayName": "Transaction Revenue"
+    },
+    {
+      "shortName": "ts",
+      "type": 1,
+      "displayName": "Transaction Shipping"
+    },
+    {
+      "shortName": "tt",
+      "type": 1,
+      "displayName": "Transaction Tax"
+    },
+    {
+      "shortName": "cu",
+      "type": 0,
+      "displayName": "Currency Code"
+    },
+    {
+      "shortName": "ip",
+      "type": 1,
+      "displayName": "Item Price"
+    },
+    {
+      "shortName": "iq",
+      "type": 1,
+      "displayName": "Item Quantity"
+    },
+    {
+      "shortName": "ic",
+      "type": 0,
+      "displayName": "Item Code"
+    },
+    {
+      "shortName": "in",
+      "type": 0,
+      "displayName": "Item Name"
+    },
+    {
+      "shortName": "iv",
+      "type": 0,
+      "displayName": "Item Category"
+    },
+    {
+      "shortName": "cs",
+      "type": 0,
+      "displayName": "Campaign Source"
+    },
+    {
+      "shortName": "cm",
+      "type": 0,
+      "displayName": "Campaign Medium"
+    },
+    {
+      "shortName": "cn",
+      "type": 0,
+      "displayName": "Campaign Name"
+    },
+    {
+      "shortName": "ck",
+      "type": 0,
+      "displayName": "Campaign Keyword"
+    },
+    {
+      "shortName": "cc",
+      "type": 0,
+      "displayName": "Campaign Content"
+    },
+    {
+      "shortName": "ci",
+      "type": 0,
+      "displayName": "Campaign ID"
+    },
+    {
+      "shortName": "gclid",
+      "type": 0,
+      "displayName": "Google Ads ID"
+    },
+    {
+      "shortName": "gclsrc",
+      "type": 0,
+      "displayName": "Google Ad Source"
+    },
+    {
+      "shortName": "dclid",
+      "type": 0,
+      "displayName": "Google Display Ads ID"
+    },
+    {
+      "shortName": "gmob_t",
+      "type": 0,
+      "displayName": "AdMob Impression Ticket"
+    },
+    {
+      "shortName": "plt",
+      "type": 1,
+      "displayName": "Page Load Time"
+    },
+    {
+      "shortName": "dns",
+      "type": 1,
+      "displayName": "DNS Time"
+    },
+    {
+      "shortName": "tcp",
+      "type": 1,
+      "displayName": "TCP Connect Time"
+    },
+    {
+      "shortName": "srt",
+      "type": 1,
+      "displayName": "Server Response Time"
+    },
+    {
+      "shortName": "pdt",
+      "type": 1,
+      "displayName": "Page Download Time"
+    },
+    {
+      "shortName": "rrt",
+      "type": 1,
+      "displayName": "Redirect Response Time"
+    },
+    {
+      "shortName": "dit",
+      "type": 1,
+      "displayName": "DOM Interactive Time"
+    },
+    {
+      "shortName": "clt",
+      "type": 1,
+      "displayName": "Content Load Time"
+    },
+    {
+      "shortName": "utc",
+      "type": 0,
+      "displayName": "User Timing Category"
+    },
+    {
+      "shortName": "utv",
+      "type": 0,
+      "displayName": "User Timing Variable Name"
+    },
+    {
+      "shortName": "utt",
+      "type": 1,
+      "displayName": "User timing time"
+    },
+    {
+      "shortName": "utl",
+      "type": 0,
+      "displayName": "User timing label"
+    },
+    {
+      "shortName": "exd",
+      "type": 0,
+      "displayName": "Exception Description"
+    },
+    {
+      "shortName": "exf",
+      "type": 2,
+      "displayName": "Is Exception Fatal?"
+    },
+    {
+      "shortName": "sf",
+      "type": 1,
+      "displayName": "Sample Rate"
+    },
+    {
+      "shortName": "xid",
+      "type": 0,
+      "displayName": "Experiment ID"
+    },
+    {
+      "shortName": "exp",
+      "type": 0,
+      "displayName": "Experiment"
+    },
+    {
+      "shortName": "xvar",
+      "type": 0,
+      "displayName": "Experiment Variant"
+    },
+    {
+      "shortName": "a",
+      "type": 1,
+      "displayName": "AdSense/AdMob Hit ID"
+    },
+    {
+      "shortName": "uid",
+      "type": 0,
+      "displayName": "User ID"
+    },
+    {
+      "shortName": "linkid",
+      "type": 0,
+      "displayName": "Link ID"
+    },
+    {
+      "shortName": "uip",
+      "type": 0,
+      "displayName": "IP Override"
+    },
+    {
+      "shortName": "ua",
+      "type": 0,
+      "displayName": "User Agent Override"
+    },
+    {
+      "shortName": "sg",
+      "type": 0,
+      "displayName": "Session Group"
+    },
+    {
+      "shortName": "ds",
+      "type": 0,
+      "displayName": "Data Source"
+    },
+    {
+      "shortName": "ht",
+      "type": 0,
+      "displayName": "Hit Timestamp"
+    },
+    {
+      "shortName": "geoid",
+      "type": 0,
+      "displayName": "Geographical Override"
+    },
+    {
+      "shortName": "_r",
+      "type": 1,
+      "displayName": "Redirect"
+    },
+    {
+      "shortName": "_utma",
+      "type": 0,
+      "displayName": "Cookie Value"
+    },
+    {
+      "shortName": "_utmz",
+      "type": 0,
+      "displayName": "Cookie Value"
+    },
+    {
+      "shortName": "_utmht",
+      "type": 0,
+      "displayName": "Cookie Value"
+    },
+    {
+      "shortName": "jid",
+      "type": 0,
+      "displayName": "Join ID"
+    },
+    {
+      "shortName": "asid",
+      "type": 0,
+      "displayName": "App Store ID"
+    },
+    {
+      "shortName": "cp",
+      "type": 0,
+      "displayName": "Custom Parameter",
+      "shortNameRegExp": "^cp"
+    },
+    {
+      "shortName": "anid",
+      "type": 0,
+      "displayName": "Ad Network Id"
+    },
+    {
+      "shortName": "aclid",
+      "type": 0,
+      "displayName": "Ad Network Click Id"
+    },
+    {
+      "shortName": "gtm",
+      "type": 0,
+      "displayName": ""
+    },
+    {
+      "shortName": "adsig",
+      "type": 0,
+      "displayName": "Hashed SSAID (Deprecated)"
+    },
+    {
+      "shortName": "did",
+      "type": 0,
+      "displayName": "Developer IDs"
+    },
+    {
+      "shortName": "gdid",
+      "type": 0,
+      "displayName": "Global Developer IDs"
+    },
+    {
+      "shortName": "edid",
+      "type": 0,
+      "displayName": "Event Developer IDs"
+    },
+    {
+      "shortName": "gcs",
+      "type": 0,
+      "displayName": "Cookie Consent State"
+    },
+    {
+      "shortName": "gcd",
+      "type": 0,
+      "displayName": "gcd"
+    },
+    {
+      "shortName": "gcu",
+      "type": 2,
+      "displayName": "Cookie Consent Updated"
+    },
+    {
+      "shortName": "dma_cps",
+      "type": 0,
+      "displayName": "Google Services Consent State"
+    },
+    {
+      "shortName": "em",
+      "type": 0,
+      "displayName": "em"
+    },
+    {
+      "shortName": "ec_mode",
+      "type": 0,
+      "displayName": "ec_mode"
+    },
+    {
+      "shortName": "npa",
+      "type": 2,
+      "displayName": "Non-personalized Ads"
+    },
+    {
+      "shortName": "vdnc",
+      "type": 0,
+      "displayName": "New Customer"
+    }
+  ],
+  "ga4": [
+    {
+      "shortName": "_gid",
+      "type": 0,
+      "displayName": "Internal Client ID"
+    },
+    {
+      "shortName": "ht",
+      "type": 1,
+      "displayName": "Timestamp Override"
+    },
+    {
+      "shortName": "cc",
+      "type": 0,
+      "displayName": "Campaign Content"
+    },
+    {
+      "shortName": "ci",
+      "type": 0,
+      "displayName": "Campaign ID"
+    },
+    {
+      "shortName": "cm",
+      "type": 0,
+      "displayName": "Campaign Medium"
+    },
+    {
+      "shortName": "cn",
+      "type": 0,
+      "displayName": "Campaign Name"
+    },
+    {
+      "shortName": "cs",
+      "type": 0,
+      "displayName": "Campaign Source"
+    },
+    {
+      "shortName": "ck",
+      "type": 0,
+      "displayName": "Campaign Term"
+    },
+    {
+      "shortName": "cid",
+      "type": 0,
+      "displayName": "Client ID"
+    },
+    {
+      "shortName": "_c",
+      "type": 2,
+      "displayName": "Conversion Event"
+    },
+    {
+      "shortName": "cu",
+      "type": 0,
+      "displayName": "Currency"
+    },
+    {
+      "shortName": "_dbg",
+      "type": 2,
+      "displayName": "Debug View"
+    },
+    {
+      "shortName": "_et",
+      "type": 1,
+      "displayName": "Engagement Time"
+    },
+    {
+      "shortName": "en",
+      "type": 0,
+      "displayName": "Event Name"
+    },
+    {
+      "shortName": "_fid",
+      "type": 0,
+      "displayName": "Firebase ID"
+    },
+    {
+      "shortName": "_fv",
+      "type": 2,
+      "displayName": "First Visit"
+    },
+    {
+      "shortName": "gtm",
+      "type": 0,
+      "displayName": ""
+    },
+    {
+      "shortName": "ul",
+      "type": 0,
+      "displayName": "Language"
+    },
+    {
+      "shortName": "_nsi",
+      "type": 2,
+      "displayName": "New to Site"
+    },
+    {
+      "shortName": "ni",
+      "type": 0,
+      "displayName": "Non-interaction Event Type"
+    },
+    {
+      "shortName": "_p",
+      "type": 1,
+      "displayName": "Random Page ID"
+    },
+    {
+      "shortName": "gaf",
+      "type": 1,
+      "displayName": "Gold Request Flags"
+    },
+    {
+      "shortName": "dl",
+      "type": 0,
+      "displayName": "Page Location"
+    },
+    {
+      "shortName": "dp",
+      "type": 0,
+      "displayName": "Page Path"
+    },
+    {
+      "shortName": "dr",
+      "type": 0,
+      "displayName": "Page Referrer"
+    },
+    {
+      "shortName": "dt",
+      "type": 0,
+      "displayName": "Page Title"
+    },
+    {
+      "shortName": "pr",
+      "type": 0,
+      "displayName": "Ecommerce Item",
+      "shortNameRegExp": "^pr"
+    },
+    {
+      "shortName": "ep.",
+      "type": 0,
+      "displayName": "Event Parameter",
+      "shortNameRegExp": "^ep\\."
+    },
+    {
+      "shortName": "epn.",
+      "type": 1,
+      "displayName": "Numeric Event Parameter",
+      "shortNameRegExp": "^epn\\."
+    },
+    {
+      "shortName": "upn.",
+      "type": 1,
+      "displayName": "Numeric User Property",
+      "shortNameRegExp": "^upn\\."
+    },
+    {
+      "shortName": "_",
+      "type": 0,
+      "displayName": "System Property",
+      "shortNameRegExp": "^_"
+    },
+    {
+      "shortName": "up.",
+      "type": 0,
+      "displayName": "User Property",
+      "shortNameRegExp": "^up\\."
+    },
+    {
+      "shortName": "v",
+      "type": 1,
+      "displayName": "Protocol Version"
+    },
+    {
+      "shortName": "_s",
+      "type": 1,
+      "displayName": "Request Number"
+    },
+    {
+      "shortName": "sr",
+      "type": 0,
+      "displayName": "Screen Resolution"
+    },
+    {
+      "shortName": "seg",
+      "type": 2,
+      "displayName": "Session Engagement"
+    },
+    {
+      "shortName": "sid",
+      "type": 0,
+      "displayName": "Session ID"
+    },
+    {
+      "shortName": "sct",
+      "type": 1,
+      "displayName": "Session Count"
+    },
+    {
+      "shortName": "_ss",
+      "type": 2,
+      "displayName": "Start of Session"
+    },
+    {
+      "shortName": "tid",
+      "type": 0,
+      "displayName": "Measurement ID"
+    },
+    {
+      "shortName": "uid",
+      "type": 0,
+      "displayName": "Custom User ID"
+    },
+    {
+      "shortName": "_gaz",
+      "type": 2,
+      "displayName": "Internal Ping Type"
+    },
+    {
+      "shortName": "gdid",
+      "type": 0,
+      "displayName": "Global Developer Id"
+    },
+    {
+      "shortName": "edid",
+      "type": 0,
+      "displayName": "Event Developer Id"
+    },
+    {
+      "shortName": "_ono",
+      "type": 2,
+      "displayName": "Google Owned and Operated"
+    },
+    {
+      "shortName": "ecid",
+      "type": 0,
+      "displayName": "Enhanced Client Id"
+    },
+    {
+      "shortName": "uaa",
+      "type": 0,
+      "displayName": "User-Agent Architecture"
+    },
+    {
+      "shortName": "uab",
+      "type": 1,
+      "displayName": "User-Agent Bitness"
+    },
+    {
+      "shortName": "uafvl",
+      "type": 0,
+      "displayName": "User-Agent Full Version List"
+    },
+    {
+      "shortName": "uamb",
+      "type": 2,
+      "displayName": "User-Agent Mobileness"
+    },
+    {
+      "shortName": "uam",
+      "type": 0,
+      "displayName": "User-Agent Model"
+    },
+    {
+      "shortName": "uap",
+      "type": 0,
+      "displayName": "User-Agent Platform"
+    },
+    {
+      "shortName": "uapv",
+      "type": 0,
+      "displayName": "User-Agent Platform Version"
+    },
+    {
+      "shortName": "uaw",
+      "type": 2,
+      "displayName": "User-Agent WoW64 (Win32 on Win64)"
+    },
+    {
+      "shortName": "ext.value",
+      "type": 0,
+      "displayName": "Extracted Value"
+    },
+    {
+      "shortName": "ext.currency_code",
+      "type": 0,
+      "displayName": "Extracted Currency"
+    },
+    {
+      "shortName": "ext.oid",
+      "type": 0,
+      "displayName": "Extracted Transaction Id"
+    },
+    {
+      "shortName": "gcs",
+      "type": 0,
+      "displayName": "Cookie Consent State"
+    },
+    {
+      "shortName": "gcd",
+      "type": 0,
+      "displayName": "gcd"
+    },
+    {
+      "shortName": "gcu",
+      "type": 2,
+      "displayName": "Cookie Consent Updated"
+    },
+    {
+      "shortName": "dma_cps",
+      "type": 0,
+      "displayName": "Google Services Consent State"
+    },
+    {
+      "shortName": "em",
+      "type": 0,
+      "displayName": "em"
+    },
+    {
+      "shortName": "ec_mode",
+      "type": 0,
+      "displayName": "ec_mode"
+    },
+    {
+      "shortName": "npa",
+      "type": 2,
+      "displayName": "Non-personalized Ads"
+    },
+    {
+      "shortName": "vdnc",
+      "type": 0,
+      "displayName": "New Customer"
+    }
+  ],
+  "floodlight": [
+    {
+      "shortName": "src",
+      "type": 1,
+      "displayName": "Floodlight Configuration ID"
+    },
+    {
+      "shortName": "type",
+      "type": 0,
+      "displayName": "Floodlight Group"
+    },
+    {
+      "shortName": "cat",
+      "type": 0,
+      "displayName": "Floodlight Activity"
+    },
+    {
+      "shortName": "gdid",
+      "type": 0,
+      "displayName": "Global Developer Id"
+    },
+    {
+      "shortName": "edid",
+      "type": 0,
+      "displayName": "Event Developer Id"
+    },
+    {
+      "shortName": "gcs",
+      "type": 0,
+      "displayName": "Cookie Consent State"
+    },
+    {
+      "shortName": "gcd",
+      "type": 0,
+      "displayName": "gcd"
+    },
+    {
+      "shortName": "gcu",
+      "type": 2,
+      "displayName": "Cookie Consent Updated"
+    },
+    {
+      "shortName": "dma_cps",
+      "type": 0,
+      "displayName": "Google Services Consent State"
+    },
+    {
+      "shortName": "em",
+      "type": 0,
+      "displayName": "em"
+    },
+    {
+      "shortName": "ec_mode",
+      "type": 0,
+      "displayName": "ec_mode"
+    },
+    {
+      "shortName": "npa",
+      "type": 2,
+      "displayName": "Non-personalized Ads"
+    },
+    {
+      "shortName": "vdnc",
+      "type": 0,
+      "displayName": "New Customer"
+    }
+  ]
+}
