@@ -152,5 +152,7 @@ export function snapshotToSpec(snapshot: ApiSnapshotData): ContainerSpec {
     client: snapshot.client,
     transformation: snapshot.transformation,
     customTemplate: snapshot.customTemplate,
+    environment: snapshot.environments,
+    gtagConfig: snapshot.gtagConfig,
   });
 }

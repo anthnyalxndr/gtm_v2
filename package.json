@@ -2,30 +2,34 @@
   "name": "gtm-workspace",
   "private": true,
   "type": "module",
-  "description": "Workspace for @anthnyalxndr/gtm-client and @anthnyalxndr/gtm-apply.",
+  "description": "Workspace for the @anthnyalxndr GTM packages: gtm-model, gtm-client, gtm-apply, gtm-recipes and gtm-preview.",
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "verify": "pnpm build && pnpm typecheck && pnpm test",
+    "verify": "pnpm build && pnpm typecheck && pnpm lint && pnpm test",
     "format": "prettier --write \"packages/*/src/**/*.ts\" \"packages/*/test/**/*.ts\" \"packages/*/scripts/**/*.ts\" \"packages/*/*.ts\"",
     "dev": "pnpm --filter @anthnyalxndr/gtm-apply dev",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "lint": "pnpm -r run lint"
   },
   "lint-staged": {
-    "*.ts": "prettier --write"
+    "*.ts": "prettier --write",
+    "packages/gtm-preview/**/*.{ts,mjs}": "pnpm --filter @anthnyalxndr/gtm-preview exec eslint --fix"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^22.10.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.5.0",
     "prettier": "^3.9.6",
     "tsx": "^4",
     "typescript": "^5",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22"
   },
   "packageManager": "pnpm@10.30.2"
 }

@@ -1,0 +1,1963 @@
+{
+  "awcc": {
+    "publicId": "awcc",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Google Ads Calls from Website Conversion",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "eventSettingsOverrides",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsOverrides",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventParametersGroup",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Parameters",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "phoneConversionNumber",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Displayed Phone Number to Replace",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsTable",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsTable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionId",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Conversion ID",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsVariable",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Settings Variable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionLabel",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Conversion Label",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 1,
+    "thumbnail": "thumbnail-adwords.svg"
+  },
+  "awct": {
+    "publicId": "awct",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Google Ads Conversion Tracking",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "eventSettingsOverrides",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsOverrides",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "awFeedCountry",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Feed Country",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "orderId",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Transaction ID",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "customVariablesSettings",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Custom Variables",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "cssProvidedEnhancedConversionValue",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "cssProvidedEnhancedConversionValue",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "userProvidedDataLabel",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Google will only use the data you shared to provide you services, including technical support. Google won't share your data with other advertisers.",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "discount",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Discount",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enhancedConversionObject",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Legacy Enhanced Conversion Object",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "awFeedLanguage",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Feed Language",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableShippingData",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Provide shipping data",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "customVariables",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "customVariables",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableConversionLinker",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Enable Conversion Linking",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionValue",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Conversion Value",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableEnhancedConversion",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Include user-provided data from your website",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "unrepeatable",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Unrepeatable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsTable",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsTable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "warning",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Note: This tag type is only supported on iOS versions 6 and greater. To prevent firing the tag on Android, add a negative rule such as <b>{{platform}} does not equal iOS</b>. To prevent firing the tag on older versions of iOS, add a negative rule such as <b>{{platform}} equals iOS and {{os version}} matches RegEx ^[0-5]\\..+</b>.",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "awCustomerLTV",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Customer Lifetime Value",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionCookiePrefix",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Custom Cookie Prefix",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionId",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Conversion ID",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "setTransportUrl",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Set Transport URL",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "awMerchantId",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Merchant ID",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionLabel",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Conversion Label",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "transportUrl",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Transport URL",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "productReportingDataSource",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Data Source",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableEnhancedConversions",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Enable manual enhanced conversions",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "conversionLinkingSettings",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Conversion Linking",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "newCustomerReportingDataSource",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Data Source",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "awNewCustomer",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "New Customer",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableProductReporting",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Provide product-level sales data",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventParametersGroup",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Parameters",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "estimatedDeliveryDate",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Estimated Delivery Date",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsVariable",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Settings Variable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableNewCustomerReporting",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Provide new customer data",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "shippingFee",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Shipping Cost",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "deliveryPostalCode",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Shipping Postal Code",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "deliveryCountry",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Shipping Country",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "currencyCode",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Currency Code",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "items",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Items",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "rdp",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Enable Restricted Data Processing",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 1,
+    "thumbnail": "thumbnail-adwords.svg"
+  },
+  "c": {
+    "publicId": "c",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Constant",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "value",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Value",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 2,
+    "thumbnail": ""
+  },
+  "e": {
+    "publicId": "e",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Custom Event",
+          "containerContext": [0, 2, 1],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [],
+    "type": 2,
+    "thumbnail": ""
+  },
+  "f": {
+    "publicId": "f",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "HTTP Referrer",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "stripWww",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Strip 'www.'",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "component",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Component Type",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "defaultPages",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Default Pages",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "queryKey",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Query Key",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 2,
+    "thumbnail": ""
+  },
+  "gaawe": {
+    "publicId": "gaawe",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Google Analytics: GA4 Event",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "eventSettingsOverrides",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsOverrides",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventParametersGroup",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Parameters",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "moreSettings",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "More Settings",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enhancedUserId",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Include user-provided data from your website",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "ecommerceSection",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Ecommerce",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "measurementIdOverride",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Measurement ID",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsVariable",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Settings Variable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "ecommerceMacroData",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Ecommerce Object",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "userDataVariable",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "User Data",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "demoV2WarningLabel",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "<div class=\"blg-caption\">Event parameters (Legacy field that will be MIGRATED and REMOVED when Google tag launches)</div>",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enhancedUserIdLabel",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "<div class=\"callout callout--info callout--page-level\"><div class=\"callout__label\">Improve measurement and get more insights with data that people provide to your website. Note that no data will be collected by destination products if such data is disallowed by that product's Terms of Service or if the terms of this feature are not accepted. <a href='https://support.google.com/tagmanager/answer/11566484#user_provided_data' target='_blank'>Learn more</a></div></div>",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "sendEcommerceData",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Send Ecommerce data",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "getEcommerceDataFrom",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Data source",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsTable",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsTable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "userProperties",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "User Properties",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventName",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Name",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventParameters",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Parameters",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "userPropertiesGroup",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "User Properties",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "measurementId",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Configuration Tag",
+              "containerContext": [],
+              "enablingCondition": [
+                {
+                  "predicate": [
+                    {
+                      "type": 1,
+                      "arg": [
+                        {
+                          "type": 4,
+                          "listItem": [],
+                          "mapKey": [],
+                          "mapValue": [],
+                          "macroReference": "demoV2",
+                          "templateToken": [],
+                          "escaping": []
+                        },
+                        {
+                          "type": 8,
+                          "listItem": [],
+                          "mapKey": [],
+                          "mapValue": [],
+                          "boolean": false,
+                          "templateToken": [],
+                          "escaping": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 1,
+    "thumbnail": "thumbnail-ga.svg"
+  },
+  "gclidw": {
+    "publicId": "gclidw",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Conversion Linker",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "enableCrossDomain",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Enable linking across domains",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "cookieFlags",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Cookie flags",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "acceptIncoming",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Accept incoming linker parameters",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableCookieOverrides",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Override cookie settings (advanced)",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "cookiePrefix",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Name prefix",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "path",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Path",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "enableUrlPassthrough",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Enable linking on all page URLs",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "linkerDomains",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Auto Link Domains",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "domain",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Domain",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "options",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Linker Options",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "noConfig",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "No configuration required. <a href=\"https://support.google.com/tagmanager/answer/7549390\" target=\"_blank\">Learn more.</a> <br><br>",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "formDecoration",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Decorate Forms",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "urlPosition",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "URL Position",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 1,
+    "thumbnail": "ic_swap_horizontal_circle_googblue_48dp.svg"
+  },
+  "googtag": {
+    "publicId": "googtag",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Google Tag",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "eventSettingsLabel",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Set default event parameters that will be used for all events measured by your Google tag. <a href=\"https://support.google.com/tagmanager/answer/13438771\" target=\"_blank\">Learn more</a><div class=\"blg-spacer2\"></div>",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsOverrides",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsOverrides",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "whitelistedTypes",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Type Restrictions",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "tagId",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Tag ID",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "configSettingsVariable",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Configuration Settings Variable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "configSettingsLabel",
+        "type": 3,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Set configuration parameters that update your tag's behavior. <a href=\"https://support.google.com/tagmanager/answer/13438166\" target=\"_blank\">Learn more</a><div class=\"blg-spacer2\"></div>",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsVariable",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Event Settings Variable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "configSettingsOverrides",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "configSettingsOverrides",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "sharedEvent",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Shared event settings",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "eventSettingsTable",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "eventSettingsTable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "userProperties",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "User Properties",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "config",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Configuration settings",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "configSettingsTable",
+        "type": 8,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "configSettingsTable",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 1,
+    "thumbnail": "gtag-solid-icon.svg"
+  },
+  "u": {
+    "publicId": "u",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "URL",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "stripWww",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Strip 'www.'",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "component",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Component Type",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "defaultPages",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Default Pages",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "queryKey",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Query Key",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "moreSettings",
+        "type": 1,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "More Settings",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "customUrlSource",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "URL Source",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "multiQueryKeys",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Support comma-separating multiple query keys",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "ignoreEmptyQueryParam",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Ignore empty query parameter",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 2,
+    "thumbnail": ""
+  },
+  "v": {
+    "publicId": "v",
+    "displayName": {
+      "text": [
+        {
+          "type": 1,
+          "value": "Data Layer Variable",
+          "containerContext": [],
+          "enablingCondition": [],
+          "product": [],
+          "translations": []
+        }
+      ]
+    },
+    "param": [
+      {
+        "name": "dataLayerVersion",
+        "type": 5,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Data Layer Version",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "setDefaultValue",
+        "type": 7,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Set Default Value",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "defaultValue",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Default Value",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "name",
+        "type": 4,
+        "displayName": {
+          "text": [
+            {
+              "type": 1,
+              "value": "Data Layer Variable Name",
+              "containerContext": [],
+              "enablingCondition": [],
+              "product": [],
+              "translations": []
+            }
+          ]
+        }
+      }
+    ],
+    "type": 2,
+    "thumbnail": ""
+  }
+}
