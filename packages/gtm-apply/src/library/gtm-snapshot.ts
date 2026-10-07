@@ -3,7 +3,7 @@ import { redactSnapshotSecrets } from "../snapshot/redact.js";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { pullSnapshot, snapshotToSpec } from "../snapshot/pull.js";
 import type { ApiSnapshotData, ContainerType, SnapshotSource } from "../snapshot/types.js";
-import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
+import { applySpec, type ApplySpecOutcome, type ExecuteOptions } from "../spec/execute.js";
 import type {
   ClientSpec,
   ContainerSpec,
@@ -528,16 +528,15 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     return issues;
   }
 
-  /** Apply the staged state, manifest included, back to the container. Never strips declarations. */
+  /**
+   * Apply the staged state, manifest included, back to the container. Never strips
+   * declarations. Like applySpec, it leaves the workspace in place unless `version`
+   * or `publish` is set.
+   */
   push(
     client: GtmClient,
     target: { container?: string; workspace: string },
-    options: {
-      dryRun?: boolean;
-      publish?: boolean;
-      versionName?: string;
-      versionDescription?: string;
-    } = {}
+    options: ExecuteOptions & { dryRun?: boolean } = {}
   ): Promise<ApplySpecOutcome> {
     const container = target.container ?? this.#source?.container ?? this.data.container.publicId;
     if (!container) throw new Error("push needs a target container");

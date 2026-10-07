@@ -75,6 +75,7 @@ describe("gtm-recipes server library", () => {
       plan,
       container: "GTM-SRV",
       workspace: "onboarding",
+      version: true,
     });
     expect(outcome.plan.errors).toEqual([]);
     const snap = latestSnapshot(state);

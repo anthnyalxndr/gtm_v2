@@ -118,9 +118,10 @@ describe("custom environments", () => {
 
   it("exports custom environments with the latest version, without Live, Latest or codes", async () => {
     const { client } = fake();
-    // A variable change as well, so the apply creates a version to export.
+    // A variable change as well, so the apply has something to version for the export.
     await applySpec(client, {
       ...target,
+      version: true,
       spec: defineContainer({
         ...staging(),
         variable: [

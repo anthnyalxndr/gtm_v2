@@ -119,8 +119,9 @@ A spec may carry `containerType` (`web`, `server`, `amp`, `android`, `ios`); `no
 
 ```bash
 gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --dry-run
-gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json
-gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --publish
+gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json            # writes the workspace
+gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --version  # and cuts a version
+gtm-apply apply --container GTM-XXXXXXX --workspace conversions-2026-09 --spec spec.json --publish  # and publishes it
 ```
 
 Or from code:
@@ -139,30 +140,56 @@ const { plan, result } = await applySpec(client, {
   dryRun: true,
 });
 console.log(formatPlan(plan));
+// Without dryRun, result.workspacePath and result.workspaceUrl name the workspace written to.
+// version: true (or version: { name, notes }) creates a version from it; publish: true publishes that version.
 ```
 
 ### What apply does
 
-1. Resolves the container by public id and reads the target workspace if it exists.
+1. Resolves the container by public id and reads the target workspace if it exists; a missing workspace is created.
 2. Resolves every reference in the spec and builds a plan. Names are identity: an entity that exists by name is compared and updated only if it differs. The plan output uses `[+]` create, `[~]` update, `[=]` unchanged, `[!]` error.
 3. Refuses to write while the plan has errors. All errors are reported together.
 4. Applies folders, then variables (ordered by their `{{ }}` references), then triggers, then tags, resolving names to ids as it goes. Updates send the current fingerprint.
-5. Checks the workspace for merge conflicts, creates a version when something changed, and publishes only with `--publish`.
+5. Stops there. The workspace stays open in Tag Manager, for review and for further applies, and the command prints its URL. A version is created only with `--version` or `--publish` (see below), and published only with `--publish`.
 
 `--dry-run` prints the plan and makes no write calls. What the dry run shows is exactly what apply does.
+
+Running apply again with the same spec against the same workspace changes nothing and reports every entity `[=]`. Running it with a changed spec updates the same workspace.
 
 ### Versions and workspaces
 
 Two Tag Manager behaviors shape the apply flow, both verified against the live API:
 
-- **Creating a version deletes the workspace it came from.** After an apply that changed something, the named workspace is gone and the changes live in the new version. Open a fresh workspace in the UI to preview.
-- **A new workspace branches from the latest version, not the live one.** So the next apply sees everything earlier applies created, whether or not it was published, and reports it `[=]`. The planner reads the latest version when the target workspace does not exist yet.
+- **Creating a version deletes the workspace it came from.** This is why apply leaves versioning to you: an apply that versioned on every run would leave no workspace to fix a naming nit in, and each fix would cost a new workspace and a new version.
+- **A new workspace branches from the latest version, not the live one.** So a workspace shows the spec's changes against the latest version, and the next apply sees everything earlier applies versioned, whether or not it was published. The planner reads the latest version when the target workspace does not exist yet.
 
-When nothing changed, no version is created and the workspace is left in place.
+The usual sequence is apply, review, version:
 
-### Checking a publish
+```bash
+gtm-apply apply --container GTM-XXXXXXX --workspace pr-42 --spec spec.ts             # writes pr-42 and prints its URL
+# Workspace "pr-42": https://tagmanager.google.com/#/container/accounts/…/workspaces/…
+gtm-apply apply --container GTM-XXXXXXX --workspace pr-42 --spec spec.ts             # a fix: updates pr-42 in place
+gtm-apply apply --container GTM-XXXXXXX --workspace pr-42 --spec spec.ts --version   # cuts the version; pr-42 is gone
+# Version: accounts/…/versions/…
+```
 
-After `--publish`, apply reads the container's live version and fails unless it is the version it just created. `--verify <command>` then runs a command of yours through the shell and exits with that command's code, so a CI job fails when the check does. For example, audit the site with [gtm_audit](https://github.com/anthnyalxndr/gtm_audit) right after publishing:
+`--version` creates a version when the workspace differs from the latest version: this run changed something, or an earlier apply left changes behind (apply reads the workspace status to tell). When the workspace matches the latest version, no version is created and the workspace stays. `--version-name` and `--version-description` name and describe the version, and imply `--version`; the default name is the workspace's. From code the option is `version: true` or `version: { name, notes }`.
+
+Delete a workspace when its review ends without a version, for example when the pull request closes. A workspace that is already gone is not an error, so cleanup can run twice:
+
+```bash
+gtm-apply delete-workspace --container GTM-XXXXXXX --workspace pr-42
+```
+
+Neither command touches the Default Workspace (decision-4).
+
+### Publishing
+
+`--publish` (`publish: true` from code) creates the version and publishes it, whether or not anything changed. Before creating the version, apply checks that the caller holds the Publish permission on the container, because a version the caller cannot publish would be left unpublished with its workspace gone. When the caller lacks Publish, apply stops with the workspace intact and names the users who hold it.
+
+The check needs two things the API does not always give: the caller's email, which the token carries only when it was granted the `userinfo.email` scope (in the client's default scopes now; a token stored earlier lacks it until you re-authorize), and the account's user list, which only account administrators can read. When either is out of reach, apply prints a `[?]` line saying the permission was not checked, before it creates the version. It then creates the version and attempts the publish. If Tag Manager refuses the publish, apply fails with an error that names the version it created by name, id and path. The workspace is gone by then, so someone who holds Publish can publish that version from the container's Versions page. From code, `onWarning` receives each warning as it arises, and `result.warnings` lists them after a successful run.
+
+After publishing, apply reads the container's live version and fails unless it is the version it just created. `--verify <command>` then runs a command of yours through the shell and exits with that command's code, so a CI job fails when the check does. For example, audit the site with [gtm_audit](https://github.com/anthnyalxndr/gtm_audit) right after publishing:
 
 ```bash
 gtm-apply apply --container GTM-XXXXXXX --workspace release --spec spec.ts --publish \
@@ -170,23 +197,6 @@ gtm-apply apply --container GTM-XXXXXXX --workspace release --spec spec.ts --pub
 ```
 
 `--verify` needs `--publish`, and it does not run on a dry run or when nothing was published. What counts as a failure is up to the command: apply only passes its exit code on.
-
-### Reviewing changes in a workspace
-
-`--no-version` reconciles the named workspace and stops before creating a version, so the workspace stays for review in the Tag Manager interface. The command prints the workspace's page:
-
-```bash
-gtm-apply apply --container GTM-XXXXXXX --workspace pr-42 --spec spec.ts --no-version
-# Workspace kept for review, no version created: https://tagmanager.google.com/#/container/accounts/…/workspaces/…
-```
-
-Running it again with a changed spec updates the same workspace. Delete the workspace when the review is over, for example when the pull request closes; a workspace that is already gone is not an error, so cleanup can run twice:
-
-```bash
-gtm-apply delete-workspace --container GTM-XXXXXXX --workspace pr-42
-```
-
-A review workspace branches from the latest version, not the live one, so it shows the spec's changes against the latest version. `--no-version` cannot be combined with `--publish`, and neither command touches the Default Workspace (decision-4).
 
 ### Naming
 

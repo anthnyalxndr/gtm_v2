@@ -3,6 +3,7 @@ import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer, type ContainerRef } from "@anthnyalxndr/gtm-client";
 import { listEnabledBuiltIns } from "../resources/builtins.js";
 import { matches } from "../resources/entities.js";
+import { workspaceStatus } from "../resources/workspaces.js";
 import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import { builtInTypeForName, referencedVariableNames } from "./catalog.js";
 import {
@@ -48,10 +49,31 @@ export interface PlanTarget {
   workspace: string;
 }
 
+/** How to name and describe the version an apply creates. */
+export interface VersionOptions {
+  /** Defaults to the workspace name. */
+  name?: string;
+  /** Shown with the version in Tag Manager as its description. Left out of the request when not given. */
+  notes?: string;
+}
+
 export interface PlanOptions {
+  /**
+   * Create a version from the workspace once the apply succeeds. By default the
+   * workspace is left in place for review and further applies. `publish` implies it.
+   */
+  version?: boolean | VersionOptions;
   publish?: boolean;
-  /** Reconcile the workspace and stop before creating a version, so it stays for review. */
-  noVersion?: boolean;
+}
+
+/** Whether the options ask for a version, directly or through publish. */
+export function wantsVersion(options: PlanOptions): boolean {
+  return Boolean(options.version) || Boolean(options.publish);
+}
+
+/** The name the version gets: the one given, else the workspace's. */
+export function versionName(options: PlanOptions, workspace: string): string {
+  return typeof options.version === "object" ? (options.version.name ?? workspace) : workspace;
 }
 
 export interface Plan {
@@ -190,9 +212,6 @@ export async function planContainerSpec(
   options: PlanOptions = {}
 ): Promise<Plan> {
   assertValidSpec(input);
-  if (options.noVersion && options.publish) {
-    throw new Error("publish needs a version: drop the no-version option or the publish option");
-  }
   const container = await resolveContainer(client, target.container);
   const containerType = containerTypeOf(container.usageContext);
   const ops: PlannedOp[] = [];
@@ -393,13 +412,23 @@ export async function planContainerSpec(
     });
   }
 
-  const changed = ops.some(
-    (o) => o.action !== "unchanged" && o.kind !== "workspace" && o.kind !== "environment"
-  );
-  if (!options.noVersion && (changed || options.publish)) {
-    ops.push({ kind: "version", name: target.workspace, action: "create" });
+  // A version is created only when asked for, and then only when the workspace will
+  // differ from the latest version: this run changes something, or an earlier apply
+  // left changes in the workspace. Publishing always versions.
+  if (wantsVersion(options)) {
+    const changed = ops.some(
+      (o) => o.action !== "unchanged" && o.kind !== "workspace" && o.kind !== "environment"
+    );
+    const pending = workspacePath
+      ? (await workspaceStatus(client, workspacePath)).changes > 0
+      : false;
+    if (changed || pending || options.publish) {
+      ops.push({ kind: "version", name: versionName(options, target.workspace), action: "create" });
+    }
   }
-  if (options.publish) ops.push({ kind: "publish", name: target.workspace, action: "create" });
+  if (options.publish) {
+    ops.push({ kind: "publish", name: versionName(options, target.workspace), action: "create" });
+  }
 
   return { target, container, workspacePath, spec, existing, environments, ops, errors };
 }

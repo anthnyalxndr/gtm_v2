@@ -32,6 +32,7 @@ async function pulled() {
     container: "GTM-ENV",
     workspace: "seed",
     spec: defineContainer({ variable: [manifestVariable({ recipes: {} })] }),
+    version: true,
   });
   return new GtmSnapshot(client, { container: "GTM-ENV" }).init();
 }

@@ -11,6 +11,7 @@ type CustomTemplate = tagmanager_v2.Schema$CustomTemplate;
 type GtagConfig = tagmanager_v2.Schema$GtagConfig;
 type Environment = tagmanager_v2.Schema$Environment;
 type Destination = tagmanager_v2.Schema$Destination;
+type UserPermission = tagmanager_v2.Schema$UserPermission;
 
 export interface FakeAccount {
   accountId: string;
@@ -32,6 +33,8 @@ export interface FakeSeed {
   environments?: Environment[];
   /** Linked Google tag destinations; give each a path under its container. */
   destinations?: Destination[];
+  /** Who can do what, as accounts.user_permissions.list returns it; give each an accountId. */
+  userPermissions?: UserPermission[];
 }
 
 /** Workspace-scoped entity collections, as captured by a version. */
@@ -61,6 +64,7 @@ export interface FakeState {
   gtagConfigs: GtagConfig[];
   environments: Environment[];
   destinations: Destination[];
+  userPermissions: UserPermission[];
   builtIns: { workspacePath: string; type: string }[];
   versions: {
     path: string;
@@ -73,6 +77,8 @@ export interface FakeState {
   published: string[];
   calls: string[];
   mergeConflicts: number;
+  /** Paths of entities created or updated in a workspace since it branched; what getStatus reports. */
+  changedPaths: string[];
 }
 
 let idCounter = 0;
@@ -93,7 +99,12 @@ function removeWorkspace(state: FakeState, wsPath: string): void {
   prune(state.templates, inWs);
   prune(state.gtagConfigs, inWs);
   prune(state.builtIns, (b) => b.workspacePath === wsPath);
+  prune(state.changedPaths, (p) => p.startsWith(wsPath + "/"));
   prune(state.workspaces, (w) => w.path === wsPath);
+}
+
+function recordChange(state: FakeState, path: string): void {
+  if (!state.changedPaths.includes(path)) state.changedPaths.push(path);
 }
 
 /** Entities as captured by the most recent version. */
@@ -155,6 +166,7 @@ function collection<T extends Named>(state: FakeState, store: T[], idKey: string
         fingerprint: "1",
       } as T;
       store.push(entity);
+      recordChange(state, entity.path as string);
       return { data: entity };
     },
     update: async ({
@@ -181,6 +193,7 @@ function collection<T extends Named>(state: FakeState, store: T[], idKey: string
         fingerprint: String(Number(fingerprint) + 1),
       } as T;
       store[idx] = updated;
+      recordChange(state, path);
       return { data: updated };
     },
   };
@@ -206,11 +219,13 @@ export function createFakeService(seed: FakeSeed = {}): {
     gtagConfigs: [],
     environments: seed.environments ?? [],
     destinations: seed.destinations ?? [],
+    userPermissions: seed.userPermissions ?? [],
     builtIns: [],
     versions: [],
     published: [],
     calls: [],
     mergeConflicts: 0,
+    changedPaths: [],
   };
 
   const service = {
@@ -220,6 +235,17 @@ export function createFakeService(seed: FakeSeed = {}): {
         return {
           data: { account: state.accounts.map((a) => ({ ...a, path: `accounts/${a.accountId}` })) },
         };
+      },
+      user_permissions: {
+        list: async ({ parent }: { parent: string; pageToken?: string }) => {
+          state.calls.push("user_permissions.list");
+          const accountId = parent.split("/")[1];
+          return {
+            data: {
+              userPermission: state.userPermissions.filter((p) => p.accountId === accountId),
+            },
+          };
+        },
       },
       containers: {
         list: async ({ parent }: { parent: string }) => {
@@ -421,12 +447,14 @@ export function createFakeService(seed: FakeSeed = {}): {
             removeWorkspace(state, path);
             return { data: {} };
           },
-          getStatus: async () => {
+          getStatus: async ({ path }: { path: string }) => {
             state.calls.push("workspaces.getStatus");
             return {
               data: {
                 mergeConflict: Array.from({ length: state.mergeConflicts }, () => ({})),
-                workspaceChange: [],
+                workspaceChange: state.changedPaths
+                  .filter((p) => p.startsWith(path + "/"))
+                  .map((p) => ({ changeStatus: "added", path: p })),
               },
             };
           },
@@ -490,7 +518,10 @@ export function createFakeService(seed: FakeSeed = {}): {
             },
             create: async ({ parent, type }: { parent: string; type: string[] }) => {
               state.calls.push("built_in_variables.create");
-              for (const t of type) state.builtIns.push({ workspacePath: parent, type: t });
+              for (const t of type) {
+                state.builtIns.push({ workspacePath: parent, type: t });
+                recordChange(state, `${parent}/built_in_variables/${t}`);
+              }
               return { data: { builtInVariable: type.map((t) => ({ type: t })) } };
             },
           },

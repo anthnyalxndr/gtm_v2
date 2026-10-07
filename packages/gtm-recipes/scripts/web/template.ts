@@ -262,6 +262,11 @@ export async function templateSnapshot(): Promise<GtmSnapshot> {
     ],
   });
   const client = new GtmClient({ service, minIntervalMs: 0 });
-  await applySpec(client, { container: "GTM-SAMPLE", workspace: "sample", spec: template });
+  await applySpec(client, {
+    container: "GTM-SAMPLE",
+    workspace: "sample",
+    spec: template,
+    version: true,
+  });
   return new GtmSnapshot(client, { container: "GTM-SAMPLE" }).init();
 }
