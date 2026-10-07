@@ -29,6 +29,7 @@
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "gen:discovery": "tsx scripts/generate-discovery.ts",
+    "probe:notes-cap": "tsx scripts/probe-notes-cap.ts",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [

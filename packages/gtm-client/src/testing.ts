@@ -263,6 +263,32 @@ export function createFakeService(seed: FakeSeed = {}): {
             },
           };
         },
+        // The API accepts exactly one of tagId (GTM-XXXXXXX) or destinationId (e.g. AW-123).
+        lookup: async ({ tagId, destinationId }: { tagId?: string; destinationId?: string }) => {
+          state.calls.push("containers.lookup");
+          if ((tagId === undefined) === (destinationId === undefined)) {
+            throw Object.assign(new Error("set exactly one of tagId or destinationId"), {
+              code: 400,
+            });
+          }
+          const destination =
+            destinationId === undefined
+              ? undefined
+              : state.destinations.find((d) => d.destinationId === destinationId);
+          const c = state.containers.find((x) =>
+            tagId !== undefined
+              ? x.publicId === tagId
+              : x.accountId === destination?.accountId && x.containerId === destination?.containerId
+          );
+          if (!c) throw Object.assign(new Error("container not found"), { code: 404 });
+          return {
+            data: {
+              ...c,
+              usageContext: c.usageContext ?? ["web"],
+              path: `accounts/${c.accountId}/containers/${c.containerId}`,
+            },
+          };
+        },
         get: async ({ path }: { path: string }) => {
           state.calls.push("containers.get");
           const c = state.containers.find(
@@ -503,7 +529,22 @@ export function createFakeService(seed: FakeSeed = {}): {
             "transformationId",
             "transformation"
           ),
-          templates: collection(state, state.templates, "templateId", "template"),
+          templates: {
+            ...collection(state, state.templates, "templateId", "template"),
+            import_from_gallery: async ({ parent }: { parent: string }) => {
+              // Installs a bare template from the gallery; the caller reconciles
+              // templateData and the gallery reference with a follow-up update.
+              state.calls.push("template.import_from_gallery");
+              const id = nextId();
+              const entity: CustomTemplate = {
+                templateId: id,
+                path: `${parent}/template/${id}`,
+                fingerprint: "1",
+              };
+              state.templates.push(entity);
+              return { data: entity };
+            },
+          },
           gtag_config: collection(state, state.gtagConfigs, "gtagConfigId", "gtagConfig"),
           built_in_variables: {
             list: async ({ parent }: { parent: string }) => {
