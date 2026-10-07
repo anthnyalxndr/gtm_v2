@@ -312,7 +312,7 @@ A content package holds the library: its pull script reads the template containe
 
 ## Ad hoc work: use gtm-cli
 
-For discovery, inspection, and one-off edits, use owntag's [gtm-cli](https://github.com/owntag/gtm-cli) (`npm i -g @owntag/gtm-cli`). It covers per-resource commands with JSON output and needs no spec. gtm-apply is for the repeatable path: reconciling a container against a spec by name, with dry run and version handling. The reasoning is recorded in `backlog/decisions/`.
+For discovery, inspection, and one-off edits, use owntag's [gtm-cli](https://github.com/owntag/gtm-cli) (`npm i -g @owntag/gtm-cli`). It covers per-resource commands with JSON output and needs no spec. gtm-apply is for the repeatable path: reconciling a container against a spec by name, with dry run and version handling. The reasoning is recorded in `docs/decisions/`.
 
 ## Development
 
@@ -322,7 +322,7 @@ pnpm verify        # typecheck + tests
 pnpm dev           # runs example.ts (dry run)
 ```
 
-Run these from the repo root. Pre-commit hooks run prettier, the build, the typecheck, and the tests for both packages. Design notes are in `docs/superpowers/plans/2026-09-09-gtm-sdk.md` and `backlog/decisions/`.
+Run these from the repo root. Pre-commit hooks run prettier, the build, the typecheck, and the tests for both packages. Design notes are in `docs/superpowers/plans/2026-09-09-gtm-sdk.md` and `docs/decisions/`.
 
 ## License
 

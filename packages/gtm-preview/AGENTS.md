@@ -5,10 +5,11 @@
 
 This package lives in the gtm workspace (`packages/gtm-preview` of `anthnyalxndr/gtm_v2`),
 beside `gtm-model`, `gtm-client`, `gtm-apply` and `gtm-recipes`. The hooks, the verify gate,
-CI, the Backlog.md backlog and the decision log are the workspace's, at the repository root.
+CI, the task issues and the decision log are the workspace's, at the repository root.
 It was a standalone repository until 2026-10-06; its history is intact under this directory
-and the move is recorded in the workspace's `backlog/decisions/decision-13`. Paths in this
-file are relative to this directory unless they start with `backlog/`.
+and the move is recorded in the workspace's `docs/decisions/decision-13`. Paths in this
+file are relative to this directory. The one exception is `docs/decisions/decision-13`, which is the
+workspace decision at the repository root; this package's own ADRs live in `docs/decisions/` here.
 
 ## Project
 
@@ -192,7 +193,7 @@ These are non-negotiable for all agents and humans:
 - **Never** use `git push --force` or bypass hooks with `--no-verify`.
 - **Security** — never commit secrets; `.env*`, `*.pem`, `*.key`, `*_rsa`, `*.p12` are gitignored. Check `git diff --cached` before committing. Never read/print `.env` files.
 - **Hooks** are the workspace's (`.husky/` at the root): lint-staged with Prettier and this package's ESLint, then `pnpm verify`; commitlint on the message.
-- **Tasks** are in the workspace's Backlog.md (`backlog task list --plain` from the root). This package's own backlog was retired on 2026-10-06; `backlog/docs/doc-4` maps its ids to the ones here. **What is next** lives in the workspace's Backlog.md document titled `Plan`, an ordered list with rationale rewritten at each planning pass; `backlog-next` reads it first.
+- **Tasks** are GitHub issues in anthnyalxndr/gtm_v2, and `gh task ready` lists the ones an agent may start. This package's own backlog was retired on 2026-10-06, and `docs/gtm-preview-backlog-history.md` maps its ids to the ones here. **What is next** lives in the pinned Plan issue in anthnyalxndr/gtm_v2-tasks (`gh task plan show`), and `task-next` reads it first.
 
 ## Suggested workflow loop
 
@@ -205,7 +206,7 @@ For any non-trivial change, follow this loop (skills are Claude Code superpowers
 5. **Self-review** before claiming done — `superpowers:verification-before-completion` (run the actual commands).
 6. **Request review** — `superpowers:requesting-code-review` and/or `/code-review`.
 7. **Commit & PR** — `commit-commands:commit-push-pr` (Conventional Commits).
-8. **Record decisions** worth keeping. Decisions about this package's internals go in `docs/decisions/` (ADRs 0001 to 0003 are there); decisions that touch the workspace go in the root `backlog/decisions/` through `backlog decision create`.
+8. **Record decisions** worth keeping. Decisions about this package's internals go in `docs/decisions/` (ADRs 0001 to 0003 are there); decisions that touch the workspace go in the root `docs/decisions/`.
 
 ## Tooling (skills / plugins to reach for)
 

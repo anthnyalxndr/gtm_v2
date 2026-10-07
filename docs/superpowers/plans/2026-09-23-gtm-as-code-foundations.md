@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (ES2022, NodeNext), pnpm workspace, vitest, `node:util` `parseArgs`, the in-memory fake Tag Manager service in `@anthnyalxndr/gtm-client/testing`.
 
-**Spec:** `docs/superpowers/specs/2026-09-23-gtm-as-code-package-design.md` (sections "Canonical serialization", "Pull and account listing", "The files in a container directory"). Backlog: TASK-34, TASK-19, TASK-35 in milestone m-0. Decision: `backlog/decisions/decision-11`.
+**Spec:** `docs/superpowers/specs/2026-09-23-gtm-as-code-package-design.md` (sections "Canonical serialization", "Pull and account listing", "The files in a container directory"). Backlog: TASK-34, TASK-19, TASK-35 in milestone m-0. Decision: `docs/decisions/decision-11`.
 
 ## Global Constraints
 
