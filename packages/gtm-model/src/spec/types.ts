@@ -1,6 +1,7 @@
 import type {
   BuiltInVariableType,
   Client,
+  CustomTemplate,
   Folder,
   GtagConfig,
   Tag,
@@ -42,6 +43,8 @@ export interface FolderSpec extends Pick<Folder, "name"> {
   name: string;
 }
 export type VariableSpec = WithFolder<Variable>;
+/** A custom template, carried by name; server ids are dropped, gallery reference kept. */
+export type CustomTemplateSpec = Omit<CustomTemplate, ServerField>;
 export type TriggerSpec = WithFolder<Trigger>;
 /** Server containers only. */
 export type ClientSpec = WithFolder<Client>;
@@ -96,13 +99,16 @@ export interface ContainerSpec {
   client?: ClientSpec[];
   /** Server containers only. */
   transformation?: TransformationSpec[];
+  /** Custom (including community-gallery) templates, referenced by tags and variables through a cvt:<name> type. */
+  customTemplate?: CustomTemplateSpec[];
   /** Custom environments; container level, applied outside the workspace, never versioned. */
   environment?: EnvironmentSpec[];
   /** Google tag configs, identified by their tagId parameter. */
   gtagConfig?: GtagConfigSpec[];
 }
 
-export type EntityKind = "folder" | "variable" | "trigger" | "tag" | "client" | "transformation";
+export type EntityKind =
+  "folder" | "variable" | "trigger" | "tag" | "client" | "transformation" | "customTemplate";
 
 type TagSpecNaming<N extends string> = Omit<
   TagSpec,
@@ -126,6 +132,7 @@ interface CommonSections<N extends string> {
 /** A web container spec. A spec without a containerType is a web spec. */
 export interface WebContainerSpec<N extends string = string> extends CommonSections<N> {
   containerType?: "web";
+  customTemplate?: CustomTemplateSpec[];
   gtagConfig?: GtagConfigSpec[];
   client?: never;
   transformation?: never;
@@ -136,6 +143,7 @@ export interface ServerContainerSpec<N extends string = string> extends CommonSe
   containerType: "server";
   client?: ClientSpec[];
   transformation?: TransformationSpec[];
+  customTemplate?: CustomTemplateSpec[];
 }
 
 export interface AmpContainerSpec<N extends string = string> extends CommonSections<N> {

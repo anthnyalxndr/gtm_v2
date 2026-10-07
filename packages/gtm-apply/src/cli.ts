@@ -10,7 +10,12 @@ import { normalizeExport } from "./spec/normalize.js";
 import { stringifySpec } from "./spec/canonical.js";
 import { stringifySnapshot } from "./snapshot/canonical.js";
 import { formatIssue, validateSpec } from "./spec/validate.js";
-import { executePlan, type ApplyResult, type ExecuteOptions } from "./spec/execute.js";
+import {
+  executePlan,
+  writePlanReport,
+  type ApplyResult,
+  type ExecuteOptions,
+} from "./spec/execute.js";
 import { formatPlan, planContainerSpec, wantsVersion, type PlanOptions } from "./spec/plan.js";
 import { pullSnapshot } from "./snapshot/pull.js";
 import { pullSnapshots, snapshotAccount } from "./snapshot/account.js";
@@ -24,6 +29,7 @@ export type CliCommand =
   "apply" | "normalize" | "export" | "snapshot" | "pull" | "delete-workspace";
 
 export interface CliArgs {
+  report?: string;
   command: CliCommand;
   container?: string;
   /** Every --container given, in order; `container` is the first. */
@@ -50,7 +56,7 @@ export interface CliArgs {
 }
 
 export const USAGE = `Usage:
-  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--version | --publish [--verify <command>]] [--version-name <name>] [--version-description <text>]
+  gtm-apply apply --container GTM-XXXXXXX --workspace <name> --spec <file> [--dry-run] [--version | --publish [--verify <command>]] [--version-name <name>] [--version-description <text>] [--report <file.md|file.html>]
       (apply writes the workspace and leaves it there for review; --version creates a version from it,
        --publish creates and publishes one; --version-name and --version-description imply --version)
       (--verify runs <command> after a successful publish and exits with its code)
@@ -89,6 +95,7 @@ const OPTIONS = {
   plan: { type: "string" },
   library: { type: "string" },
   "write-spec": { type: "string" },
+  report: { type: "string" },
 } as const;
 
 /**
@@ -143,6 +150,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     plan: values.plan,
     library: values.library,
     writeSpec: values["write-spec"],
+    report: values.report,
   };
 }
 
@@ -372,6 +380,7 @@ export async function runCli(
         out("Dry run: no changes made.");
         return 0;
       }
+      if (args.report) await writePlanReport(plan, args.report);
       const result = await executePlan(client, plan, options);
       reportApply(args, options, result, out);
       return verifyAfterPublish(args, result.published, out, runCommand);
@@ -419,6 +428,7 @@ async function applyFromPlan(
     dryRun: args.dryRun,
     ...options,
     writeSpecTo: args.writeSpec,
+    reportTo: args.report,
   });
   out(formatPlan(outcome.plan));
   if (outcome.plan.errors.length > 0) return 1;
