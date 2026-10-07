@@ -156,6 +156,21 @@ describe("planContainerSpec", () => {
     expect(plan.ops.map((o) => o.kind)).toEqual(["workspace", "version", "publish"]);
   });
 
+  it("labels the planned version and publish steps with the version name", async () => {
+    const { client } = fresh();
+    const plan = await planContainerSpec(
+      client,
+      target,
+      {},
+      { publish: true, version: { name: "Release 7" } }
+    );
+    const named = plan.ops.filter((o) => o.kind === "version" || o.kind === "publish");
+    expect(named.map((o) => [o.kind, o.name])).toEqual([
+      ["version", "Release 7"],
+      ["publish", "Release 7"],
+    ]);
+  });
+
   it("formats the plan with labels", async () => {
     const { client } = fresh();
     const spec = fixtureSpec();

@@ -426,7 +426,9 @@ export async function planContainerSpec(
       ops.push({ kind: "version", name: versionName(options, target.workspace), action: "create" });
     }
   }
-  if (options.publish) ops.push({ kind: "publish", name: target.workspace, action: "create" });
+  if (options.publish) {
+    ops.push({ kind: "publish", name: versionName(options, target.workspace), action: "create" });
+  }
 
   return { target, container, workspacePath, spec, existing, environments, ops, errors };
 }
