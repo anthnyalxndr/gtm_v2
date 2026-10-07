@@ -8,7 +8,8 @@ beside `gtm-model`, `gtm-client`, `gtm-apply` and `gtm-recipes`. The hooks, the 
 CI, the task issues and the decision log are the workspace's, at the repository root.
 It was a standalone repository until 2026-10-06; its history is intact under this directory
 and the move is recorded in the workspace's `docs/decisions/decision-13`. Paths in this
-file are relative to this directory unless they start with `docs/decisions/`.
+file are relative to this directory. The one exception is `docs/decisions/decision-13`, which is the
+workspace decision at the repository root; this package's own ADRs live in `docs/decisions/` here.
 
 ## Project
 
