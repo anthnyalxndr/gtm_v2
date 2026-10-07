@@ -1,0 +1,424 @@
+{
+  "EVENT_STARTED": {
+    "containerProduct": "GTM",
+    "key": {
+      "publicId": "GTM-WNX8FFXW",
+      "eventId": 1,
+      "eventName": "gtm.init_consent",
+      "groupId": "7567946434264738",
+      "targetRef": {
+        "ctid": "GTM-WNX8FFXW",
+        "isDestination": false,
+        "canonicalId": "241202947"
+      }
+    },
+    "version": "2",
+    "messageType": "EVENT_STARTED",
+    "consentData": {
+      "fullConsentList": {
+        "ad_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "analytics_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_user_data": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_personalization": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        }
+      },
+      "usedContainerConsent": false,
+      "consentList": {
+        "ad_storage": {
+          "implicit": true
+        },
+        "analytics_storage": {
+          "implicit": true
+        },
+        "ad_user_data": {
+          "implicit": true
+        },
+        "ad_personalization": {
+          "implicit": true
+        }
+      },
+      "defaultConsent": false,
+      "wasSetLate": false
+    },
+    "tagInfo": [
+      {
+        "name": "GA4 - form_submit",
+        "metadata": {
+          "type": "gaawe",
+          "isVendorTemplate": true
+        },
+        "tagData": {
+          "function": "gaawe",
+          "vtp_eventName": ["form_submit", "form_submit"],
+          "vtp_measurementIdOverride": [
+            {
+              "type": "macro",
+              "name": "Const - GA4 Measurement ID"
+            },
+            "G-PLACEHOLDER"
+          ],
+          "vtp_enableUserProperties": [true, true],
+          "vtp_enableEuid": [true, true],
+          "vtp_migratedToV2": [true, true],
+          "vtp_demoV2": [false, false],
+          "tag_id": [6, 6]
+        }
+      }
+    ]
+  },
+  "MACRO_RESOLVED": {
+    "containerProduct": "GTM",
+    "key": {
+      "publicId": "GTM-WNX8FFXW",
+      "eventId": 1,
+      "eventName": "gtm.init_consent",
+      "groupId": "7567946434264738",
+      "targetRef": {
+        "ctid": "GTM-WNX8FFXW",
+        "isDestination": false,
+        "canonicalId": "241202947"
+      }
+    },
+    "version": "2",
+    "messageType": "MACRO_RESOLVED",
+    "consentData": {
+      "fullConsentList": {
+        "ad_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "analytics_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_user_data": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_personalization": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        }
+      },
+      "usedContainerConsent": false,
+      "consentList": {
+        "ad_storage": {
+          "implicit": true
+        },
+        "analytics_storage": {
+          "implicit": true
+        },
+        "ad_user_data": {
+          "implicit": true
+        },
+        "ad_personalization": {
+          "implicit": true
+        }
+      },
+      "defaultConsent": false,
+      "wasSetLate": false
+    },
+    "ruleInfo": [
+      {
+        "name": "Custom Event - form_submit",
+        "predicates": [
+          {
+            "function": "eq",
+            "arg0": [
+              {
+                "type": "macro",
+                "name": "_event"
+              },
+              "gtm.init_consent"
+            ],
+            "arg1": ["form_submit", "form_submit"],
+            "pass": false,
+            "isIgnored": false
+          }
+        ],
+        "pass": false,
+        "firingTags": [0],
+        "blockingTags": []
+      }
+    ]
+  },
+  "TAG_STARTED": {
+    "containerProduct": "GTM",
+    "key": {
+      "publicId": "GTM-WNX8FFXW",
+      "eventId": 8,
+      "eventName": "form_submit",
+      "groupId": "7567946434264738",
+      "tagName": "GA4 - form_submit",
+      "targetRef": {
+        "ctid": "GTM-WNX8FFXW",
+        "isDestination": false,
+        "canonicalId": "241202947"
+      }
+    },
+    "version": "2",
+    "messageType": "TAG_STARTED",
+    "consentData": {
+      "fullConsentList": {
+        "ad_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "analytics_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_user_data": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_personalization": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        }
+      },
+      "usedContainerConsent": false,
+      "consentList": {
+        "ad_storage": {
+          "implicit": true
+        },
+        "analytics_storage": {
+          "implicit": true
+        },
+        "ad_user_data": {
+          "implicit": true
+        },
+        "ad_personalization": {
+          "implicit": true
+        }
+      },
+      "defaultConsent": false,
+      "wasSetLate": false
+    },
+    "tagInfo": [
+      {
+        "name": "GA4 - form_submit",
+        "tagData": {
+          "function": "gaawe",
+          "vtp_eventName": ["form_submit", "form_submit"],
+          "vtp_measurementIdOverride": [
+            {
+              "type": "macro",
+              "name": "Const - GA4 Measurement ID"
+            },
+            "G-PLACEHOLDER"
+          ],
+          "vtp_enableUserProperties": [true, true],
+          "vtp_enableEuid": [true, true],
+          "vtp_migratedToV2": [true, true],
+          "vtp_demoV2": [false, false],
+          "tag_id": [6, 6]
+        },
+        "execute": "execute"
+      }
+    ]
+  },
+  "DATA_LAYER": {
+    "containerProduct": "GTM",
+    "key": {
+      "publicId": "GTM-WNX8FFXW",
+      "eventId": 1,
+      "eventName": "gtm.init_consent",
+      "groupId": "7567946434264738",
+      "targetRef": {
+        "ctid": "GTM-WNX8FFXW",
+        "isDestination": false,
+        "canonicalId": "241202947"
+      }
+    },
+    "version": "2",
+    "messageType": "DATA_LAYER",
+    "consentData": {
+      "fullConsentList": {
+        "ad_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "analytics_storage": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_user_data": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        },
+        "ad_personalization": {
+          "consentEntry": {
+            "implicit": true
+          },
+          "isConsentGranted": true
+        }
+      },
+      "usedContainerConsent": false,
+      "consentList": {
+        "ad_storage": {
+          "implicit": true
+        },
+        "analytics_storage": {
+          "implicit": true
+        },
+        "ad_user_data": {
+          "implicit": true
+        },
+        "ad_personalization": {
+          "implicit": true
+        }
+      },
+      "defaultConsent": false,
+      "wasSetLate": false
+    },
+    "message": {
+      "event": "gtm.init_consent",
+      "gtm.uniqueEventId": 1
+    },
+    "abstractModel": {
+      "event": "gtm.init_consent",
+      "gtm": {
+        "uniqueEventId": 1
+      }
+    },
+    "macroInfo": [
+      {
+        "name": "_event",
+        "type": "e",
+        "metadata": {
+          "type": "e",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "e"
+        },
+        "resolvedValue": "gtm.init_consent"
+      },
+      {
+        "name": "Const - GA4 Measurement ID",
+        "type": "c",
+        "metadata": {
+          "type": "c",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "c",
+          "vtp_value": ["G-PLACEHOLDER", "G-PLACEHOLDER"]
+        },
+        "resolvedValue": "G-PLACEHOLDER"
+      },
+      {
+        "name": "Page URL",
+        "type": "u",
+        "metadata": {
+          "type": "u",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "u",
+          "vtp_component": ["URL", "URL"],
+          "vtp_enableMultiQueryKeys": [false, false],
+          "vtp_enableIgnoreEmptyQueryParam": [false, false]
+        },
+        "resolvedValue": "https://poc.local/"
+      },
+      {
+        "name": "Page Hostname",
+        "type": "u",
+        "metadata": {
+          "type": "u",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "u",
+          "vtp_component": ["HOST", "HOST"],
+          "vtp_enableMultiQueryKeys": [false, false],
+          "vtp_enableIgnoreEmptyQueryParam": [false, false]
+        },
+        "resolvedValue": "poc.local"
+      },
+      {
+        "name": "Page Path",
+        "type": "u",
+        "metadata": {
+          "type": "u",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "u",
+          "vtp_component": ["PATH", "PATH"],
+          "vtp_enableMultiQueryKeys": [false, false],
+          "vtp_enableIgnoreEmptyQueryParam": [false, false]
+        },
+        "resolvedValue": "/"
+      },
+      {
+        "name": "Referrer",
+        "type": "f",
+        "metadata": {
+          "type": "f",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "f",
+          "vtp_component": ["URL", "URL"]
+        },
+        "resolvedValue": ""
+      },
+      {
+        "name": "Event",
+        "type": "e",
+        "metadata": {
+          "type": "e",
+          "isVendorTemplate": true
+        },
+        "macroData": {
+          "function": "e"
+        },
+        "resolvedValue": "gtm.init_consent"
+      }
+    ]
+  }
+}
