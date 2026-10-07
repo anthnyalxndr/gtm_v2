@@ -1,12 +1,14 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
-import { BUILT_IN_TRIGGERS } from "./catalog.js";
+import { catalogFor, type ContainerType } from "@anthnyalxndr/gtm-model";
 import type {
   ClientSpec,
+  CustomTemplateSpec,
   TagSpec,
   TransformationSpec,
   TriggerSpec,
   VariableSpec,
 } from "./types.js";
+import { templateNameOf } from "./cvt.js";
 
 /** Name-to-id maps and raw entities for a workspace, used to resolve spec references. */
 export interface ExistingState {
@@ -16,6 +18,8 @@ export interface ExistingState {
   tags: Map<string, string>;
   clients: Map<string, string>;
   transformations: Map<string, string>;
+  /** Template name to the cvt_ type it has in this container. */
+  templates: Map<string, string>;
   builtIns: Set<string>;
   raw: {
     folder: tagmanager_v2.Schema$Folder[];
@@ -24,26 +28,56 @@ export interface ExistingState {
     tag: tagmanager_v2.Schema$Tag[];
     client: tagmanager_v2.Schema$Client[];
     transformation: tagmanager_v2.Schema$Transformation[];
+    customTemplate: tagmanager_v2.Schema$CustomTemplate[];
+    /** Read only when the spec has gtag configs; not every container supports them. */
+    gtagConfig: tagmanager_v2.Schema$GtagConfig[];
   };
 }
 
-export function emptyState(): ExistingState {
+/** A container with no entities; built-in triggers come from the container type (web when unknown). */
+export function emptyState(containerType?: ContainerType): ExistingState {
   return {
     folders: new Map(),
     variables: new Map(),
     // Built-in triggers exist in every container but are never listed; a spec names them like any trigger.
-    triggers: new Map(Object.entries(BUILT_IN_TRIGGERS)),
+    triggers: new Map(Object.entries(catalogFor(containerType).triggers.builtIn)),
     tags: new Map(),
     clients: new Map(),
     transformations: new Map(),
+    templates: new Map(),
     builtIns: new Set(),
-    raw: { folder: [], variable: [], trigger: [], tag: [], client: [], transformation: [] },
+    raw: {
+      folder: [],
+      variable: [],
+      trigger: [],
+      tag: [],
+      client: [],
+      transformation: [],
+      customTemplate: [],
+      gtagConfig: [],
+    },
   };
 }
 
 export interface Unresolved {
-  kind: "folder" | "trigger";
+  kind: "folder" | "trigger" | "customTemplate";
   name: string;
+}
+
+/** Rewrite a cvt:<name> sentinel type to the target container's cvt_ type, or record it unresolved. */
+function resolveTemplate(
+  type: string | null | undefined,
+  ids: ExistingState,
+  unresolved: Unresolved[]
+): string | null | undefined {
+  const name = templateNameOf(type);
+  if (name === undefined) return type;
+  const cvt = ids.templates.get(name);
+  if (!cvt) {
+    unresolved.push({ kind: "customTemplate", name });
+    return type;
+  }
+  return cvt;
 }
 
 export interface Converted<T> {
@@ -71,7 +105,13 @@ export function toApiVariable(
   const body: tagmanager_v2.Schema$Variable = { ...rest };
   const folderId = resolveFolder(parentFolderName, ids, unresolved);
   if (folderId) body.parentFolderId = folderId;
+  body.type = resolveTemplate(body.type, ids, unresolved) ?? body.type;
   return { body, unresolved };
+}
+
+/** A template body for the API: the spec as is (name, templateData, galleryReference). */
+export function toApiTemplate(spec: CustomTemplateSpec): tagmanager_v2.Schema$CustomTemplate {
+  return { ...spec };
 }
 
 export function toApiTrigger(
@@ -130,5 +170,6 @@ export function toApiTag(spec: TagSpec, ids: ExistingState): Converted<tagmanage
   if (firing) body.firingTriggerId = firing;
   const blocking = resolveTriggers(blockingTriggerName);
   if (blocking) body.blockingTriggerId = blocking;
+  body.type = resolveTemplate(body.type, ids, unresolved) ?? body.type;
   return { body, unresolved };
 }

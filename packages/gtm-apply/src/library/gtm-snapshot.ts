@@ -1,8 +1,9 @@
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
+import { redactSnapshotSecrets } from "../snapshot/redact.js";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { pullSnapshot, snapshotToSpec } from "../snapshot/pull.js";
 import type { ApiSnapshotData, ContainerType, SnapshotSource } from "../snapshot/types.js";
-import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
+import { applySpec, type ApplySpecOutcome, type ExecuteOptions } from "../spec/execute.js";
 import type {
   ClientSpec,
   ContainerSpec,
@@ -21,9 +22,16 @@ import {
   type NamingConventions,
 } from "../spec/conventions.js";
 import { closure, refKey, type EntityRef } from "./closure.js";
+import {
+  attributeRecipes,
+  computeSpecChanges,
+  type ChangeReport,
+  type ComputeChangesOptions,
+} from "../report/change-report.js";
 import { notesEncoding, resolveEncoding } from "./encoding.js";
 import {
   NOTED_KINDS,
+  NOTES_MAX_LENGTH,
   readMetadata,
   type EntityMetadata,
   type MetadataEncoding,
@@ -31,6 +39,8 @@ import {
   type MetadataIndex,
   type NotedEntity,
 } from "./metadata.js";
+import { describeLiteral, findLiterals, type LiteralBearer } from "./literals.js";
+import { templateNameOf } from "../spec/cvt.js";
 import {
   DEFAULT_PLACEHOLDER_PATTERN,
   MANIFEST_VARIABLE_NAME,
@@ -48,6 +58,8 @@ export interface Recipe {
   /** Roots plus their reference closure. */
   entities: EntityRef[];
   dependencies: ExternalDependency[];
+  /** Recipes a plan must not select together with this one; absent in libraries pulled before conflicts existed. */
+  conflicts?: string[];
 }
 
 /** What a content package commits: the API pull plus what was read and computed from it. */
@@ -86,6 +98,35 @@ type ConstantNames<S> = S extends { readonly data: { readonly variable: readonly
   : never;
 /** Literal names of the library's constant variables when the data is a const literal; string otherwise. */
 export type ConstantNameOf<S> = [ConstantNames<S>] extends [never] ? string : ConstantNames<S>;
+
+/** Names of constants whose metadata declares a placeholder, when the data is a const literal; never otherwise. */
+export type PlaceholderConstantNameOf<S> = S extends { readonly metadata: infer M }
+  ? {
+      [K in keyof M]: K extends `variable:${infer N}`
+        ? M[K] extends { readonly placeholder: object }
+          ? N
+          : never
+        : never;
+    }[keyof M]
+  : never;
+
+type RecipeVariableNames<S, RS extends readonly string[]> = S extends {
+  readonly recipes: readonly (infer Rec)[];
+}
+  ? Rec extends { readonly name: RS[number]; readonly entities: readonly (infer E)[] }
+    ? E extends { readonly kind: "variable"; readonly name: infer N extends string }
+      ? N
+      : never
+    : never
+  : never;
+
+/**
+ * Constants a plan selecting the recipes `RS` must supply: placeholder
+ * constants reached by those recipes. Literal when the data is a const
+ * literal; never otherwise, so plans against a pulled library are unchecked.
+ */
+export type RequiredConstantNameOf<S, RS extends readonly string[]> = PlaceholderConstantNameOf<S> &
+  RecipeVariableNames<S, RS>;
 
 /** Tag types grouped into destination families a plan can enable or disable. */
 export const DEFAULT_DESTINATION_FAMILIES: Readonly<Record<string, string>> = {
@@ -128,7 +169,13 @@ const ROOT_KINDS = ["tag", "client", "transformation"] as const;
  *   const lib = await new GtmSnapshot(client, { container: "GTM-XXXX" }).init();
  *   const same = GtmSnapshot.fromData(JSON.parse(await readFile("library.json", "utf-8")));
  */
-export class GtmSnapshot<R extends string = string, C extends string = string> {
+export class GtmSnapshot<
+  R extends string = string,
+  C extends string = string,
+  S extends GtmSnapshotInput = GtmSnapshotInput,
+> {
+  /** Phantom: the literal this library was built from, so plans can be typed against it. Never set. */
+  declare readonly literal?: S;
   readonly #client: GtmClient | null;
   readonly #source: SnapshotSource | null;
   readonly #options: GtmSnapshotOptions;
@@ -169,8 +216,8 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   static fromData<const S extends GtmSnapshotInput>(
     data: S,
     options: GtmSnapshotOptions = {}
-  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>> {
-    return new GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>>(
+  ): GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>, S> {
+    return new GtmSnapshot<RecipeNameOf<S>, ConstantNameOf<S>, S>(
       data as unknown as GtmSnapshotData,
       options
     );
@@ -245,6 +292,10 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   /** Matches library values a plan must replace: the manifest's placeholderPattern or the default. */
   get placeholderPattern(): RegExp {
     return new RegExp(this.manifest?.placeholderPattern ?? DEFAULT_PLACEHOLDER_PATTERN);
+  }
+  /** Longest notes value lint accepts: the manifest's notesMaxLength or NOTES_MAX_LENGTH. */
+  get notesMaxLength(): number {
+    return this.manifest?.notesMaxLength ?? NOTES_MAX_LENGTH;
   }
   get containerType(): ContainerType {
     return this.data.containerType;
@@ -406,6 +457,7 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     const tag = pick("tag", spec.tag).map(customer);
     const client = pick("client", spec.client).map(customer);
     const transformation = pick("transformation", spec.transformation).map(customer);
+    const customTemplate = pick("customTemplate", spec.customTemplate);
     const builtInVariable = (spec.builtInVariable ?? []).filter((b) =>
       wanted.has(refKey({ kind: "builtInVariable", name: b }))
     );
@@ -414,6 +466,7 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     if (variable.length) out.variable = variable;
     if (client.length) out.client = client;
     if (transformation.length) out.transformation = transformation;
+    if (customTemplate.length) out.customTemplate = customTemplate;
     if (trigger.length) out.trigger = trigger;
     if (tag.length) out.tag = tag;
     return out;
@@ -423,8 +476,9 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
    * Problems in how the library declares itself: unreadable metadata
    * trailers, recipes declared where they cannot be, recipes the manifest
    * does not know, recipes that never fire, dependencies outside their
-   * recipe, placeholders that disagree with their value, and naming when
-   * conventions are in effect.
+   * recipe, placeholders that disagree with their value, literals that look
+   * site-specific, notes too long to save, and naming when conventions are
+   * in effect.
    */
   lint(): SpecIssue[] {
     const { spec } = this.#ready();
@@ -433,6 +487,18 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     if (conventions) issues.push(...checkNames(spec, conventions));
     for (const { ref, message } of this.#metadataErrors) {
       issues.push({ entity: `${ref.kind} "${ref.name}"`, path: "notes", message });
+    }
+    const maxNotes = this.notesMaxLength;
+    for (const kind of NOTED_KINDS) {
+      for (const entity of spec[kind] ?? []) {
+        const length = entity.notes?.length ?? 0;
+        if (!entity.name || length <= maxNotes) continue;
+        issues.push({
+          entity: `${kind} "${entity.name}"`,
+          path: "notes",
+          message: `is ${length} characters, over the ${maxNotes} Tag Manager saves`,
+        });
+      }
     }
     const declared = this.manifest?.recipes ? new Set(Object.keys(this.manifest.recipes)) : null;
     const roots = new Set<string>(ROOT_KINDS);
@@ -470,6 +536,15 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
       const hasTagRoot = recipe.roots.some((r) => r.kind === "tag");
       if (hasTagRoot && !recipe.entities.some((r) => r.kind === "trigger")) {
         issues.push({ entity, path: "", message: "reaches no trigger, so its tags never fire" });
+      }
+      for (const other of recipe.conflicts ?? []) {
+        if (!this.#recipes.some((r) => r.name === other)) {
+          issues.push({
+            entity,
+            path: "conflicts",
+            message: `names "${other}", which is not a recipe`,
+          });
+        }
       }
       const names = new Set(recipe.entities.map(refKey));
       recipe.dependencies.forEach((dep, i) => {
@@ -513,14 +588,51 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
         });
       }
     }
+    const templateNames = new Set((spec.customTemplate ?? []).map((t) => t.name).filter(Boolean));
+    for (const kind of ["tag", "variable"] as const) {
+      for (const entity of spec[kind] ?? []) {
+        const templateName = templateNameOf(entity.type);
+        if (templateName && !templateNames.has(templateName)) {
+          issues.push({
+            entity: `${kind} "${entity.name}"`,
+            path: "type",
+            message: `is built on custom template "${templateName}", which is not in the library`,
+          });
+        }
+      }
+    }
+    const rules = this.manifest?.literals ?? {};
+    const isPlaceholderValue = (value: string) => placeholder.test(value.trim());
+    for (const kind of NOTED_KINDS) {
+      for (const entity of spec[kind] ?? []) {
+        if (!entity.name || entity.name === MANIFEST_VARIABLE_NAME) continue;
+        const ref = { kind, name: entity.name };
+        if (kind === "variable" && this.#metadata[refKey(ref)]?.placeholder) continue;
+        for (const { path, hit } of findLiterals(
+          entity as LiteralBearer,
+          rules,
+          isPlaceholderValue
+        )) {
+          issues.push({
+            entity: `${kind} "${entity.name}"`,
+            path,
+            message: `holds ${JSON.stringify(hit.value)}, which ${describeLiteral(hit)}; hoist it into a Const with a placeholder entry, or list it in the manifest's literals.allow`,
+          });
+        }
+      }
+    }
     return issues;
   }
 
-  /** Apply the staged state, manifest included, back to the container. Never strips declarations. */
+  /**
+   * Apply the staged state, manifest included, back to the container. Never strips
+   * declarations. Like applySpec, it leaves the workspace in place unless `version`
+   * or `publish` is set.
+   */
   push(
     client: GtmClient,
     target: { container?: string; workspace: string },
-    options: { dryRun?: boolean; publish?: boolean; versionName?: string } = {}
+    options: ExecuteOptions & { dryRun?: boolean } = {}
   ): Promise<ApplySpecOutcome> {
     const container = target.container ?? this.#source?.container ?? this.data.container.publicId;
     if (!container) throw new Error("push needs a target container");
@@ -532,13 +644,32 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
     });
   }
 
+  /** Recipe name to the refKeys of the entities in its closure. */
+  #recipeEntityKeys(): Map<string, Set<string>> {
+    return new Map(this.#recipes.map((r) => [r.name, new Set(r.entities.map(refKey))]));
+  }
+
+  /**
+   * The changes staged since the pull: the staged state (spec) against the
+   * pristine pull, attributed to the recipes each changed entity belongs to.
+   */
+  changes(options: ComputeChangesOptions = {}): ChangeReport {
+    const { data } = this.#ready();
+    const report = computeSpecChanges(snapshotToSpec(data), this.spec, {
+      source: "snapshot",
+      container: this.data.container.publicId ?? undefined,
+      ...options,
+    });
+    return attributeRecipes(report, this.#recipeEntityKeys());
+  }
+
   /** The pristine pull with its manifest, encoding, metadata and recipe index; what a content package commits. */
   toJSON(): GtmSnapshotData {
     const { data, encoding } = this.#ready();
     const spec = snapshotToSpec(data);
     const { index } = readMetadata(spec, encoding);
     return {
-      data,
+      data: redactSnapshotSecrets(data),
       manifest: this.#manifest,
       encoding: {
         name: encoding.name,
@@ -586,5 +717,6 @@ export function indexRecipes(
     roots: rootRefs,
     entities: closure(spec, rootRefs),
     dependencies: manifest?.recipes?.[name]?.dependencies ?? [],
+    conflicts: manifest?.recipes?.[name]?.conflicts ?? [],
   }));
 }

@@ -1,4 +1,5 @@
 import { builtInTypeForName, referencedVariableNames } from "../spec/catalog.js";
+import { templateNameOf } from "../spec/cvt.js";
 import type { ContainerSpec, EntityKind, TriggerSpec } from "../spec/types.js";
 
 export type RefKind = EntityKind | "builtInVariable";
@@ -38,7 +39,7 @@ export function referencesOf(spec: ContainerSpec, ref: EntityRef): EntityRef[] {
       if (name.startsWith("_")) continue;
       if (byName(spec.variable, name)) add("variable", name);
       else {
-        const type = builtInTypeForName(name);
+        const type = builtInTypeForName(name, spec.containerType);
         if (type) add("builtInVariable", type);
       }
     }
@@ -48,6 +49,7 @@ export function referencesOf(spec: ContainerSpec, ref: EntityRef): EntityRef[] {
       const tag = byName(spec.tag, ref.name);
       if (!tag) return out;
       add("folder", tag.parentFolderName);
+      add("customTemplate", templateNameOf(tag.type));
       for (const t of tag.firingTriggerName ?? []) add("trigger", t);
       for (const t of tag.blockingTriggerName ?? []) add("trigger", t);
       for (const s of tag.setupTag ?? []) add("tag", s.tagName);
@@ -69,6 +71,7 @@ export function referencesOf(spec: ContainerSpec, ref: EntityRef): EntityRef[] {
       const entity = byName(spec[ref.kind], ref.name);
       if (!entity) return out;
       add("folder", entity.parentFolderName);
+      if (ref.kind === "variable") add("customTemplate", templateNameOf(entity.type));
       variables(entity);
       return out;
     }

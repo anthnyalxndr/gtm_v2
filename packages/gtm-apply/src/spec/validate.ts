@@ -1,3 +1,4 @@
+import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import {
   BUILT_IN_VARIABLE_TYPES,
   SCHEMAS,
@@ -69,7 +70,10 @@ const TOP_LEVEL: Record<string, SchemaName | "builtIn"> = {
   tag: "Tag",
   client: "Client",
   transformation: "Transformation",
+  customTemplate: "CustomTemplate",
   builtInVariable: "builtIn",
+  environment: "Environment",
+  gtagConfig: "GtagConfig",
 };
 
 interface Ctx {
@@ -134,7 +138,7 @@ function checkObject(
       push(
         ctx,
         at,
-        `is not a field of ${schema}; run \`pnpm gen:discovery --fetch\` if the API added it`
+        `is not a field of ${schema}; run \`pnpm --filter @anthnyalxndr/gtm-model gen:discovery --fetch\` if the API added it`
       );
       continue;
     }
@@ -154,19 +158,77 @@ function checkEntity(
   schema: SchemaName,
   value: unknown
 ): void {
-  const label =
-    isRecord(value) && typeof value.name === "string" && value.name
-      ? `${kind} "${value.name}"`
-      : `${kind}[${index}]`;
+  const id = schema === "GtagConfig" && isRecord(value) ? gtagConfigTagId(value) : value;
+  const named = schema === "GtagConfig" ? id : isRecord(value) ? value.name : undefined;
+  const label = typeof named === "string" && named ? `${kind} "${named}"` : `${kind}[${index}]`;
   const ctx: Ctx = { entity: label, issues };
   if (!isRecord(value)) return push(ctx, "", `must be an object (got ${show(value)})`);
-  if (typeof value.name !== "string" || value.name.length === 0) {
+  if (schema === "GtagConfig") {
+    if (!gtagConfigTagId(value)) {
+      push(ctx, "parameter", "needs a tagId entry, which identifies the config");
+    }
+  } else if (typeof value.name !== "string" || value.name.length === 0) {
     push(ctx, "name", "is required");
   }
-  if (schema !== "Folder" && (typeof value.type !== "string" || value.type.length === 0)) {
+  if (schema === "Environment") return checkEnvironment(ctx, value);
+  const typeless = schema === "Folder" || schema === "CustomTemplate";
+  if (!typeless && (typeof value.type !== "string" || value.type.length === 0)) {
     push(ctx, "type", "is required");
   }
   checkObject(ctx, "", schema, value);
+  if (schema === "Variable" && value.type === "c") checkConstantLength(ctx, value);
+}
+
+function checkUniqueTagIds(issues: SpecIssue[], configs: unknown[]): void {
+  const seen = new Map<string, number>();
+  for (const c of configs) {
+    const tagId = isRecord(c) ? gtagConfigTagId(c) : undefined;
+    if (tagId) seen.set(tagId, (seen.get(tagId) ?? 0) + 1);
+  }
+  for (const [tagId, count] of seen) {
+    if (count > 1) {
+      issues.push({
+        entity: `gtagConfig "${tagId}"`,
+        path: "tagId",
+        message: "appears in more than one config",
+      });
+    }
+  }
+}
+
+/** Environment fields a spec may carry; Tag Manager sets every other one. */
+const ENVIRONMENT_SPEC_FIELDS = new Set(["name", "description", "url", "enableDebug", "type"]);
+
+function checkEnvironment(ctx: Ctx, env: Record<string, unknown>): void {
+  if (typeof env.name === "string" && ["live", "latest"].includes(env.name.trim().toLowerCase())) {
+    push(ctx, "name", "is built in; Live and Latest are never in a spec");
+  }
+  for (const key of Object.keys(env)) {
+    if (!ENVIRONMENT_SPEC_FIELDS.has(key)) {
+      push(ctx, key, "is set by Tag Manager and never in a spec");
+    }
+  }
+  if (env.type !== undefined && env.type !== "user") {
+    push(ctx, "type", 'must be "user" (only custom environments are in a spec)');
+  }
+  checkObject(ctx, "", "Environment", env);
+}
+
+/** Tag Manager rejects a constant variable whose value is longer than this. */
+export const CONSTANT_VALUE_MAX_LENGTH = 1024;
+
+function checkConstantLength(ctx: Ctx, variable: Record<string, unknown>): void {
+  const params = Array.isArray(variable.parameter) ? variable.parameter : [];
+  for (const p of params) {
+    if (!isRecord(p) || p.key !== "value" || typeof p.value !== "string") continue;
+    if (p.value.length > CONSTANT_VALUE_MAX_LENGTH) {
+      push(
+        ctx,
+        "parameter.value",
+        `is ${p.value.length} characters; Tag Manager caps a constant's value at ${CONSTANT_VALUE_MAX_LENGTH}`
+      );
+    }
+  }
 }
 
 /**
@@ -220,6 +282,7 @@ export function validateSpec(spec: unknown): SpecIssue[] {
       continue;
     }
     value.forEach((v, i) => checkEntity(issues, key, i, kind, v));
+    if (kind === "GtagConfig") checkUniqueTagIds(issues, value);
   }
   return issues;
 }

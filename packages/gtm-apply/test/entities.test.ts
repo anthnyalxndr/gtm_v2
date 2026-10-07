@@ -9,7 +9,7 @@ import {
 } from "../src/resources/entities.js";
 import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
 
-const ws = "accounts/1/containers/10/workspace/100";
+const ws = "accounts/1/containers/10/workspaces/100";
 
 describe("matches", () => {
   it("compares only keys present in desired and ignores server fields", () => {
@@ -22,6 +22,46 @@ describe("matches", () => {
   it("compares arrays positionally and deeply", () => {
     expect(matches({ p: [{ k: "a", v: 1 }] }, { p: [{ k: "a" }] })).toBe(true);
     expect(matches({ p: [{ k: "a" }] }, { p: [{ k: "a" }, { k: "b" }] })).toBe(false);
+  });
+
+  it("compares arrays of uniquely keyed items by key, in any order", () => {
+    const existing = {
+      parameter: [
+        { type: "template", key: "conversionLabel", value: "xyz" },
+        { type: "template", key: "conversionId", value: "{{Const - Ads ID}}" },
+      ],
+    };
+    const desired = {
+      parameter: [
+        { type: "template", key: "conversionId", value: "{{Const - Ads ID}}" },
+        { type: "template", key: "conversionLabel", value: "xyz" },
+      ],
+    };
+    expect(matches(existing, desired)).toBe(true);
+    expect(
+      matches(existing, {
+        parameter: [desired.parameter[0], { ...desired.parameter[1], value: "abc" }],
+      })
+    ).toBe(false);
+    expect(
+      matches(existing, {
+        parameter: [desired.parameter[0], { type: "template", key: "other", value: "xyz" }],
+      })
+    ).toBe(false);
+  });
+
+  it("falls back to positional comparison when keys repeat or are missing", () => {
+    const dup = [
+      { key: "a", value: "1" },
+      { key: "a", value: "2" },
+    ];
+    expect(matches({ p: dup }, { p: [dup[1], dup[0]] })).toBe(false);
+    expect(matches({ p: dup }, { p: dup })).toBe(true);
+    const unkeyed = [
+      { type: "map", map: [] },
+      { type: "template", value: "x" },
+    ];
+    expect(matches({ list: unkeyed }, { list: [unkeyed[1], unkeyed[0]] })).toBe(false);
   });
 });
 

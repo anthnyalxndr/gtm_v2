@@ -1,16 +1,20 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { SERVER_FIELDS } from "../resources/entities.js";
-import { BUILT_IN_TRIGGERS, upperSnakeToCamel } from "./catalog.js";
+import { catalogFor, upperSnakeToCamel } from "./catalog.js";
 import type { BuiltInVariableType } from "./generated/tagmanager-v2.js";
 import type {
   ClientSpec,
   ContainerSpec,
+  CustomTemplateSpec,
   TagSpec,
   TransformationSpec,
   TriggerSpec,
   VariableSpec,
+  EnvironmentSpec,
+  GtagConfigSpec,
 } from "./types.js";
 import { containerTypeOf } from "../snapshot/pull.js";
+import { cleanGalleryReference, cvtSentinel } from "./cvt.js";
 
 export class NormalizeError extends Error {}
 
@@ -75,12 +79,45 @@ export function normalizeExport(input: unknown): ContainerSpec {
   const rawBuiltIns = (cv.builtInVariable ?? []) as (string | { type?: string | null })[];
   const rawClients = (cv.client ?? []) as ClientSpec[];
   const rawTransformations = (cv.transformation ?? []) as TransformationSpec[];
+  const rawTemplates = (cv.customTemplate ?? []) as tagmanager_v2.Schema$CustomTemplate[];
+
+  // Make a tag or variable built on a custom template name-portable. A local
+  // template's type is cvt_<containerId>_<templateId> and a gallery template's
+  // is cvt_<galleryTemplateId>, so match a local type by its trailing template
+  // id and a gallery type by its gallery id. Types already normalized to the
+  // cvt:<name> sentinel are left alone (normalizeExport is idempotent).
+  const templateByTemplateId = new Map<string, string>();
+  const templateByGalleryId = new Map<string, string>();
+  for (const t of rawTemplates) {
+    if (!t.name) continue;
+    if (t.templateId) templateByTemplateId.set(String(t.templateId), t.name);
+    const gid = t.galleryReference?.galleryTemplateId;
+    if (gid) templateByGalleryId.set(gid, t.name);
+  }
+  const resolveCvt = (kind: string, name: string | null | undefined, type: unknown): unknown => {
+    if (typeof type !== "string" || !type.startsWith("cvt_")) return type;
+    const rest = type.slice("cvt_".length);
+    const local = /^(\d+)_(\d+)$/.exec(rest);
+    const templateName = local ? templateByTemplateId.get(local[2]) : templateByGalleryId.get(rest);
+    if (!templateName) {
+      throw new NormalizeError(
+        `${kind} "${name}" uses custom template ${type}, but no matching template is in the export`
+      );
+    }
+    return cvtSentinel(templateName);
+  };
+  const rawEnvironments = (cv.environment ?? []) as tagmanager_v2.Schema$Environment[];
+  const rawGtagConfigs = (cv.gtagConfig ?? []) as tagmanager_v2.Schema$GtagConfig[];
 
   const folderNames: IdMap = new Map(
     rawFolders.filter((f) => f.folderId).map((f) => [String(f.folderId), f.name ?? ""])
   );
+  // Built-in trigger ids differ by container type (web and server each have an "All Pages").
+  const containerType = containerTypeFrom(cv, input);
   const triggerNames: IdMap = new Map([
-    ...Object.entries(BUILT_IN_TRIGGERS).map(([name, id]): [string, string] => [id, name]),
+    ...Object.entries(catalogFor(containerType).triggers.builtIn).map(
+      ([name, id]): [string, string] => [id, name]
+    ),
     ...rawTriggers
       .filter((t) => t.triggerId)
       .map((t): [string, string] => [String(t.triggerId), t.name ?? ""]),
@@ -97,18 +134,14 @@ export function normalizeExport(input: unknown): ContainerSpec {
   };
 
   const tags = rawTags.map((t) => {
-    if (t.type?.startsWith("cvt_")) {
-      throw new NormalizeError(
-        `Tag "${t.name}" uses custom template ${t.type}, which is bound to the source container. Import the template into the target first; custom templates are not supported by the normalizer yet.`
-      );
-    }
+    const type = resolveCvt("Tag", t.name, t.type);
     if (containsTriggerReference(t.parameter)) {
       throw new NormalizeError(
         `Tag "${t.name}" contains a triggerReference parameter (trigger group). Not supported yet.`
       );
     }
     const { firingTriggerId, blockingTriggerId, ...rest } = t;
-    const spec: TagSpec = withFolder(rest);
+    const spec: TagSpec = withFolder({ ...rest, type: type as string });
     if (firingTriggerId?.length) {
       spec.firingTriggerName = firingTriggerId.map((id) => nameFor(triggerNames, id, "trigger"));
     }
@@ -128,7 +161,16 @@ export function normalizeExport(input: unknown): ContainerSpec {
     }
     return clean(withFolder(t)) as TriggerSpec;
   });
-  const variables = rawVariables.map((v) => clean(withFolder(v)) as VariableSpec);
+  const variables = rawVariables.map((v) => {
+    const type = resolveCvt("Variable", v.name, v.type);
+    return clean(withFolder({ ...v, type: type as string })) as VariableSpec;
+  });
+  const templates = rawTemplates.map((t): CustomTemplateSpec => {
+    const gallery = cleanGalleryReference(t.galleryReference);
+    const base = clean({ name: t.name, templateData: t.templateData }) as Record<string, unknown>;
+    if (gallery) base.galleryReference = gallery;
+    return base as CustomTemplateSpec;
+  });
   const clients = rawClients.map((c) => clean(withFolder(c)) as ClientSpec);
   const transformations = rawTransformations.map((t) => clean(withFolder(t)) as TransformationSpec);
   const builtIns = rawBuiltIns
@@ -137,7 +179,6 @@ export function normalizeExport(input: unknown): ContainerSpec {
     .map((t) => (UPPER_SNAKE.test(t) ? upperSnakeToCamel(t) : t)) as BuiltInVariableType[];
 
   const spec: ContainerSpec = {};
-  const containerType = containerTypeFrom(cv, input);
   if (containerType) spec.containerType = containerType;
   if (rawFolders.length) spec.folder = rawFolders.map((f) => ({ name: f.name ?? "" }));
   if (builtIns.length) spec.builtInVariable = [...new Set(builtIns)];
@@ -146,7 +187,40 @@ export function normalizeExport(input: unknown): ContainerSpec {
   if (tags.length) spec.tag = tags;
   if (clients.length) spec.client = clients;
   if (transformations.length) spec.transformation = transformations;
+  if (templates.length) spec.customTemplate = templates;
+  // Custom environments only: Live and Latest are built in, and Tag Manager owns ids and codes.
+  const environments = rawEnvironments
+    .filter((e) => !e.type || e.type === "user")
+    .map(toEnvironmentSpec);
+  if (environments.length) spec.environment = environments;
+  if (rawGtagConfigs.length) spec.gtagConfig = rawGtagConfigs.map(toGtagConfigSpec);
   return spec;
+}
+
+/** A gtag config without the ids and fields Tag Manager owns. */
+function toGtagConfigSpec(config: tagmanager_v2.Schema$GtagConfig): GtagConfigSpec {
+  const {
+    accountId: _a,
+    containerId: _c,
+    workspaceId: _w,
+    gtagConfigId: _g,
+    fingerprint: _f,
+    path: _p,
+    tagManagerUrl: _u,
+    ...rest
+  } = config;
+  return rest as GtagConfigSpec;
+}
+
+function toEnvironmentSpec(env: tagmanager_v2.Schema$Environment): EnvironmentSpec {
+  return {
+    name: env.name ?? "",
+    ...(env.description ? { description: env.description } : {}),
+    ...(env.url ? { url: env.url } : {}),
+    ...(env.enableDebug !== undefined && env.enableDebug !== null
+      ? { enableDebug: env.enableDebug }
+      : {}),
+  };
 }
 
 /** A UI export carries container.usageContext; a normalized spec carries containerType. */

@@ -1,8 +1,12 @@
+import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import { resolveContainer, type ContainerRef } from "@anthnyalxndr/gtm-client";
 import { listEnabledBuiltIns } from "../resources/builtins.js";
 import { matches } from "../resources/entities.js";
+import { workspaceStatus } from "../resources/workspaces.js";
+import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import { builtInTypeForName, referencedVariableNames } from "./catalog.js";
+import { cvtSentinel, targetCvtType } from "./cvt.js";
 import {
   emptyState,
   toApiTag,
@@ -11,12 +15,12 @@ import {
   type Converted,
   type ExistingState,
 } from "./convert.js";
-import type { ContainerSpec, VariableSpec } from "./types.js";
+import type { ContainerSpec, EnvironmentSpec, VariableSpec } from "./types.js";
 import { assertValidSpec } from "./validate.js";
 import { SECTIONS_BY_CONTAINER_TYPE } from "./kinds.js";
 import { containerTypeOf } from "../snapshot/pull.js";
 import type { ContainerType } from "../snapshot/types.js";
-import { toApiClient, toApiTransformation } from "./convert.js";
+import { toApiClient, toApiTemplate, toApiTransformation } from "./convert.js";
 
 export type OpKind =
   | "workspace"
@@ -27,6 +31,9 @@ export type OpKind =
   | "tag"
   | "client"
   | "transformation"
+  | "customTemplate"
+  | "environment"
+  | "gtagConfig"
   | "version"
   | "publish";
 export type OpAction = "create" | "update" | "unchanged";
@@ -44,8 +51,31 @@ export interface PlanTarget {
   workspace: string;
 }
 
+/** How to name and describe the version an apply creates. */
+export interface VersionOptions {
+  /** Defaults to the workspace name. */
+  name?: string;
+  /** Shown with the version in Tag Manager as its description. Left out of the request when not given. */
+  notes?: string;
+}
+
 export interface PlanOptions {
+  /**
+   * Create a version from the workspace once the apply succeeds. By default the
+   * workspace is left in place for review and further applies. `publish` implies it.
+   */
+  version?: boolean | VersionOptions;
   publish?: boolean;
+}
+
+/** Whether the options ask for a version, directly or through publish. */
+export function wantsVersion(options: PlanOptions): boolean {
+  return Boolean(options.version) || Boolean(options.publish);
+}
+
+/** The name the version gets: the one given, else the workspace's. */
+export function versionName(options: PlanOptions, workspace: string): string {
+  return typeof options.version === "object" ? (options.version.name ?? workspace) : workspace;
 }
 
 export interface Plan {
@@ -56,6 +86,8 @@ export interface Plan {
   /** The input spec plus implicit folders, with variables sorted by reference. */
   spec: ContainerSpec;
   existing: ExistingState;
+  /** The container's custom environments by name; container level, outside any workspace. */
+  environments: ReadonlyMap<string, tagmanager_v2.Schema$Environment>;
   ops: PlannedOp[];
   errors: string[];
 }
@@ -70,28 +102,35 @@ const has = (list: readonly Named[] | undefined, name: string): boolean =>
 export async function loadExisting(
   client: GtmClient,
   workspacePath: string,
-  containerType: ContainerType = "web"
+  containerType: ContainerType = "web",
+  withGtagConfigs = false
 ): Promise<ExistingState> {
   const ws = client.service.accounts.containers.workspaces;
   const parent = workspacePath;
   const serverKinds = SECTIONS_BY_CONTAINER_TYPE[containerType].includes("client");
-  const [folders, variables, triggers, tags, builtIns, clients, transformations] =
+  const [folders, variables, triggers, tags, templates, builtIns, clients, transformations] =
     await Promise.all([
       client.call(() => ws.folders.list({ parent })),
       client.call(() => ws.variables.list({ parent })),
       client.call(() => ws.triggers.list({ parent })),
       client.call(() => ws.tags.list({ parent })),
+      client.call(() => ws.templates.list({ parent })),
       listEnabledBuiltIns(client, workspacePath),
       serverKinds ? client.call(() => ws.clients.list({ parent })) : null,
       serverKinds ? client.call(() => ws.transformations.list({ parent })) : null,
     ]);
-  const state = emptyState();
+  const state = emptyState(containerType);
   state.raw.folder = folders.data.folder ?? [];
   state.raw.variable = variables.data.variable ?? [];
   state.raw.trigger = triggers.data.trigger ?? [];
   state.raw.tag = tags.data.tag ?? [];
   state.raw.client = clients?.data.client ?? [];
   state.raw.transformation = transformations?.data.transformation ?? [];
+  state.raw.customTemplate = templates.data.template ?? [];
+  if (withGtagConfigs) {
+    const gtag = await client.call(() => ws.gtag_config.list({ parent }));
+    state.raw.gtagConfig = gtag.data.gtagConfig ?? [];
+  }
   indexState(state);
   state.builtIns = builtIns;
   return state;
@@ -119,12 +158,13 @@ function indexState(state: ExistingState): void {
  */
 export async function loadExistingFromLatestVersion(
   client: GtmClient,
-  containerPath: string
+  containerPath: string,
+  containerType: ContainerType = "web"
 ): Promise<ExistingState> {
   const api = client.service.accounts.containers;
   const header = await client.call(() => api.version_headers.latest({ parent: containerPath }));
   const versionId = header.data.containerVersionId;
-  const state = emptyState();
+  const state = emptyState(containerType);
   if (!versionId) return state;
   const version = await client.call(() =>
     api.versions.get({ path: `${containerPath}/versions/${versionId}` })
@@ -136,6 +176,8 @@ export async function loadExistingFromLatestVersion(
   state.raw.tag = cv.tag ?? [];
   state.raw.client = cv.client ?? [];
   state.raw.transformation = cv.transformation ?? [];
+  state.raw.customTemplate = cv.customTemplate ?? [];
+  state.raw.gtagConfig = cv.gtagConfig ?? [];
   indexState(state);
   for (const b of cv.builtInVariable ?? []) if (b.type) state.builtIns.add(b.type);
   return state;
@@ -177,6 +219,12 @@ export async function planContainerSpec(
   assertValidSpec(input);
   const container = await resolveContainer(client, target.container);
   const containerType = containerTypeOf(container.usageContext);
+  const indexTemplates = (state: ExistingState): void => {
+    for (const t of state.raw.customTemplate) {
+      const cvt = t.name && targetCvtType(container.containerId, t);
+      if (t.name && cvt) state.templates.set(t.name, cvt);
+    }
+  };
   const ops: PlannedOp[] = [];
   const errors: string[] = [];
   if (input.containerType && input.containerType !== containerType) {
@@ -185,7 +233,7 @@ export async function planContainerSpec(
     );
   }
   const allowed = SECTIONS_BY_CONTAINER_TYPE[containerType];
-  for (const section of ["client", "transformation"] as const) {
+  for (const section of ["client", "transformation", "customTemplate"] as const) {
     if (input[section]?.length && !allowed.includes(section)) {
       errors.push(`${section} entities are not supported by a ${containerType} container`);
     }
@@ -196,7 +244,8 @@ export async function planContainerSpec(
       container,
       workspacePath: null,
       spec: input,
-      existing: emptyState(),
+      existing: emptyState(containerType),
+      environments: new Map(),
       ops,
       errors,
     };
@@ -205,9 +254,11 @@ export async function planContainerSpec(
   const wsList = await client.call(() => wsApi.list({ parent: container.path }));
   const found = (wsList.data.workspace ?? []).find((w) => w.name === target.workspace);
   const workspacePath = found?.path ?? null;
+  const withGtagConfigs = (input.gtagConfig?.length ?? 0) > 0;
   const existing = workspacePath
-    ? await loadExisting(client, workspacePath, containerType)
-    : await loadExistingFromLatestVersion(client, container.path);
+    ? await loadExisting(client, workspacePath, containerType, withGtagConfigs)
+    : await loadExistingFromLatestVersion(client, container.path, containerType);
+  indexTemplates(existing);
 
   ops.push({
     kind: "workspace",
@@ -230,6 +281,7 @@ export async function planContainerSpec(
     tag: input.tag ?? [],
     client: input.client ?? [],
     transformation: input.transformation ?? [],
+    customTemplate: input.customTemplate ?? [],
   };
 
   // Duplicate names within a kind.
@@ -240,6 +292,7 @@ export async function planContainerSpec(
     "tag",
     "client",
     "transformation",
+    "customTemplate",
   ] as const) {
     const seen = new Set<string>();
     for (const e of spec[kind] ?? []) {
@@ -288,7 +341,7 @@ export async function planContainerSpec(
   ])) {
     if (name.startsWith("_")) continue;
     if (has(spec.variable, name) || existing.variables.has(name)) continue;
-    const type = builtInTypeForName(name);
+    const type = builtInTypeForName(name, containerType);
     if (type) {
       builtIns.add(type);
       continue;
@@ -339,6 +392,21 @@ export async function planContainerSpec(
       });
     }
   };
+  // Templates come before the tags and variables that use them. A template
+  // the target lacks is a create; its cvt_ type is only known once created,
+  // so record a provisional entry so cvt:<name> references resolve in the plan.
+  for (const tpl of spec.customTemplate!) {
+    if (!tpl.name) continue;
+    const cur = existing.raw.customTemplate.find((c) => c.name === tpl.name);
+    if (!cur) {
+      ops.push({ kind: "customTemplate", name: tpl.name, action: "create" });
+      if (!existing.templates.has(tpl.name))
+        existing.templates.set(tpl.name, cvtSentinel(tpl.name));
+    } else {
+      const action = matches(cur, toApiTemplate(tpl)) ? "unchanged" : "update";
+      ops.push({ kind: "customTemplate", name: tpl.name, action });
+    }
+  }
   planEntities("variable", spec.variable!, existing.raw.variable, (v) =>
     toApiVariable(v, existing)
   );
@@ -351,13 +419,73 @@ export async function planContainerSpec(
 
   // A version is only created when something changed or a publish was requested;
   // creating one deletes the workspace, so an unchanged run leaves it in place.
-  const changed = ops.some((o) => o.action !== "unchanged" && o.kind !== "workspace");
-  if (changed || options.publish) {
-    ops.push({ kind: "version", name: target.workspace, action: "create" });
+  // Gtag configs have no name; their tagId parameter identifies them.
+  for (const config of input.gtagConfig ?? []) {
+    const tagId = gtagConfigTagId(config) ?? "";
+    const current = existing.raw.gtagConfig.find((c) => gtagConfigTagId(c) === tagId);
+    ops.push({
+      kind: "gtagConfig",
+      name: tagId,
+      action: !current ? "create" : matches(current, config) ? "unchanged" : "update",
+    });
   }
-  if (options.publish) ops.push({ kind: "publish", name: target.workspace, action: "create" });
 
-  return { target, container, workspacePath, spec, existing, ops, errors };
+  // Environments are container level: applied outside the workspace, never in a version.
+  const environments = await loadCustomEnvironments(client, container.path);
+  for (const env of input.environment ?? []) {
+    const current = environments.get(env.name);
+    ops.push({
+      kind: "environment",
+      name: env.name,
+      action: !current ? "create" : environmentChanged(current, env) ? "update" : "unchanged",
+    });
+  }
+
+  // A version is created only when asked for, and then only when the workspace will
+  // differ from the latest version: this run changes something, or an earlier apply
+  // left changes in the workspace. Publishing always versions.
+  if (wantsVersion(options)) {
+    const changed = ops.some(
+      (o) => o.action !== "unchanged" && o.kind !== "workspace" && o.kind !== "environment"
+    );
+    const pending = workspacePath
+      ? (await workspaceStatus(client, workspacePath)).changes > 0
+      : false;
+    if (changed || pending || options.publish) {
+      ops.push({ kind: "version", name: versionName(options, target.workspace), action: "create" });
+    }
+  }
+  if (options.publish) {
+    ops.push({ kind: "publish", name: versionName(options, target.workspace), action: "create" });
+  }
+
+  return { target, container, workspacePath, spec, existing, environments, ops, errors };
+}
+
+/** A container's custom (type user) environments by name. */
+async function loadCustomEnvironments(
+  client: GtmClient,
+  containerPath: string
+): Promise<Map<string, tagmanager_v2.Schema$Environment>> {
+  const api = client.service.accounts.containers.environments;
+  const res = await client.call(() => api.list({ parent: containerPath }));
+  return new Map(
+    (res.data.environment ?? [])
+      .filter((e) => e.type === "user" && e.name)
+      .map((e) => [e.name as string, e])
+  );
+}
+
+/** Whether a spec environment differs from the container's, treating absent as empty or false. */
+export function environmentChanged(
+  current: tagmanager_v2.Schema$Environment,
+  env: EnvironmentSpec
+): boolean {
+  return (
+    (current.description ?? "") !== (env.description ?? "") ||
+    (current.url ?? "") !== (env.url ?? "") ||
+    Boolean(current.enableDebug) !== Boolean(env.enableDebug)
+  );
 }
 
 const LABEL: Record<OpAction, string> = { create: "[+]", update: "[~]", unchanged: "[=]" };
@@ -366,8 +494,13 @@ export function formatPlan(plan: Plan): string {
   const lines = [
     `Container ${plan.target.container} (${plan.container.name}), workspace "${plan.target.workspace}"`,
   ];
-  for (const op of plan.ops) {
-    lines.push(`${LABEL[op.action]} ${op.kind} "${op.name}"${op.implicit ? " (implicit)" : ""}`);
+  const line = (op: PlannedOp) =>
+    `${LABEL[op.action]} ${op.kind} "${op.name}"${op.implicit ? " (implicit)" : ""}`;
+  const environmentOps = plan.ops.filter((op) => op.kind === "environment");
+  for (const op of plan.ops) if (op.kind !== "environment") lines.push(line(op));
+  if (environmentOps.length > 0) {
+    lines.push("Environments (container level, not versioned):");
+    for (const op of environmentOps) lines.push(line(op));
   }
   if (plan.errors.length > 0) {
     lines.push(`Plan has ${plan.errors.length} error(s):`);
