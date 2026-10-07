@@ -1,9 +1,10 @@
 ---
 id: TASK-11
 title: 'Recipe dependencies are verified against GA4 and Google Ads, GA4 first'
-status: To Do
+status: Deferred
 assignee: []
 created_date: '2026-09-11 15:27'
+updated_date: '2026-10-07 16:09'
 labels:
   - sdk
   - verify
