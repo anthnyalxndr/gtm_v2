@@ -96,6 +96,7 @@ describe("server containers", () => {
       container: "GTM-SRV",
       workspace: "ws",
       spec: serverSpec,
+      version: true,
     });
     const kinds = first.plan.ops.filter((o) => o.action === "create").map((o) => o.kind);
     expect(kinds).toEqual([
@@ -118,6 +119,7 @@ describe("server containers", () => {
       container: "GTM-SRV",
       workspace: "ws2",
       spec: serverSpec,
+      version: true,
     });
     expect(
       second.plan.ops.filter((o) => o.kind !== "workspace").every((o) => o.action === "unchanged")
@@ -127,7 +129,12 @@ describe("server containers", () => {
 
   it("round-trips through a snapshot", async () => {
     const { client } = fake();
-    await applySpec(client, { container: "GTM-SRV", workspace: "ws", spec: serverSpec });
+    await applySpec(client, {
+      container: "GTM-SRV",
+      workspace: "ws",
+      spec: serverSpec,
+      version: true,
+    });
     const snap = await pullSnapshot(client, { container: "GTM-SRV" });
     const spec = snapshotToSpec(snap);
     expect(spec.containerType).toBe("server");

@@ -129,6 +129,7 @@ async function library() {
   await applySpec(client, {
     container: "GTM-TPL",
     workspace: "seed",
+    version: true,
     spec: defineContainer({
       variable: [
         manifestVariable({ recipes: { lead: { description: "Lead" } } }),

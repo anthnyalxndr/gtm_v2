@@ -1,7 +1,7 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 
-/** The kind of container, derived from Container.usageContext. */
-export type ContainerType = "web" | "server" | "amp" | "android" | "ios";
+import type { ContainerType } from "@anthnyalxndr/gtm-model";
+export type { ContainerType };
 
 /** What to pull. Exactly one of workspace or version applies; neither means the latest version. */
 export interface SnapshotSource {

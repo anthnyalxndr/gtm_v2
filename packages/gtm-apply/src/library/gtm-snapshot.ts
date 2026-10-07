@@ -1,8 +1,9 @@
 import type { GtmClient } from "@anthnyalxndr/gtm-client";
+import { redactSnapshotSecrets } from "../snapshot/redact.js";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { pullSnapshot, snapshotToSpec } from "../snapshot/pull.js";
 import type { ApiSnapshotData, ContainerType, SnapshotSource } from "../snapshot/types.js";
-import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
+import { applySpec, type ApplySpecOutcome, type ExecuteOptions } from "../spec/execute.js";
 import type {
   ClientSpec,
   ContainerSpec,
@@ -57,6 +58,8 @@ export interface Recipe {
   /** Roots plus their reference closure. */
   entities: EntityRef[];
   dependencies: ExternalDependency[];
+  /** Recipes a plan must not select together with this one; absent in libraries pulled before conflicts existed. */
+  conflicts?: string[];
 }
 
 /** What a content package commits: the API pull plus what was read and computed from it. */
@@ -534,6 +537,15 @@ export class GtmSnapshot<
       if (hasTagRoot && !recipe.entities.some((r) => r.kind === "trigger")) {
         issues.push({ entity, path: "", message: "reaches no trigger, so its tags never fire" });
       }
+      for (const other of recipe.conflicts ?? []) {
+        if (!this.#recipes.some((r) => r.name === other)) {
+          issues.push({
+            entity,
+            path: "conflicts",
+            message: `names "${other}", which is not a recipe`,
+          });
+        }
+      }
       const names = new Set(recipe.entities.map(refKey));
       recipe.dependencies.forEach((dep, i) => {
         if (!names.has(refKey({ kind: "variable", name: dep.constant }))) {
@@ -612,11 +624,15 @@ export class GtmSnapshot<
     return issues;
   }
 
-  /** Apply the staged state, manifest included, back to the container. Never strips declarations. */
+  /**
+   * Apply the staged state, manifest included, back to the container. Never strips
+   * declarations. Like applySpec, it leaves the workspace in place unless `version`
+   * or `publish` is set.
+   */
   push(
     client: GtmClient,
     target: { container?: string; workspace: string },
-    options: { dryRun?: boolean; publish?: boolean; versionName?: string } = {}
+    options: ExecuteOptions & { dryRun?: boolean } = {}
   ): Promise<ApplySpecOutcome> {
     const container = target.container ?? this.#source?.container ?? this.data.container.publicId;
     if (!container) throw new Error("push needs a target container");
@@ -653,7 +669,7 @@ export class GtmSnapshot<
     const spec = snapshotToSpec(data);
     const { index } = readMetadata(spec, encoding);
     return {
-      data,
+      data: redactSnapshotSecrets(data),
       manifest: this.#manifest,
       encoding: {
         name: encoding.name,
@@ -701,5 +717,6 @@ export function indexRecipes(
     roots: rootRefs,
     entities: closure(spec, rootRefs),
     dependencies: manifest?.recipes?.[name]?.dependencies ?? [],
+    conflicts: manifest?.recipes?.[name]?.conflicts ?? [],
   }));
 }

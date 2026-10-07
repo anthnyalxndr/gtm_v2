@@ -119,6 +119,7 @@ describe("apply creates templates before the entities that use them", () => {
       container: "GTM-CUST",
       workspace: "onboarding",
       spec,
+      version: true,
     });
     expect(plan.errors).toEqual([]);
     expect(result?.ops.map((o) => `${o.kind}:${o.action}`)).toContain("customTemplate:create");
@@ -168,6 +169,7 @@ describe("apply creates templates before the entities that use them", () => {
       container: "GTM-CUST",
       workspace: "onboarding",
       spec,
+      version: true,
     });
     expect(plan.errors).toEqual([]);
     expect(state.calls).toContain("template.import_from_gallery");
@@ -197,6 +199,7 @@ describe("library round trip with a custom template tag", () => {
     await applySpec(client, {
       container: "GTM-TPL",
       workspace: "seed",
+      version: true,
       spec: defineContainer({
         variable: [manifestVariable({ recipes: { consent: { description: "Consent init" } } })],
         customTemplate: [{ name: "Consent Pro", templateData: "// code" }],

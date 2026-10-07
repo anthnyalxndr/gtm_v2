@@ -1,4 +1,5 @@
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
+import { catalogFor, type ContainerType } from "@anthnyalxndr/gtm-model";
 import type {
   ClientSpec,
   CustomTemplateSpec,
@@ -28,14 +29,18 @@ export interface ExistingState {
     client: tagmanager_v2.Schema$Client[];
     transformation: tagmanager_v2.Schema$Transformation[];
     customTemplate: tagmanager_v2.Schema$CustomTemplate[];
+    /** Read only when the spec has gtag configs; not every container supports them. */
+    gtagConfig: tagmanager_v2.Schema$GtagConfig[];
   };
 }
 
-export function emptyState(): ExistingState {
+/** A container with no entities; built-in triggers come from the container type (web when unknown). */
+export function emptyState(containerType?: ContainerType): ExistingState {
   return {
     folders: new Map(),
     variables: new Map(),
-    triggers: new Map(),
+    // Built-in triggers exist in every container but are never listed; a spec names them like any trigger.
+    triggers: new Map(Object.entries(catalogFor(containerType).triggers.builtIn)),
     tags: new Map(),
     clients: new Map(),
     transformations: new Map(),
@@ -49,6 +54,7 @@ export function emptyState(): ExistingState {
       client: [],
       transformation: [],
       customTemplate: [],
+      gtagConfig: [],
     },
   };
 }

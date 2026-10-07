@@ -14,7 +14,7 @@ export const NOTES_DELIMITER = "---";
 
 /**
  * The longest notes value known to save. Verified on 2026-09-11 with
- * scripts/probe-notes-cap.ts against the web test container GTM-WNX8FFXW: the
+ * packages/gtm-model/scripts/probe-notes-cap.ts against the web test container GTM-WNX8FFXW: the
  * API accepted and stored every length tried up to 512,000 characters on a
  * variable, and nothing longer was tried, so lint treats that as the cap. A
  * library can tighten it with the manifest's `notesMaxLength`.
