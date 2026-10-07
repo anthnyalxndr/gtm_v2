@@ -24,6 +24,8 @@ import type { SnapshotSource } from "./snapshot/types.js";
 import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
 import { applyPlan, compilePlan, type TrackingPlan } from "./plan/tracking-plan.js";
 import { formatIssue as formatSpecIssue } from "./spec/validate.js";
+import { gitShortSha, loadRepoConfig, renderWorkspace, resolveEnv } from "./config.js";
+import { dirname } from "node:path";
 
 export type CliCommand =
   "apply" | "normalize" | "export" | "snapshot" | "pull" | "delete-workspace";
@@ -36,6 +38,10 @@ export interface CliArgs {
   containers: string[];
   account?: string;
   out?: string;
+  /** A container from the repo config file, by env name or slug. */
+  env?: string;
+  /** Path of the repo config file; default: gtm.config.{json,ts,js,mjs} in the working directory. */
+  config?: string;
   workspace?: string;
   spec?: string;
   file?: string;
@@ -74,6 +80,9 @@ export const USAGE = `Usage:
       (writes <dir>/spec.json, snapshot.json and container.json)
   gtm-apply pull --account <id> --out <dir>
       (one <dir>/<slug>/ per container, slug from the container name; exits 1 if any container failed, after trying them all)
+  gtm-apply <command> --env <name> [--config <file>]
+      (resolve --container, and for apply --spec and --workspace, for pull --out, from the repo config
+       file gtm.config.json; explicit flags win)
   gtm-apply delete-workspace --container GTM-XXXXXXX --workspace <name>
       (delete a review workspace, e.g. when its pull request closes; refuses the Default Workspace)`;
 
@@ -82,6 +91,8 @@ const OPTIONS = {
   container: { type: "string", multiple: true },
   account: { type: "string" },
   out: { type: "string" },
+  env: { type: "string" },
+  config: { type: "string" },
   workspace: { type: "string" },
   spec: { type: "string" },
   "dry-run": { type: "boolean", default: false },
@@ -136,6 +147,8 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     containers: values.container ?? [],
     account: values.account,
     out: values.out,
+    env: values.env,
+    config: values.config,
     workspace: values.workspace,
     spec: values.spec,
     file: positionals[1],
@@ -161,6 +174,35 @@ function sourceFromArgs(args: CliArgs, container: string): SnapshotSource {
     ...(args.workspace ? { workspace: args.workspace } : {}),
     ...(args.live ? { version: "live" } : args.version ? { version: args.version } : {}),
   };
+}
+
+/**
+ * Fill in what --env resolves from the repo config file: the container for
+ * every command, the spec and a rendered workspace name for apply, the
+ * container directory for pull. An explicit flag always wins.
+ */
+export async function withRepoConfig(args: CliArgs): Promise<CliArgs> {
+  if (!args.env) return args;
+  const config = await loadRepoConfig(args.config);
+  const { slug, entry } = resolveEnv(config, args.env);
+  const container = args.container ?? entry.publicId;
+  const filled: CliArgs = {
+    ...args,
+    container,
+    containers: args.containers.length > 0 ? args.containers : [container],
+  };
+  if (args.command === "apply") {
+    if (!args.plan && !args.spec) filled.spec = entry.spec;
+    if (!args.workspace) {
+      filled.workspace = renderWorkspace(config.defaults.workspace, {
+        slug,
+        env: entry.env,
+        commit: gitShortSha(dirname(config.path)),
+      });
+    }
+  }
+  if (args.command === "pull" && !args.out) filled.out = entry.dir;
+  return filled;
 }
 
 /**
@@ -222,11 +264,12 @@ async function verifyAfterPublish(
 }
 
 export async function runCli(
-  args: CliArgs,
+  input: CliArgs,
   client: GtmClient,
   out: (line: string) => void = console.log,
   runCommand: (command: string) => Promise<number> = runShellCommand
 ): Promise<number> {
+  const args = await withRepoConfig(input);
   if (args.verify && !args.publish) {
     throw new Error(`--verify needs --publish: it runs after a successful publish.\n${USAGE}`);
   }
