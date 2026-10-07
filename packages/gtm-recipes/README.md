@@ -92,7 +92,7 @@ GTM_LIBRARY_WORKSPACE="owner-edits" pnpm push web
 
 The Default Workspace is refused (decision-4): automation never writes where people edit by hand.
 
-`pnpm push` lints the template first and refuses on findings. `pnpm pull` lints the container the same way. Commit the regenerated module; a package version pins a library snapshot. `pnpm sample <type>` regenerates the module from the template through an in-memory container, for work without credentials.
+`pnpm push` lints the template first and refuses on findings: recipe names not in the manifest, recipes that reach no trigger, placeholder entries that disagree with their value, inline literals that look site-specific such as a page path typed into a trigger condition, and naming rules. `pnpm pull` lints the container the same way. Commit the regenerated module; a package version pins a library snapshot. `pnpm sample <type>` regenerates the module from the template through an in-memory container, for work without credentials.
 
 ```bash
 GTM_LIBRARY_WORKSPACE=wip pnpm pull web    # work in progress instead of the latest version

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
-import { applyPlan, compilePlan, defineTrackingPlan } from "@anthnyalxndr/gtm-apply";
+import { applyPlan, compilePlan } from "@anthnyalxndr/gtm-apply";
 import { library } from "../src/server/index.js";
 import { recipes } from "../src/index.js";
 import plan from "../examples/server.plan.js";
@@ -49,10 +49,8 @@ describe("gtm-recipes server library", () => {
   });
 
   it("reports an unfilled web container id for web_container_client", () => {
-    const unfilled = compilePlan(
-      library,
-      defineTrackingPlan(library, { recipes: ["web_container_client"] })
-    );
+    // Straight to compilePlan: defineTrackingPlan would demand the constant at compile time.
+    const unfilled = compilePlan(library, { recipes: ["web_container_client"] });
     expect(unfilled.issues.map((i) => i.entity)).toContain('variable "Const - Web Container ID"');
     expect(compilePlan(library, plan).issues).toEqual([]);
   });

@@ -6,6 +6,7 @@ import { matches } from "../resources/entities.js";
 import { workspaceStatus } from "../resources/workspaces.js";
 import { gtagConfigTagId } from "../resources/gtag-configs.js";
 import { builtInTypeForName, referencedVariableNames } from "./catalog.js";
+import { cvtSentinel, targetCvtType } from "./cvt.js";
 import {
   emptyState,
   toApiTag,
@@ -19,7 +20,7 @@ import { assertValidSpec } from "./validate.js";
 import { SECTIONS_BY_CONTAINER_TYPE } from "./kinds.js";
 import { containerTypeOf } from "../snapshot/pull.js";
 import type { ContainerType } from "../snapshot/types.js";
-import { toApiClient, toApiTransformation } from "./convert.js";
+import { toApiClient, toApiTemplate, toApiTransformation } from "./convert.js";
 
 export type OpKind =
   | "workspace"
@@ -30,6 +31,7 @@ export type OpKind =
   | "tag"
   | "client"
   | "transformation"
+  | "customTemplate"
   | "environment"
   | "gtagConfig"
   | "version"
@@ -106,12 +108,13 @@ export async function loadExisting(
   const ws = client.service.accounts.containers.workspaces;
   const parent = workspacePath;
   const serverKinds = SECTIONS_BY_CONTAINER_TYPE[containerType].includes("client");
-  const [folders, variables, triggers, tags, builtIns, clients, transformations] =
+  const [folders, variables, triggers, tags, templates, builtIns, clients, transformations] =
     await Promise.all([
       client.call(() => ws.folders.list({ parent })),
       client.call(() => ws.variables.list({ parent })),
       client.call(() => ws.triggers.list({ parent })),
       client.call(() => ws.tags.list({ parent })),
+      client.call(() => ws.templates.list({ parent })),
       listEnabledBuiltIns(client, workspacePath),
       serverKinds ? client.call(() => ws.clients.list({ parent })) : null,
       serverKinds ? client.call(() => ws.transformations.list({ parent })) : null,
@@ -123,6 +126,7 @@ export async function loadExisting(
   state.raw.tag = tags.data.tag ?? [];
   state.raw.client = clients?.data.client ?? [];
   state.raw.transformation = transformations?.data.transformation ?? [];
+  state.raw.customTemplate = templates.data.template ?? [];
   if (withGtagConfigs) {
     const gtag = await client.call(() => ws.gtag_config.list({ parent }));
     state.raw.gtagConfig = gtag.data.gtagConfig ?? [];
@@ -172,6 +176,7 @@ export async function loadExistingFromLatestVersion(
   state.raw.tag = cv.tag ?? [];
   state.raw.client = cv.client ?? [];
   state.raw.transformation = cv.transformation ?? [];
+  state.raw.customTemplate = cv.customTemplate ?? [];
   state.raw.gtagConfig = cv.gtagConfig ?? [];
   indexState(state);
   for (const b of cv.builtInVariable ?? []) if (b.type) state.builtIns.add(b.type);
@@ -214,6 +219,12 @@ export async function planContainerSpec(
   assertValidSpec(input);
   const container = await resolveContainer(client, target.container);
   const containerType = containerTypeOf(container.usageContext);
+  const indexTemplates = (state: ExistingState): void => {
+    for (const t of state.raw.customTemplate) {
+      const cvt = t.name && targetCvtType(container.containerId, t);
+      if (t.name && cvt) state.templates.set(t.name, cvt);
+    }
+  };
   const ops: PlannedOp[] = [];
   const errors: string[] = [];
   if (input.containerType && input.containerType !== containerType) {
@@ -222,7 +233,7 @@ export async function planContainerSpec(
     );
   }
   const allowed = SECTIONS_BY_CONTAINER_TYPE[containerType];
-  for (const section of ["client", "transformation"] as const) {
+  for (const section of ["client", "transformation", "customTemplate"] as const) {
     if (input[section]?.length && !allowed.includes(section)) {
       errors.push(`${section} entities are not supported by a ${containerType} container`);
     }
@@ -247,6 +258,7 @@ export async function planContainerSpec(
   const existing = workspacePath
     ? await loadExisting(client, workspacePath, containerType, withGtagConfigs)
     : await loadExistingFromLatestVersion(client, container.path, containerType);
+  indexTemplates(existing);
 
   ops.push({
     kind: "workspace",
@@ -269,6 +281,7 @@ export async function planContainerSpec(
     tag: input.tag ?? [],
     client: input.client ?? [],
     transformation: input.transformation ?? [],
+    customTemplate: input.customTemplate ?? [],
   };
 
   // Duplicate names within a kind.
@@ -279,6 +292,7 @@ export async function planContainerSpec(
     "tag",
     "client",
     "transformation",
+    "customTemplate",
   ] as const) {
     const seen = new Set<string>();
     for (const e of spec[kind] ?? []) {
@@ -378,6 +392,21 @@ export async function planContainerSpec(
       });
     }
   };
+  // Templates come before the tags and variables that use them. A template
+  // the target lacks is a create; its cvt_ type is only known once created,
+  // so record a provisional entry so cvt:<name> references resolve in the plan.
+  for (const tpl of spec.customTemplate!) {
+    if (!tpl.name) continue;
+    const cur = existing.raw.customTemplate.find((c) => c.name === tpl.name);
+    if (!cur) {
+      ops.push({ kind: "customTemplate", name: tpl.name, action: "create" });
+      if (!existing.templates.has(tpl.name))
+        existing.templates.set(tpl.name, cvtSentinel(tpl.name));
+    } else {
+      const action = matches(cur, toApiTemplate(tpl)) ? "unchanged" : "update";
+      ops.push({ kind: "customTemplate", name: tpl.name, action });
+    }
+  }
   planEntities("variable", spec.variable!, existing.raw.variable, (v) =>
     toApiVariable(v, existing)
   );

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   NOTED_KINDS,
+  NOTES_MAX_LENGTH,
   formatNotes,
   parseNotes,
   parseRecipeList,
@@ -40,6 +41,12 @@ describe("parseNotes", () => {
   it("accepts recipes as a list or a comma separated string", () => {
     expect(parseNotes('---\n{"recipes": "a, b c"}').metadata?.recipes).toEqual(["a", "b", "c"]);
     expect(parseRecipeList("")).toEqual([]);
+  });
+});
+
+describe("NOTES_MAX_LENGTH", () => {
+  it("is the length the probe script verified", () => {
+    expect(NOTES_MAX_LENGTH).toBe(512_000);
   });
 });
 
