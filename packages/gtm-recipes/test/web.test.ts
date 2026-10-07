@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { GtmClient } from "@anthnyalxndr/gtm-client";
 import { createFakeService, latestSnapshot } from "@anthnyalxndr/gtm-client/testing";
-import { applyPlan, compilePlan, defineTrackingPlan, GtmSnapshot } from "@anthnyalxndr/gtm-apply";
+import {
+  applyPlan,
+  compilePlan,
+  defineTrackingPlan,
+  GtmSnapshot,
+  type RequiredConstantNameOf,
+} from "@anthnyalxndr/gtm-apply";
 import { data, library } from "../src/web/index.js";
 import plan from "../examples/web.plan.js";
 
@@ -105,22 +111,49 @@ describe("gtm-recipes web library", () => {
       example: "https://sgtm.example.com",
       pattern: "^https://[^/]+$",
     });
-    const both = compilePlan(
-      library,
-      defineTrackingPlan(library, { recipes: ["google_tag", "google_tag_server"] })
-    );
+    // Straight to compilePlan: defineTrackingPlan would also demand the placeholder constants.
+    const both = compilePlan(library, { recipes: ["google_tag", "google_tag_server"] });
     expect(both.issues.some((i) => i.message.includes("conflicts with"))).toBe(true);
   });
 
-  it("type-checks plans against the library by recipe and constant name", () => {
+  it("type-checks plans against the library, placeholder constants included", () => {
+    defineTrackingPlan(library, { recipes: ["email_click"], destinations: ["ga4"] });
+    defineTrackingPlan(library, {
+      recipes: ["email_click"],
+      constants: {
+        "Const - GA4 Measurement ID": "G-1",
+        "Const - Google Ads Conversion ID": "1",
+        "Const - Google Ads - email_click Conversion Label": "AbCdEf",
+      },
+    });
+    // @ts-expect-error email_click reaches three placeholder constants that must be supplied
     defineTrackingPlan(library, { recipes: ["email_click"] });
+    // @ts-expect-error the Ads label for email_click is missing
+    defineTrackingPlan(library, {
+      recipes: ["email_click"],
+      constants: { "Const - GA4 Measurement ID": "G-1", "Const - Google Ads Conversion ID": "1" },
+    });
     // @ts-expect-error not a recipe of this library
     defineTrackingPlan(library, { recipes: ["purchase"] });
-    // @ts-expect-error not a constant of this library
-    defineTrackingPlan(library, { recipes: ["email_click"], constants: { "Const - Nope": "x" } });
+    defineTrackingPlan(library, {
+      recipes: ["email_click"],
+      destinations: ["ga4"],
+      // @ts-expect-error not a constant of this library
+      constants: { "Const - Nope": "x" },
+    });
+    const required: RequiredConstantNameOf<typeof data, ["call_click"]>[] = [
+      "Const - GA4 Measurement ID",
+      "Const - Google Ads Conversion ID",
+      "Const - Google Ads - call_click Conversion Label",
+    ];
+    expect(required).toHaveLength(3);
+    // @ts-expect-error contact_form_submit's label is not reached by call_click
+    const notRequired: RequiredConstantNameOf<typeof data, ["call_click"]> =
+      "Const - Google Ads - contact_form_submit Conversion Label";
+    void notRequired;
     expect(compilePlan(library, plan).issues).toEqual([]);
     // A constant left at its placeholder is reported before any API call.
-    const unfilled = compilePlan(library, defineTrackingPlan(library, { recipes: ["call_click"] }));
+    const unfilled = compilePlan(library, { recipes: ["call_click"] });
     expect(unfilled.issues.length).toBeGreaterThan(0);
   });
 
