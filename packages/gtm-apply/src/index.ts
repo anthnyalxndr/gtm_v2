@@ -88,6 +88,7 @@ export {
 export type { SpecIssue } from "./spec/validate.js";
 export { loadSpecFile } from "./spec/load.js";
 export { pullSnapshot, snapshotToSpec, containerTypeOf } from "./snapshot/pull.js";
+export { canonicalSnapshot, stringifySnapshot } from "./snapshot/canonical.js";
 export { redactSnapshotSecrets } from "./snapshot/redact.js";
 export { GtmSnapshot, indexRecipes, DEFAULT_DESTINATION_FAMILIES } from "./library/gtm-snapshot.js";
 export type {
@@ -165,6 +166,7 @@ export {
   referencedVariableNames,
 } from "./spec/catalog.js";
 export { normalizeExport, NormalizeError, ENUM_KEYS } from "./spec/normalize.js";
+export { canonicalSpec, canonicalValue, stringifySpec, compareStrings } from "./spec/canonical.js";
 export {
   emptyState,
   toApiVariable,
