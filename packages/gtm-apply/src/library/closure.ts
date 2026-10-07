@@ -38,7 +38,7 @@ export function referencesOf(spec: ContainerSpec, ref: EntityRef): EntityRef[] {
       if (name.startsWith("_")) continue;
       if (byName(spec.variable, name)) add("variable", name);
       else {
-        const type = builtInTypeForName(name);
+        const type = builtInTypeForName(name, spec.containerType);
         if (type) add("builtInVariable", type);
       }
     }

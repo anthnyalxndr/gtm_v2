@@ -121,7 +121,12 @@ async function libraryFake() {
     ],
   });
   const client = new GtmClient({ service, minIntervalMs: 0 });
-  await applySpec(client, { container: "GTM-TPL", workspace: "seed", spec: template });
+  await applySpec(client, {
+    container: "GTM-TPL",
+    workspace: "seed",
+    spec: template,
+    version: true,
+  });
   return { client, state };
 }
 
@@ -236,6 +241,7 @@ describe("GtmSnapshot", () => {
       container: "GTM-CUST",
       workspace: "onboarding",
       spec,
+      version: true,
     });
     expect(plan.errors).toEqual([]);
     expect(result?.versionPath).toBeDefined();
@@ -292,7 +298,7 @@ describe("GtmSnapshot", () => {
       containers: [{ accountId: "1", containerId: "10", publicId: "GTM-LINT", name: "lint" }],
     });
     const client = new GtmClient({ service, minIntervalMs: 0 });
-    await applySpec(client, { container: "GTM-LINT", workspace: "seed", spec });
+    await applySpec(client, { container: "GTM-LINT", workspace: "seed", spec, version: true });
     const lib = await new GtmSnapshot(client, { container: "GTM-LINT" }).init();
     const [first, ...rest] = lib.lint().map(formatIssue);
     expect(first).toMatch(/^tag "Broken": notes metadata trailer is not valid JSON/);
@@ -331,7 +337,7 @@ describe("GtmSnapshot", () => {
       containers: [{ accountId: "1", containerId: "10", publicId: "GTM-BAD", name: "bad" }],
     });
     const client = new GtmClient({ service, minIntervalMs: 0 });
-    await applySpec(client, { container: "GTM-BAD", workspace: "seed", spec: bad });
+    await applySpec(client, { container: "GTM-BAD", workspace: "seed", spec: bad, version: true });
     const lib = await new GtmSnapshot(client, { container: "GTM-BAD" }).init();
     expect(lib.encoding.name).toBe("notes");
     expect(lib.lint().map(formatIssue)).toEqual([
@@ -371,6 +377,7 @@ describe("GtmSnapshot", () => {
     await applySpec(client, {
       container: "GTM-NM",
       workspace: "seed",
+      version: true,
       spec: {
         trigger: [{ name: "PV", type: "pageview" }],
         tag: [{ name: "T", type: "html", notes: meta("x"), firingTriggerName: ["PV"] }],
@@ -463,6 +470,7 @@ describe("GtmSnapshot on a server container", () => {
     await applySpec(client, {
       container: "GTM-SRV",
       workspace: "seed",
+      version: true,
       spec: {
         containerType: "server",
         client: [{ name: "GA4 Client", type: "gaaw_client" }],
@@ -521,7 +529,7 @@ describe("built-in triggers in a library", () => {
         },
       ],
     });
-    await applySpec(client, { container: "GTM-INIT", workspace: "w", spec });
+    await applySpec(client, { container: "GTM-INIT", workspace: "w", spec, version: true });
     const lib = await new GtmSnapshot(client, { container: "GTM-INIT" }).init();
     expect(lib.tags.get("Google Tag")?.firingTriggerName).toEqual(["Initialization - All Pages"]);
     expect(lib.lint()).toEqual([]);

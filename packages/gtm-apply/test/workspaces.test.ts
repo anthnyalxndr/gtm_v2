@@ -11,7 +11,7 @@ describe("ensureWorkspace", () => {
     const client = new GtmClient({ service, minIntervalMs: 0 });
     const ws = await ensureWorkspace(client, container, "conv-2026-09");
     expect(ws.created).toBe(true);
-    expect(ws.path).toMatch(/^accounts\/1\/containers\/10\/workspace\/\d+$/);
+    expect(ws.path).toMatch(/^accounts\/1\/containers\/10\/workspaces\/\d+$/);
     expect(state.calls).toContain("workspace.create");
   });
 
