@@ -34,7 +34,13 @@ import {
 } from "./plan.js";
 import type { ContainerSpec } from "./types.js";
 
-export type ExecuteOptions = PlanOptions;
+export interface ExecuteOptions extends PlanOptions {
+  /**
+   * Called with each warning as it arises, before the steps that follow it run, so
+   * a caller sees it even when a later step throws. Warnings also land in `warnings`.
+   */
+  onWarning?: (message: string) => void;
+}
 
 export interface ApplyResult {
   /** The workspace written to. Tag Manager deletes it once a version is created from it. */
@@ -48,6 +54,8 @@ export interface ApplyResult {
   /** Checks that could not run, such as a publish permission that could not be read. */
   warnings: string[];
 }
+
+const describe = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 const toOpAction = (action: EnsureAction): OpAction =>
   action === "created" ? "create" : action === "updated" ? "update" : "unchanged";
@@ -185,6 +193,10 @@ export async function executePlan(
   }
 
   const warnings: string[] = [];
+  const warn = (message: string): void => {
+    warnings.push(message);
+    options.onWarning?.(message);
+  };
   const kept: ApplyResult = {
     workspacePath: ws.path,
     ops,
@@ -225,7 +237,7 @@ export async function executePlan(
       );
     }
     if (permission.outcome === "unknown") {
-      warnings.push(`Publish permission not checked: ${permission.reason}`);
+      warn(`Publish permission not checked: ${permission.reason}`);
     }
   }
 
@@ -240,14 +252,24 @@ export async function executePlan(
 
   let published = false;
   if (options.publish) {
-    await client.call(() =>
-      client.service.accounts.containers.versions.publish({ path: versionPath })
-    );
+    const createdId =
+      versionRes.data.containerVersion?.containerVersionId ?? versionPath.split("/").pop();
+    try {
+      await client.call(() =>
+        client.service.accounts.containers.versions.publish({ path: versionPath })
+      );
+    } catch (err) {
+      // The version exists and its workspace is gone, so say which version to publish.
+      throw new Error(
+        `Created version ${createdId} "${name}" (${versionPath}), but publishing it failed: ${describe(err)}. ` +
+          `Tag Manager deleted the workspace "${ws.name}" when it created the version. ` +
+          `Someone who holds Publish on container ${plan.container.publicId} can publish version ${createdId} from its Versions page.`,
+        { cause: err }
+      );
+    }
     ops.push({ kind: "publish", name, action: "create" });
     published = true;
     // Publishing returns before anything else is known; confirm the live version is ours.
-    const createdId =
-      versionRes.data.containerVersion?.containerVersionId ?? versionPath.split("/").pop();
     const live = await client.call(() =>
       client.service.accounts.containers.versions.live({ parent: plan.container.path })
     );
@@ -273,7 +295,7 @@ function versionRequest(
   return notes === undefined ? { name } : { name, notes };
 }
 
-export interface ApplySpecOptions extends PlanOptions {
+export interface ApplySpecOptions extends ExecuteOptions {
   container: string;
   workspace: string;
   spec: ContainerSpec;
@@ -290,7 +312,11 @@ export async function applySpec(
   client: GtmClient,
   options: ApplySpecOptions
 ): Promise<ApplySpecOutcome> {
-  const planOptions: PlanOptions = { version: options.version, publish: options.publish };
+  const planOptions: ExecuteOptions = {
+    version: options.version,
+    publish: options.publish,
+    onWarning: options.onWarning,
+  };
   const plan = await planContainerSpec(
     client,
     { container: options.container, workspace: options.workspace },

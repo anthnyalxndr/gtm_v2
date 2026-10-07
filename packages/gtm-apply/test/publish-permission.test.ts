@@ -39,6 +39,20 @@ function fake(email?: string) {
   return { client: new GtmClient({ service, minIntervalMs: 0, email }), state, service };
 }
 
+/** A caller who is not an account admin: the user list is out of reach. */
+function hideUsers(service: ReturnType<typeof fake>["service"]): void {
+  service.accounts.user_permissions.list = (async () => {
+    throw Object.assign(new Error("The caller does not have permission"), { code: 403 });
+  }) as typeof service.accounts.user_permissions.list;
+}
+
+/** Tag Manager refuses the publish, as it does for a caller without Publish. */
+function refusePublish(service: ReturnType<typeof fake>["service"]): void {
+  service.accounts.containers.versions.publish = (async () => {
+    throw Object.assign(new Error("insufficient permissions"), { code: 403 });
+  }) as typeof service.accounts.containers.versions.publish;
+}
+
 describe("publish permission", () => {
   it("stops before creating a version when the caller lacks Publish, naming who holds it", async () => {
     const { client, state } = fake("editor@acme.com");
@@ -80,14 +94,40 @@ describe("publish permission", () => {
 
   it("publishes with a warning when the account's users cannot be listed", async () => {
     const { client, service } = fake("editor@acme.com");
-    service.accounts.user_permissions.list = (async () => {
-      throw Object.assign(new Error("The caller does not have permission"), { code: 403 });
-    }) as typeof service.accounts.user_permissions.list;
+    hideUsers(service);
     const { result } = await applySpec(client, { ...target, spec, publish: true });
     expect(result?.published).toBe(true);
     expect(result?.warnings).toEqual([
       expect.stringMatching(/not checked.*users.*The caller does not have permission/),
     ]);
+  });
+
+  it("reports the skipped check before creating the version", async () => {
+    const { client, service, state } = fake("editor@acme.com");
+    hideUsers(service);
+    const seen: { message: string; versioned: boolean }[] = [];
+    const onWarning = (message: string) =>
+      seen.push({ message, versioned: state.calls.includes("workspaces.create_version") });
+    const { result } = await applySpec(client, { ...target, spec, publish: true, onWarning });
+    expect(seen).toEqual([{ message: expect.stringMatching(/not checked/), versioned: false }]);
+    expect(result?.warnings).toEqual([seen[0].message]);
+  });
+
+  it("names the version it created when the publish itself is refused", async () => {
+    const { client, service, state } = fake("editor@acme.com");
+    hideUsers(service);
+    refusePublish(service);
+    const error = await applySpec(client, { ...target, spec, publish: true }).catch(
+      (e: Error) => e
+    );
+    expect(error).toBeInstanceOf(Error);
+    const [version] = state.versions;
+    const message = (error as Error).message;
+    expect(message).toContain(version.path);
+    expect(message).toContain(`version ${version.versionId}`);
+    expect(message).toContain('"release"');
+    expect(message).toContain("insufficient permissions");
+    expect(state.published).toEqual([]);
   });
 
   it("does not check permissions when no publish is requested", async () => {
@@ -116,21 +156,41 @@ describe("cli --publish", () => {
     "--publish",
   ];
 
-  it("fails without publishing and leaves the workspace when the caller lacks Publish", async () => {
+  it("refuses an admin caller who lacks Publish before any version, naming who holds it", async () => {
     const { client, state } = fake("editor@acme.com");
     await expect(runCli(parseCliArgs(await args()), client, () => undefined)).rejects.toThrow(
-      /owner@acme\.com/
+      /editor@acme\.com does not hold Publish.*Publish is held by: owner@acme\.com\./
     );
+    expect(state.calls).toContain("user_permissions.list");
+    expect(state.calls).not.toContain("workspaces.create_version");
+    expect(state.versions).toEqual([]);
     expect(state.published).toEqual([]);
     expect(state.workspaces.map((w) => w.name)).toEqual(["release"]);
   });
 
-  it("prints the skipped check as a warning before the version line", async () => {
+  it("prints the skipped check before a refused publish and names the version", async () => {
+    const { client, service, state } = fake("editor@acme.com");
+    hideUsers(service);
+    refusePublish(service);
+    const lines: string[] = [];
+    const error = await runCli(parseCliArgs(await args()), client, (l) => lines.push(l)).catch(
+      (e: Error) => e
+    );
+    expect(lines.at(-1)).toMatch(/^\[\?\] Publish permission not checked: the account's users/);
+    expect(error).toBeInstanceOf(Error);
+    const [version] = state.versions;
+    expect((error as Error).message).toMatch(
+      new RegExp(`Created version ${version.versionId} "release" \\(${version.path}\\)`)
+    );
+    expect(state.published).toEqual([]);
+  });
+
+  it("prints the skipped check once, before the version line", async () => {
     const { client } = fake();
     const lines: string[] = [];
     expect(await runCli(parseCliArgs(await args()), client, (l) => lines.push(l))).toBe(0);
-    const warning = lines.findIndex((l) => /^\[\?\] Publish permission not checked/.test(l));
-    expect(warning).toBeGreaterThan(-1);
+    const warnings = lines.filter((l) => /^\[\?\] Publish permission not checked/.test(l));
+    expect(warnings).toHaveLength(1);
     expect(lines.at(-1)).toMatch(/^Version: .* \(published\)$/);
   });
 });

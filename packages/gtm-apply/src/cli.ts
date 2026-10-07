@@ -6,7 +6,7 @@ import { deleteWorkspace } from "./resources/workspaces.js";
 import { loadSpecFile } from "./spec/load.js";
 import { normalizeExport } from "./spec/normalize.js";
 import { formatIssue, validateSpec } from "./spec/validate.js";
-import { executePlan, type ApplyResult } from "./spec/execute.js";
+import { executePlan, type ApplyResult, type ExecuteOptions } from "./spec/execute.js";
 import { formatPlan, planContainerSpec, wantsVersion, type PlanOptions } from "./spec/plan.js";
 import { pullSnapshot } from "./snapshot/pull.js";
 import { GtmSnapshot, type GtmSnapshotData } from "./library/gtm-snapshot.js";
@@ -122,8 +122,11 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
   };
 }
 
-/** The engine's version and publish options for an apply run. */
-function applyOptions(args: CliArgs): PlanOptions {
+/**
+ * The engine's version and publish options for an apply run. Warnings print as they
+ * arise, so a skipped check shows even when a later step fails.
+ */
+function applyOptions(args: CliArgs, out: (line: string) => void): ExecuteOptions {
   const named = args.versionName !== undefined || args.versionDescription !== undefined;
   return {
     version:
@@ -131,17 +134,17 @@ function applyOptions(args: CliArgs): PlanOptions {
         ? { name: args.versionName, notes: args.versionDescription }
         : false,
     publish: args.publish,
+    onWarning: (message) => out(`[?] ${message}`),
   };
 }
 
-/** What an apply run did with the workspace and the version, after the plan. */
+/** What an apply run did with the workspace and the version, after the plan. Warnings were printed as they arose. */
 function reportApply(
   args: CliArgs,
   options: PlanOptions,
   result: ApplyResult,
   out: (line: string) => void
 ): void {
-  for (const w of result.warnings) out(`[?] ${w}`);
   if (result.versionPath) {
     out(`Version: ${result.versionPath}${result.published ? " (published)" : ""}`);
     return;
@@ -278,7 +281,7 @@ export async function runCli(
         return 1;
       }
       await client.init();
-      const options = applyOptions(args);
+      const options = applyOptions(args, out);
       const plan = await planContainerSpec(
         client,
         { container: args.container, workspace: args.workspace },
@@ -329,7 +332,7 @@ async function applyFromPlan(
     return 1;
   }
   await client.init();
-  const options = applyOptions(args);
+  const options = applyOptions(args, out);
   const outcome = await applyPlan(client, {
     library,
     plan,

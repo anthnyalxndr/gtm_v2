@@ -4,8 +4,7 @@ import type { GtmClient } from "@anthnyalxndr/gtm-client";
 import type { GtmSnapshot, GtmSnapshotData } from "../library/gtm-snapshot.js";
 import type { PlaceholderMetadata } from "../library/metadata.js";
 import { checkNames } from "../spec/conventions.js";
-import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
-import type { PlanOptions } from "../spec/plan.js";
+import { applySpec, type ApplySpecOutcome, type ExecuteOptions } from "../spec/execute.js";
 import type { ContainerSpec, VariableSpec } from "../spec/types.js";
 import { formatIssue, type SpecIssue } from "../spec/validate.js";
 
@@ -161,7 +160,7 @@ export function compilePlan<R extends string, C extends string>(
   return { spec, issues, warnings };
 }
 
-export interface ApplyPlanOptions<R extends string, C extends string> extends PlanOptions {
+export interface ApplyPlanOptions<R extends string, C extends string> extends ExecuteOptions {
   library: GtmSnapshot<R, C>;
   plan: TrackingPlan<R, C>;
   container: string;

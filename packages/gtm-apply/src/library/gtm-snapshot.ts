@@ -3,8 +3,7 @@ import { redactSnapshotSecrets } from "../snapshot/redact.js";
 import type { tagmanager_v2 } from "@googleapis/tagmanager";
 import { pullSnapshot, snapshotToSpec } from "../snapshot/pull.js";
 import type { ApiSnapshotData, ContainerType, SnapshotSource } from "../snapshot/types.js";
-import { applySpec, type ApplySpecOutcome } from "../spec/execute.js";
-import type { PlanOptions } from "../spec/plan.js";
+import { applySpec, type ApplySpecOutcome, type ExecuteOptions } from "../spec/execute.js";
 import type {
   ClientSpec,
   ContainerSpec,
@@ -537,7 +536,7 @@ export class GtmSnapshot<R extends string = string, C extends string = string> {
   push(
     client: GtmClient,
     target: { container?: string; workspace: string },
-    options: PlanOptions & { dryRun?: boolean } = {}
+    options: ExecuteOptions & { dryRun?: boolean } = {}
   ): Promise<ApplySpecOutcome> {
     const container = target.container ?? this.#source?.container ?? this.data.container.publicId;
     if (!container) throw new Error("push needs a target container");
