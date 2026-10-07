@@ -1,0 +1,8 @@
+{
+  "name": "munson-contact",
+  "startUrl": "https://www.drsamanthamunson.com/",
+  "container": { "id": "GTM-52ZLPX7", "environment": "Live" },
+  "hits": "dry",
+  "settleMs": 4000,
+  "driver": "./flows/munson-contact.mjs"
+}
