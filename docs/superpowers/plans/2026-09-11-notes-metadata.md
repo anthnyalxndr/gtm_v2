@@ -1,6 +1,6 @@
 # Notes-trailer metadata and the snapshot metadata index (TASK-12)
 
-**Decision:** `backlog/decisions/decision-10`. **Task:** TASK-12.
+**Decision:** `docs/decisions/decision-10`. **Task:** TASK-12.
 
 **Goal:** One medium for library metadata. Every entity kind with a notes field may end its notes with a `---` line followed by a JSON object. The prose above is the customer's note; the JSON below is library metadata. `GtmSnapshot` parses every trailer once into a `metadata` index that the committed snapshot carries beside `recipes`; recipe roots, lint, `select()` and `compilePlan` read the index. Variables declare placeholders in that JSON and lint reconciles the entry with the value.
 
