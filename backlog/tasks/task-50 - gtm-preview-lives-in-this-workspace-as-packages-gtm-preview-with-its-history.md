@@ -1,11 +1,11 @@
 ---
 id: TASK-50
 title: 'gtm-preview lives in this workspace as packages/gtm-preview, with its history'
-status: Review
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-06 21:49'
-updated_date: '2026-10-06 21:59'
+updated_date: '2026-10-07 02:38'
 labels:
   - gtm-preview
   - workspace
@@ -47,6 +47,8 @@ gtm-preview is the headless GTM preview runner (Playwright loads a container's d
 
 <!-- SECTION:NOTES:BEGIN -->
 git subtree add was tried first and dropped: the 63 commits were reachable through the merge's second parent, but git log and git log --follow on any file inside packages/gtm-preview stopped at the merge. Rewrote a scratch clone with git filter-repo --to-subdirectory-filter packages/gtm-preview and merged it with --allow-unrelated-histories instead; git log -- packages/gtm-preview/package.json now shows 5 commits from the standalone repo. pnpm verify at the root (build, typecheck, lint, test over five packages) passed in 14s with no browser download; the only Chromium-driving test is skipped unless its auth variable is set. commitlint checked from the new commit-msg hook: rejects 'bad message', accepts 'chore(workspace): fine'. The two untracked design docs that disappeared from git status during the work (docs/superpowers/*/2026-10-06-github-issues-task-workflow*) were moved to ~/Projects/gh-task by another session, not by this task.
+
+Merged to main from PR #49 on 2026-10-06. The GitHub Actions workflow added in this PR did not register a run on the pull request; its first run will be on main or the next PR.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
