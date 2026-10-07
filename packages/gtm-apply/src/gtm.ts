@@ -10,6 +10,8 @@ import { applyPlan, type ApplyPlanOptions, type ApplyPlanOutcome } from "./plan/
 import { snapshotToSpec } from "./snapshot/pull.js";
 import type { SnapshotSource } from "./snapshot/types.js";
 import { applySpec, type ApplySpecOptions, type ApplySpecOutcome } from "./spec/execute.js";
+import { renderReport } from "./report/render.js";
+import { writeFile } from "node:fs/promises";
 import { planContainerSpec, type Plan, type PlanOptions, type PlanTarget } from "./spec/plan.js";
 import type { ContainerSpec } from "./spec/types.js";
 
@@ -81,5 +83,23 @@ export class Gtm {
     options: ApplyPlanOptions<R, C>
   ): Promise<ApplyPlanOutcome> {
     return applyPlan(this.client, options);
+  }
+
+  /**
+   * Apply a snapshot's staged state back to a container without passing the
+   * client twice. Writes a change report (its staged-versus-pull changes)
+   * when reportTo is given.
+   */
+  async push(
+    snapshot: GtmSnapshot,
+    target: { container?: string; workspace: string },
+    options: { dryRun?: boolean; publish?: boolean; versionName?: string; reportTo?: string } = {}
+  ): Promise<ApplySpecOutcome> {
+    const { reportTo, ...rest } = options;
+    if (reportTo) {
+      const report = snapshot.changes({ workspace: target.workspace });
+      await writeFile(reportTo, renderReport(report, reportTo));
+    }
+    return snapshot.push(this.client, target, rest);
   }
 }
