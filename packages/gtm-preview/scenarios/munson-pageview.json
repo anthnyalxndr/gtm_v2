@@ -1,0 +1,14 @@
+{
+  "name": "munson-pageview",
+  "startUrl": "https://www.drsamanthamunson.com/",
+  "container": { "id": "GTM-52ZLPX7", "environment": "Live" },
+  "hits": "dry",
+  "settleMs": 4000,
+  "steps": [
+    { "kind": "wait", "ms": 2500 },
+    { "kind": "scroll", "y": 1500 },
+    { "kind": "wait", "ms": 1500 },
+    { "kind": "scroll", "y": 4000 },
+    { "kind": "wait", "ms": 2000 }
+  ]
+}

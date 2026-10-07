@@ -32,8 +32,7 @@
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
     "dev": "tsx example.ts",
-    "prepublishOnly": "pnpm build",
-    "gen:discovery": "tsx scripts/generate-discovery.ts"
+    "prepublishOnly": "pnpm build"
   },
   "keywords": [
     "google-tag-manager",
@@ -43,6 +42,7 @@
   ],
   "dependencies": {
     "@anthnyalxndr/gtm-client": "workspace:^",
+    "@anthnyalxndr/gtm-model": "workspace:^",
     "@googleapis/tagmanager": "^16.0.0"
   },
   "engines": {

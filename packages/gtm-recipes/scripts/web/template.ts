@@ -1,0 +1,272 @@
+import { GtmClient } from "@anthnyalxndr/gtm-client";
+import { createFakeService } from "@anthnyalxndr/gtm-client/testing";
+import { applySpec, GtmSnapshot, manifestVariable } from "@anthnyalxndr/gtm-apply";
+import {
+  defineContainer,
+  type TagSpec,
+  type TriggerSpec,
+  type VariableSpec,
+} from "@anthnyalxndr/gtm-model";
+import {
+  adsConversionId,
+  bool,
+  condition,
+  declares,
+  dependencies,
+  input,
+  label,
+  labelConstant,
+  notNeeded,
+  tpl,
+} from "../shared.js";
+
+/**
+ * The Web Template container (GTM-TPLKC7QP) as a ContainerSpec: the lead-gen
+ * recipe set that recurs across client work. Push it with `pnpm push web`, then
+ * `pnpm pull web` writes the real container back into src/web/library.ts.
+ *
+ * Recipes are event-centric: one trigger, a GA4 event tag and a Google Ads
+ * conversion tag, sharing the Google tag and the customer's constants. A
+ * site emits the dataLayer events; this container only listens.
+ *
+ * Metadata lives in entity notes: the text above a `---` line reaches the
+ * customer, the JSON below it is the library's and is stripped before a tag
+ * reaches a customer container.
+ */
+
+const dataLayer = (name: string, key: string, text: string): VariableSpec => ({
+  name,
+  type: "v",
+  notes: text,
+  parameter: [tpl("name", key)],
+});
+const customEvent = (recipe: string, notes: string): TriggerSpec => ({
+  name: `Custom Event - ${recipe}`,
+  type: "customEvent",
+  notes,
+  customEventFilter: [condition("equals", "{{_event}}", recipe)],
+});
+
+/** A link click trigger that waits up to two seconds for tags, as the UI configures one. */
+const linkClick = (
+  name: string,
+  notes: string,
+  filter: ReturnType<typeof condition>
+): TriggerSpec => ({
+  name,
+  type: "linkClick",
+  notes,
+  filter: [filter],
+  waitForTags: { type: "boolean", value: "true" },
+  waitForTagsTimeout: { type: "template", value: "2000" },
+  checkValidation: { type: "boolean", value: "false" },
+  autoEventFilter: [condition("matchRegex", "{{Page URL}}", ".*")],
+});
+
+const eventParameter = (parameter: string, parameterValue: string) => ({
+  type: "map" as const,
+  map: [tpl("parameter", parameter), tpl("parameterValue", parameterValue)],
+});
+
+/** A GA4 event tag and a Google Ads conversion tag for one recipe, on one trigger. */
+const conversion = (
+  recipe: string,
+  trigger: string,
+  parameters: ReturnType<typeof eventParameter>[]
+): TagSpec[] => [
+  {
+    name: `GA4 - ${recipe}`,
+    type: "gaawe",
+    firingTriggerName: [trigger],
+    notes: declares(`Sends the ${recipe} event to GA4.`, recipe),
+    consentSettings: notNeeded,
+    parameter: [
+      tpl("eventName", recipe),
+      tpl("measurementIdOverride", "{{Const - GA4 Measurement ID}}"),
+      ...(parameters.length
+        ? [{ type: "list" as const, key: "eventSettingsTable", list: parameters }]
+        : []),
+    ],
+  },
+  {
+    name: `Ads - ${recipe}`,
+    type: "awct",
+    firingTriggerName: [trigger],
+    notes: declares(`Records the ${recipe} conversion in Google Ads.`, recipe),
+    consentSettings: notNeeded,
+    parameter: [
+      tpl("conversionId", "{{Const - Google Ads Conversion ID}}"),
+      tpl("conversionLabel", `{{${labelConstant(recipe)}}}`),
+      bool("enableConversionLinker", true),
+    ],
+  },
+];
+
+const linkParameters = [
+  eventParameter("link_url", "{{Click URL}}"),
+  eventParameter("link_text", "{{Click Text}}"),
+];
+
+export const template = defineContainer({
+  containerType: "web",
+  variable: [
+    manifestVariable({
+      conventions: {},
+      recipes: {
+        google_tag: {
+          description: "Google tag on Initialization; base for every recipe.",
+        },
+        google_tag_server: {
+          description: "google_tag via a tagging server; pick one.",
+          conflicts: ["google_tag"],
+        },
+        contact_form_submit: {
+          description: "Contact form submitted (dataLayer event).",
+          dependencies: dependencies("contact_form_submit"),
+        },
+        call_click: {
+          description: "tel: link clicked.",
+          dependencies: dependencies("call_click"),
+        },
+        email_click: {
+          description: "mailto: link clicked.",
+          dependencies: dependencies("email_click"),
+        },
+        maps_click: {
+          description: "Google Maps link clicked.",
+          dependencies: dependencies("maps_click"),
+        },
+      },
+    }),
+    input(
+      "Const - GA4 Measurement ID",
+      "<G-XXXXXXXXXX>",
+      "Measurement ID of the site's GA4 web data stream (Admin > Data streams).",
+      { kind: "ga4MeasurementId", example: "G-ABC123DEF4", pattern: "^G-[A-Z0-9]+$" }
+    ),
+    input(
+      "Const - Server Container URL",
+      "<https://sgtm.example.com>",
+      "Origin of the customer's server-side tagging server (the server container's tagging server URL), with no trailing slash.",
+      {
+        kind: "serverContainerUrl",
+        example: "https://sgtm.example.com",
+        pattern: "^https://[^/]+$",
+      }
+    ),
+    adsConversionId(),
+    label("contact_form_submit"),
+    label("call_click"),
+    label("email_click"),
+    label("maps_click"),
+    dataLayer("DLV - form_id", "form_id", "The submitted form's id, read from the dataLayer."),
+    dataLayer(
+      "DLV - form_name",
+      "form_name",
+      "The submitted form's name, read from the dataLayer."
+    ),
+    dataLayer(
+      "DLV - form_destination",
+      "form_destination",
+      "The submitted form's destination URL, read from the dataLayer."
+    ),
+    dataLayer(
+      "DLV - form_submit_text",
+      "form_submit_text",
+      "The submit button's text, read from the dataLayer."
+    ),
+  ],
+  trigger: [
+    customEvent(
+      "contact_form_submit",
+      "Fires on the dataLayer event contact_form_submit that the site's form handler pushes on a successful submit."
+    ),
+    linkClick(
+      "Click - call",
+      "Fires on a click of a tel: link. Contains, not starts-with, so a swapped forwarding number still matches.",
+      condition("contains", "{{Click URL}}", "tel:")
+    ),
+    linkClick(
+      "Click - email",
+      "Fires on a click of a mailto: link.",
+      condition("contains", "{{Click URL}}", "mailto:")
+    ),
+    linkClick(
+      "Click - maps",
+      "Fires on a click of a Google Maps link (a directions request).",
+      condition(
+        "matchRegex",
+        "{{Click URL}}",
+        "maps\\.google\\.|google\\.[a-z.]+/maps|maps\\.app\\.goo\\.gl"
+      )
+    ),
+  ],
+  tag: [
+    {
+      name: "Google Tag",
+      type: "googtag",
+      firingTriggerName: ["Initialization - All Pages"],
+      consentSettings: notNeeded,
+      parameter: [tpl("tagId", "{{Const - GA4 Measurement ID}}")],
+      notes: declares(
+        'Loads the Google tag on every page. No Conversion Linker tag: a Google tag on every page sets the same first-party click cookies. Google\'s Conversion linker help says "If a container loads a Google tag on every page, it does not also need a conversion linker tag." https://support.google.com/tagmanager/answer/7549390. Add the Google Ads account as a destination of this Google tag in Google Ads or GA4 admin.',
+        "google_tag"
+      ),
+    },
+    {
+      name: "Google Tag - Server",
+      type: "googtag",
+      firingTriggerName: ["Initialization - All Pages"],
+      consentSettings: notNeeded,
+      parameter: [
+        tpl("tagId", "{{Const - GA4 Measurement ID}}"),
+        {
+          type: "list",
+          key: "configSettingsTable",
+          list: [
+            {
+              type: "map",
+              map: [
+                tpl("parameter", "server_container_url"),
+                tpl("parameterValue", "{{Const - Server Container URL}}"),
+              ],
+            },
+          ],
+        },
+      ],
+      notes: declares(
+        "Loads the Google tag on every page and sends its hits to the customer's tagging server, where the server template's GA4 client claims them. Use it instead of the Google Tag, never with it. With server tagging, leave the googleAds destination out of the web plan: the server template's Ads - <recipe> tags record conversions, so each counts once.",
+        "google_tag_server"
+      ),
+    },
+    ...conversion("contact_form_submit", "Custom Event - contact_form_submit", [
+      eventParameter("form_id", "{{DLV - form_id}}"),
+      eventParameter("form_name", "{{DLV - form_name}}"),
+      eventParameter("form_destination", "{{DLV - form_destination}}"),
+      eventParameter("form_submit_text", "{{DLV - form_submit_text}}"),
+    ]),
+    ...conversion("call_click", "Click - call", linkParameters),
+    ...conversion("email_click", "Click - email", linkParameters),
+    ...conversion("maps_click", "Click - maps", linkParameters),
+  ],
+});
+
+/**
+ * The template applied to an in-memory container and pulled back as a
+ * GtmSnapshot, so it can be linted and pushed exactly as a pull would see it.
+ */
+export async function templateSnapshot(): Promise<GtmSnapshot> {
+  const { service } = createFakeService({
+    containers: [
+      { accountId: "1", containerId: "10", publicId: "GTM-SAMPLE", name: "Web Template (sample)" },
+    ],
+  });
+  const client = new GtmClient({ service, minIntervalMs: 0 });
+  await applySpec(client, {
+    container: "GTM-SAMPLE",
+    workspace: "sample",
+    spec: template,
+    version: true,
+  });
+  return new GtmSnapshot(client, { container: "GTM-SAMPLE" }).init();
+}

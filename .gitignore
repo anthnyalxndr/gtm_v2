@@ -25,3 +25,13 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Local-only files from packages (gtm-preview run output, agent session state)
+reports/
+.remember/
+.playwright-mcp/
+.claude/settings.local.json
+*.tsbuildinfo
+coverage/
+.env.*
+!.env.example

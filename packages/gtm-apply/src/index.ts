@@ -1,7 +1,11 @@
 // The client is its own package; re-exported here so one import serves most scripts.
 export * from "@anthnyalxndr/gtm-client";
-export { ensureWorkspace, isDefaultWorkspaceName } from "./resources/workspaces.js";
-export type { WorkspaceRef } from "./resources/workspaces.js";
+export {
+  ensureWorkspace,
+  isDefaultWorkspaceName,
+  workspaceStatus,
+} from "./resources/workspaces.js";
+export type { WorkspaceRef, WorkspaceStatus } from "./resources/workspaces.js";
 export {
   ensureFolder,
   ensureVariable,
@@ -14,6 +18,8 @@ export {
 } from "./resources/entities.js";
 export type { EnsureResult, EnsureAction } from "./resources/entities.js";
 export { ensureBuiltIns, listEnabledBuiltIns } from "./resources/builtins.js";
+export { checkPublishPermission, listPublishers } from "./resources/permissions.js";
+export type { PublishPermission } from "./resources/permissions.js";
 export { Gtm } from "./gtm.js";
 export type { SnapshotCallOptions } from "./gtm.js";
 export { defineContainer } from "./spec/types.js";
@@ -90,6 +96,7 @@ export type {
   PullAccountOptions,
   PullAccountResult,
 } from "./snapshot/dir.js";
+export { redactSnapshotSecrets } from "./snapshot/redact.js";
 export { GtmSnapshot, indexRecipes, DEFAULT_DESTINATION_FAMILIES } from "./library/gtm-snapshot.js";
 export type {
   Recipe,
@@ -161,7 +168,15 @@ export {
   sortVariablesByReference,
   formatPlan,
 } from "./spec/plan.js";
-export type { Plan, PlannedOp, PlanTarget, PlanOptions, OpKind, OpAction } from "./spec/plan.js";
+export type {
+  Plan,
+  PlannedOp,
+  PlanTarget,
+  PlanOptions,
+  VersionOptions,
+  OpKind,
+  OpAction,
+} from "./spec/plan.js";
 export { executePlan, applySpec } from "./spec/execute.js";
 export type {
   ExecuteOptions,
