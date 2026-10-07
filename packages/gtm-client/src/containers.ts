@@ -51,6 +51,23 @@ export async function resolveContainer(client: GtmClient, publicId: string): Pro
   throw new Error(`No accessible container with public id ${publicId}`);
 }
 
+/** Every container in one account, in the API's listing order. */
+export async function listContainers(
+  client: GtmClient,
+  accountId: string
+): Promise<ContainerRef[]> {
+  const res = await client.call(() =>
+    client.service.accounts.containers.list({ parent: `accounts/${accountId}` })
+  );
+  const refs: ContainerRef[] = [];
+  for (const c of res.data.container ?? []) {
+    if (!c.publicId) continue;
+    const ref = toRef(c, c.publicId);
+    if (ref) refs.push(ref);
+  }
+  return refs;
+}
+
 async function lookupByTagId(client: GtmClient, publicId: string): Promise<ContainerRef | null> {
   let container: Container;
   try {

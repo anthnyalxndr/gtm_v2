@@ -89,6 +89,7 @@ export type { SpecIssue } from "./spec/validate.js";
 export { loadSpecFile } from "./spec/load.js";
 export { pullSnapshot, snapshotToSpec, containerTypeOf } from "./snapshot/pull.js";
 export { canonicalSnapshot, stringifySnapshot } from "./snapshot/canonical.js";
+export { pullSnapshots, snapshotAccount } from "./snapshot/account.js";
 export { redactSnapshotSecrets } from "./snapshot/redact.js";
 export { GtmSnapshot, indexRecipes, DEFAULT_DESTINATION_FAMILIES } from "./library/gtm-snapshot.js";
 export type {
