@@ -42,9 +42,9 @@
     "oauth"
   ],
   "dependencies": {
-    "@googleapis/tagmanager": "^16.0.0",
-    "google-auth-library": "^10.5.0",
-    "open": "^11.0.2"
+    "@googleapis/tagmanager": "^20.0.1",
+    "google-auth-library": "^11.3.1",
+    "open": "^11.0.4"
   },
   "engines": {
     "node": ">=18.0.0"
