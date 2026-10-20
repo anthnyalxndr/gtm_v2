@@ -45,7 +45,7 @@
   "dependencies": {
     "@anthnyalxndr/gtm-client": "workspace:^",
     "@anthnyalxndr/gtm-model": "workspace:^",
-    "@googleapis/tagmanager": "^16.0.0"
+    "@googleapis/tagmanager": "^20.0.1"
   },
   "engines": {
     "node": ">=18.0.0"

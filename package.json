@@ -18,15 +18,15 @@
     "packages/gtm-preview/**/*.{ts,mjs}": "pnpm --filter @anthnyalxndr/gtm-preview exec eslint --fix"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^26.6.5",
     "husky": "^9.1.7",
-    "lint-staged": "^17.5.0",
-    "prettier": "^3.9.6",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
     "tsx": "^4",
-    "typescript": "^5",
-    "vitest": "^5.0.0",
-    "@commitlint/cli": "^19.6.1",
-    "@commitlint/config-conventional": "^19.6.0"
+    "typescript": "^7",
+    "vitest": "^5.0.5",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3"
   },
   "engines": {
     "node": ">=22"
